@@ -1,0 +1,101 @@
+/* ============================================================
+   DataTable
+   ============================================================ */
+.data-table-wrapper {
+  overflow: hidden;
+}
+
+.data-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-color);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.data-table-count {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.data-table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  margin: 0;
+}
+
+.data-table-th-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.data-table-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.data-table-actions .btn {
+  padding: 0.25rem 0.45rem;
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
+/* --- Pagination --- */
+.data-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.data-table-pagination-info {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.data-table-pagination .pagination {
+  --bs-pagination-bg: var(--bg-surface);
+  --bs-pagination-border-color: var(--border-color);
+  --bs-pagination-color: var(--text-secondary);
+  --bs-pagination-hover-bg: var(--bg-surface-hover);
+  --bs-pagination-hover-color: var(--text-primary);
+  --bs-pagination-hover-border-color: var(--border-color-strong);
+  --bs-pagination-active-bg: var(--color-primary-600);
+  --bs-pagination-active-border-color: var(--color-primary-600);
+  --bs-pagination-disabled-bg: var(--bg-surface);
+  --bs-pagination-disabled-color: var(--text-tertiary);
+}
+
+/* --- Loading skeleton --- */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-surface-hover) 25%, var(--border-color) 50%, var(--bg-surface-hover) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 575.98px) {
+  .data-table-toolbar {
+    padding: var(--space-3);
+  }
+  .data-table-pagination {
+    padding: var(--space-3);
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

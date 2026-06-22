@@ -1,0 +1,156 @@
+/* ============================================================
+   AuthLayout — Login / Unauthenticated Pages
+   ============================================================ */
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b2a4a 50%, #152238 100%);
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-4);
+}
+
+/* --- Animated grid background --- */
+.auth-bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: patternMove 20s linear infinite;
+}
+
+@keyframes patternMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
+
+/* --- Container --- */
+.auth-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Brand --- */
+.auth-brand {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.auth-brand-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--color-accent), #f97316);
+  border-radius: var(--radius-xl);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-bottom: var(--space-4);
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);
+}
+
+.auth-brand-title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-2);
+}
+
+.auth-brand-subtitle {
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.5);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* --- Card --- */
+.auth-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+.auth-card h2 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: #ffffff;
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.auth-card .form-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--text-sm);
+}
+
+.auth-card .form-control {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 0.6rem 0.875rem;
+}
+
+.auth-card .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.auth-card .form-control:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.auth-card .btn-primary {
+  width: 100%;
+  padding: 0.65rem;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  background: linear-gradient(135deg, var(--color-accent), #f97316);
+  border: none;
+  margin-top: var(--space-2);
+}
+
+.auth-card .btn-primary:hover {
+  background: linear-gradient(135deg, #f97316, var(--color-accent-hover));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+}
+
+/* --- Footer --- */
+.auth-footer {
+  margin-top: var(--space-6);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* --- Responsive --- */
+@media (max-width: 575.98px) {
+  .auth-card {
+    padding: var(--space-5);
+  }
+
+  .auth-brand-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
+  .auth-brand-title {
+    font-size: var(--text-2xl);
+  }
+}

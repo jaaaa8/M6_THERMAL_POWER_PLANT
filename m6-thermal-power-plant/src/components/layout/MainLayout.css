@@ -1,0 +1,46 @@
+/* ============================================================
+   MainLayout — Page Structure
+   ============================================================ */
+.main-layout {
+  min-height: 100vh;
+}
+
+.main-wrapper {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left var(--transition-sidebar);
+}
+
+.main-layout.sidebar-collapsed .main-wrapper {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.main-content {
+  flex: 1;
+  padding: calc(var(--header-height) + var(--space-5)) var(--space-5) var(--space-5);
+  max-width: 1600px;
+  width: 100%;
+}
+
+.main-content-inner {
+  /* Animation wrapper for page transitions */
+}
+
+/* --- Mobile --- */
+@media (max-width: 991.98px) {
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  .main-content {
+    padding: calc(var(--header-height) + var(--space-4)) var(--space-3) var(--space-3);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .main-content {
+    padding: calc(var(--header-height) + var(--space-3)) var(--space-2) var(--space-2);
+  }
+}
