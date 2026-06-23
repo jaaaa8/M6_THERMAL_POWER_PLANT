@@ -14,6 +14,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import NhanSuForm from './components/nhansu/NhanSuForm';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             {/* --- Nhân sự --- */}
             <Route path="/nhan-su/phong-ban" element={<PlaceholderPage title="Quản lý Phòng ban" />} />
             <Route path="/nhan-su/nhan-vien" element={<PlaceholderPage title="Quản lý Nhân viên" />} />
+            <Route path="/nhan-su/them-moi" element={<NhanSuForm onCancel={() => window.history.back()} />} />
             <Route path="/nhan-su/tai-khoan" element={<PlaceholderPage title="Tài khoản & Phân quyền" />} />
 
             {/* --- Thiết bị --- */}

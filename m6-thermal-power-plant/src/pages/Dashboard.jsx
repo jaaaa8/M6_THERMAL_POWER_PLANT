@@ -1,8 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card } from 'react-bootstrap';
 import {
   BsGrid1X2, BsCpu, BsWrenchAdjustable, BsExclamationTriangle,
   BsFileEarmarkText, BsBoxSeam, BsTools, BsDropletHalf,
-  BsArrowUpRight, BsArrowDownRight
+  BsArrowUpRight, BsArrowDownRight, BsPersonPlusFill
 } from 'react-icons/bs';
 import PageHeader from '../components/common/PageHeader';
 import StatusBadge from '../components/common/StatusBadge';
@@ -47,6 +48,8 @@ const equipmentStatus = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
   return (
     <>
       <PageHeader
@@ -149,9 +152,13 @@ export default function Dashboard() {
                 <BsBoxSeam className="qa-icon" style={{ color: 'var(--color-status-info)' }} />
                 <span>Nhập kho<br />vật tư</span>
               </button>
-              <button className="quick-action-btn">
+              <button className="quick-action-btn" onClick={() => navigate('/bao-duong/ke-hoach')}>
                 <BsDropletHalf className="qa-icon" style={{ color: 'var(--color-status-normal)' }} />
                 <span>Lịch bảo<br />dưỡng</span>
+              </button>
+              <button className="quick-action-btn" onClick={() => navigate('/nhan-su/them-moi')}>
+                <BsPersonPlusFill className="qa-icon" style={{ color: 'var(--color-accent)' }} />
+                <span>Thêm mới<br />nhân sự</span>
               </button>
             </Card.Body>
           </Card>
