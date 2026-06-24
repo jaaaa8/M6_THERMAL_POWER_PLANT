@@ -14,6 +14,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import RepairRequest from './pages/RepairRequest.jsx';
 import NhanSuForm from './components/nhansu/NhanSuForm';
 
 function App() {
@@ -48,7 +49,7 @@ function App() {
             <Route path="/thiet-bi/danh-sach" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/sua-chua/yeu-cau" element={<PlaceholderPage title="Yêu cầu Sửa chữa" />} />
+            <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
             <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
             <Route path="/sua-chua/danh-gia-kt" element={<PlaceholderPage title="Đánh giá Kỹ thuật" />} />
 
