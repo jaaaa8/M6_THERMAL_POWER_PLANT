@@ -1,0 +1,101 @@
+/* ============================================================
+   CreateRequestModal — Modal tạo yêu cầu sửa chữa mới
+   ============================================================ */
+
+/* --- Label --- */
+.crm-label {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+/* --- Priority Radio Pills --- */
+.crm-priority-group {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.crm-priority-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-color);
+  background: var(--bg-surface);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.crm-priority-pill input[type="radio"] {
+  display: none;
+}
+
+.crm-priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-color);
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.crm-priority-pill:hover {
+  border-color: var(--color-neutral-300);
+  background: var(--bg-surface-hover);
+}
+
+/* --- Priority Colors --- */
+.crm-priority-pill.priority-low.active {
+  border-color: var(--color-status-inactive);
+  background: var(--color-status-inactive-bg);
+  color: var(--color-neutral-500);
+}
+.crm-priority-pill.priority-low.active .crm-priority-dot {
+  background: var(--color-status-inactive);
+}
+
+.crm-priority-pill.priority-medium.active {
+  border-color: var(--color-status-info);
+  background: var(--color-status-info-bg);
+  color: var(--color-status-info);
+}
+.crm-priority-pill.priority-medium.active .crm-priority-dot {
+  background: var(--color-status-info);
+}
+
+.crm-priority-pill.priority-high.active {
+  border-color: var(--color-status-warning);
+  background: var(--color-status-warning-bg);
+  color: var(--color-accent-hover);
+}
+.crm-priority-pill.priority-high.active .crm-priority-dot {
+  background: var(--color-status-warning);
+}
+
+.crm-priority-pill.priority-critical.active {
+  border-color: var(--color-status-danger);
+  background: var(--color-status-danger-bg);
+  color: var(--color-status-danger);
+  animation: fadeIn 0.2s ease-out;
+}
+.crm-priority-pill.priority-critical.active .crm-priority-dot {
+  background: var(--color-status-danger);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* --- Responsive --- */
+@media (max-width: 575.98px) {
+  .crm-priority-group {
+    flex-direction: column;
+  }
+
+  .crm-priority-pill {
+    justify-content: center;
+  }
+}

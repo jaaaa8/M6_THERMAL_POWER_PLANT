@@ -1,6 +1,11 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// AOS — Animate On Scroll
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 // Layouts
 import MainLayout from './components/layout/MainLayout';
@@ -15,8 +20,23 @@ import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NhanSuForm from './components/nhansu/NhanSuForm';
+import RoleManagementPage from './pages/RoleManagementPage';
+import RepairRequestPage from './pages/RepairRequestPage';
+import WorkOrderPage from './pages/WorkOrderPage';
+import WorkOrderListPage from './pages/WorkOrderListPage';
 
 function App() {
+  // Khởi tạo AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 600,
+      easing: 'ease-in-out',
+      once: true,
+      offset: 50,
+      delay: 0,
+    });
+  }, []);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
@@ -37,6 +57,13 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+            {/* --- Admin --- */}
+            <Route path="/admin/phan-quyen" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <RoleManagementPage />
+              </ProtectedRoute>
+            } />
+
             {/* --- Nhân sự --- */}
             <Route path="/nhan-su/phong-ban" element={<PlaceholderPage title="Quản lý Phòng ban" />} />
             <Route path="/nhan-su/nhan-vien" element={<PlaceholderPage title="Quản lý Nhân viên" />} />
@@ -48,8 +75,9 @@ function App() {
             <Route path="/thiet-bi/danh-sach" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/sua-chua/yeu-cau" element={<PlaceholderPage title="Yêu cầu Sửa chữa" />} />
-            <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
+            <Route path="/sua-chua/yeu-cau" element={<RepairRequestPage />} />
+            <Route path="/sua-chua/phieu-cong-tac" element={<WorkOrderListPage />} />
+            <Route path="/sua-chua/phieu-cong-tac/:id" element={<WorkOrderPage />} />
             <Route path="/sua-chua/danh-gia-kt" element={<PlaceholderPage title="Đánh giá Kỹ thuật" />} />
 
             {/* --- Vật tư --- */}

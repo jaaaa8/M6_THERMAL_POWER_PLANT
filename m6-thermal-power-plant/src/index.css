@@ -36,16 +36,16 @@
   --color-neutral-800: #111827;
   --color-neutral-900: #030712;
 
-  /* --- Industrial Status Colors (Chuẩn công nghiệp) --- */
-  --color-status-normal: #22c55e;         /* Xanh lá — Bình thường / Đang vận hành */
-  --color-status-normal-bg: #f0fdf4;
-  --color-status-warning: #f59e0b;        /* Vàng/Cam — Cảnh báo */
-  --color-status-warning-bg: #fffbeb;
-  --color-status-danger: #ef4444;         /* Đỏ — Sự cố / Khẩn cấp */
+  /* --- Industrial Status Colors (Chuẩn công nghiệp — theo Design System Spec) --- */
+  --color-status-normal: #10b981;         /* Emerald — Tốt / Đã hoàn thành / Đã nghiệm thu */
+  --color-status-normal-bg: #ecfdf5;
+  --color-status-warning: #eab308;        /* Yellow — Cảnh báo / Chờ xử lý / Sắp đến hạn */
+  --color-status-warning-bg: #fefce8;
+  --color-status-danger: #ef4444;         /* Red — Sự cố / Hỏng hóc / Ưu tiên CAO */
   --color-status-danger-bg: #fef2f2;
-  --color-status-inactive: #9ca3af;       /* Xám — Ngừng hoạt động / Dự phòng */
+  --color-status-inactive: #9ca3af;       /* Gray — Dự phòng / Phiếu đã đóng / Disabled */
   --color-status-inactive-bg: #f3f4f6;
-  --color-status-info: #3b82f6;           /* Xanh dương — Thông tin / Đang sửa chữa */
+  --color-status-info: #3b82f6;           /* Blue — Đang tiến hành / Đang sửa chữa */
   --color-status-info-bg: #eff6ff;
 
   /* --- Accent: Industrial Orange/Amber --- */
@@ -106,19 +106,26 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(62, 101, 162, 0.3);
+  --shadow-accent-glow: 0 0 20px rgba(245, 158, 11, 0.4);
 
-  /* --- Transitions --- */
-  --transition-fast: 150ms ease;
-  --transition-base: 250ms ease;
-  --transition-slow: 350ms ease;
+  /* --- Transitions (ease-in-out per Design System Spec §5.4) --- */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
   --transition-sidebar: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* --- Z-Index Scale --- */
-  --z-sidebar: 100;
-  --z-header: 200;
-  --z-overlay: 300;
-  --z-modal: 400;
-  --z-toast: 500;
+  /* --- Z-Index Scale (5 cấp — theo Design System Spec §4) --- */
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-fab: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+
+  /* Aliases for layout components */
+  --z-sidebar: var(--z-overlay);
+  --z-header: var(--z-sticky);
+  --z-toast: var(--z-modal);
 }
 
 /* ============================================================
@@ -188,8 +195,8 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
 
-  --color-status-normal-bg: rgba(34, 197, 94, 0.1);
-  --color-status-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-status-normal-bg: rgba(16, 185, 129, 0.1);
+  --color-status-warning-bg: rgba(234, 179, 8, 0.1);
   --color-status-danger-bg: rgba(239, 68, 68, 0.1);
   --color-status-inactive-bg: rgba(156, 163, 175, 0.1);
   --color-status-info-bg: rgba(59, 130, 246, 0.1);
@@ -412,7 +419,7 @@ a:hover {
 
 .form-control:focus, .form-select:focus {
   border-color: var(--color-primary-400);
-  box-shadow: 0 0 0 3px rgba(62, 101, 162, 0.15);
+  box-shadow: var(--shadow-focus);
 }
 
 .form-label {
