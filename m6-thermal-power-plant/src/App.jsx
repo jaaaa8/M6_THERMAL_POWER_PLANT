@@ -49,9 +49,9 @@ function App() {
             <Route path="/thiet-bi/danh-sach" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
-            <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
-            <Route path="/sua-chua/danh-gia-kt" element={<PlaceholderPage title="Đánh giá Kỹ thuật" />} />
+            <Route path="/repair/yeu-cau" element={<RepairRequest />} />
+            <Route path="/repair/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
+            <Route path="/repair/danh-gia-kt" element={<PlaceholderPage title="Đánh giá Kỹ thuật" />} />
 
             {/* --- Vật tư --- */}
             <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
