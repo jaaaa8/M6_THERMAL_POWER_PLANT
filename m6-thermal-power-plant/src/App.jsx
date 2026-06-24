@@ -16,6 +16,10 @@ import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import RepairRequest from './pages/RepairRequest.jsx';
 import NhanSuForm from './components/nhansu/NhanSuForm';
+import DanhSachCCDC from './pages/ccdc/DanhSachCCDC.jsx';
+import MuonTraCCDC from './pages/ccdc/MuonTraCCDC.jsx';
+import ToolForm from './pages/ccdc/ToolForm.jsx';
+import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
 
 function App() {
   return (
@@ -58,8 +62,11 @@ function App() {
             <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
 
             {/* --- CCDC --- */}
-            <Route path="/ccdc/danh-sach" element={<PlaceholderPage title="Danh sách CCDC" />} />
-            <Route path="/ccdc/muon-tra" element={<PlaceholderPage title="Mượn / Trả CCDC" />} />
+            <Route path="/ccdc/danh-sach" element={<DanhSachCCDC />} />
+            <Route path="/ccdc/danh-sach/them-moi" element={<ToolForm />} />
+            <Route path="/ccdc/danh-sach/sua/:id" element={<ToolForm />} />
+            <Route path="/ccdc/muon-tra" element={<MuonTraCCDC />} />
+            <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
