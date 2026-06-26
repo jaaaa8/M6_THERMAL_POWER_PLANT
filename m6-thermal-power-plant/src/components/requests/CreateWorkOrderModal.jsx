@@ -8,22 +8,12 @@ import {
   BsSave, BsXCircle, BsCpu, BsFileEarmarkPlus,
 } from 'react-icons/bs';
 import StatusBadge from '../common/StatusBadge';
-import './ModalCreateWorkOrder.css';
+import { workOrderService, AVAILABLE_WORKERS } from '../../services/workOrderService';
+import { repairRequestService, PRIORITY_LABEL, PRIORITY_COLOR } from '../../services/repairRequestService';
+import './CreateWorkOrderModal.css';
 
-/* ============================================================
-   Map mức độ → StatusBadge
-   ============================================================ */
-const MUC_DO_MAP = {
-  danger: { label: 'Khẩn cấp', status: 'danger', pulse: true },
-  warning: { label: 'Ưu tiên cao', status: 'warning' },
-  normal: { label: 'Bình thường', status: 'normal' },
-};
-
-/* ============================================================
-   VALIDATION SCHEMA — Formik + Yup
-   ============================================================ */
 const validationSchema = Yup.object({
-  soPhieu: Yup.string().required('Số PCT không được để trống'),
+  maPhieu: Yup.string().required('Số phiếu không được để trống'),
   noiDung: Yup.string()
     .required('Nội dung công việc không được để trống')
     .min(5, 'Nội dung công việc quá ngắn'),
@@ -33,44 +23,26 @@ const validationSchema = Yup.object({
   nguoiLanhDao: Yup.string().required('Vui lòng chọn người lãnh đạo công việc'),
   chiHuyTrucTiep: Yup.string().required('Vui lòng chọn chỉ huy trực tiếp'),
   nguoiGiamSatAT: Yup.string().required('Vui lòng chọn người giám sát an toàn'),
-  nhanVienLamViec: Yup.array().min(1, 'Cần ít nhất 1 nhân viên làm việc'),
+  nhanVienLamViec: Yup.array().min(1, 'Cần ít nhất 1 nhân viên thực hiện'),
 });
 
-/**
- * ModalCreateWorkOrder — Tạo phiếu công tác (PCT) từ một Request.
- * (User story #40 — Quản đốc sửa chữa / Tổ trưởng)
- *
- * Thông tin thiết bị được lấy từ Request (chỉ đọc); người dùng bổ sung
- * người lãnh đạo công việc, chỉ huy trực tiếp, giám sát an toàn và nhân viên làm việc.
- *
- * @param {boolean}  props.show
- * @param {Function} props.onClose
- * @param {object}   props.request - Request nguồn
- * @param {Array}    props.nhanVienOptions - Danh sách nhân viên (mock)
- * @param {Function} props.onCreated - (request, pct) => void
- */
-export default function ModalCreateWorkOrder({
-  show,
-  onClose,
-  request,
-  nhanVienOptions = [],
-  onCreated,
-}) {
-  // Nhân viên đang chọn ở ô "thêm nhân viên làm việc"
-  const [selectedNV, setSelectedNV] = useState('');
+const findWorker = (id) => AVAILABLE_WORKERS.find((w) => String(w.id) === String(id));
+const workerLabel = (id) => {
+  const w = findWorker(id);
+  return w ? `${w.hoTen} · ${w.chucVu}` : '—';
+};
 
-  const mucDo = MUC_DO_MAP[request?.mucDo] || MUC_DO_MAP.normal;
+export default function CreateWorkOrderModal({ show, onClose, request, onCreated }) {
+  const [selectedNV, setSelectedNV] = useState('');
 
   const initialValues = useMemo(
     () => ({
-      soPhieu: `PCT-${new Date().getFullYear()}-${String(
-          // eslint-disable-next-line react-hooks/purity
-        Math.floor(Math.random() * 9000) + 1000
-      )}`,
+      // Gợi ý mã phiếu theo năm + ID yêu cầu (user vẫn có thể sửa lại)
+      maPhieu: `PCT-${new Date().getFullYear()}-${String(request?.id ?? '').padStart(3, '0')}`,
       noiDung: request
-        ? `Sửa chữa, khắc phục sự cố thiết bị ${request.thietBi} (${request.maKKS}). ${request.moTa || ''}`.trim()
+        ? `Sửa chữa, khắc phục sự cố thiết bị ${request.tenThietBi} (${request.maKKS}). ${request.moTaSuCo || ''}`.trim()
         : '',
-      diaDiem: request?.heThong || '',
+      diaDiem: '',
       thoiGianBatDau: '',
       thoiGianKetThuc: '',
       nguoiLanhDao: '',
@@ -83,29 +55,59 @@ export default function ModalCreateWorkOrder({
 
   if (!request) return null;
 
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    try {
+      const dto = {
+        maPhieu: values.maPhieu,
+        noiDung: values.noiDung,
+        diaDiem: values.diaDiem,
+        thoiGianBatDau: values.thoiGianBatDau,
+        thoiGianKetThuc: values.thoiGianKetThuc,
+        toTruong: workerLabel(values.nguoiLanhDao),
+        nguoiChiHuy: workerLabel(values.chiHuyTrucTiep),
+        nguoiGiamSat: workerLabel(values.nguoiGiamSatAT),
+        thanhVienDuKien: values.nhanVienLamViec.map((nv) => ({
+          hoTen: nv.hoTen,
+          chucVu: nv.chucVu,
+        })),
+      };
+      const res = await workOrderService.createFromRequest(request, dto);
+
+      // Yêu cầu phải đang DA_DUYET mới chuyển sang DANG_XU_LY; nếu lệch, bỏ qua lỗi.
+      try {
+        await repairRequestService.markAsProcessing(request.id);
+      } catch {
+        // Trạng thái không phù hợp — không chặn việc tạo PCT
+      }
+
+      toast.success(`Đã tạo phiếu công tác ${res.data.maPhieu}`);
+      resetForm();
+      setSelectedNV('');
+      onCreated?.(res.data);
+      onClose?.();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể tạo phiếu công tác');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Modal show={show} onHide={onClose} centered size="lg" scrollable>
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
         enableReinitialize
-        onSubmit={(values, { setSubmitting }) => {
-          // UI-only: không gọi service, chỉ thông báo & trả dữ liệu lên parent
-          onCreated?.(request, values);
-          toast.success(`Đã tạo phiếu công tác ${values.soPhieu}`);
-          setSubmitting(false);
-          setSelectedNV('');
-          onClose?.();
-        }}
+        onSubmit={handleSubmit}
       >
         {({ values, touched, errors, isSubmitting, setFieldValue }) => {
           const addNhanVien = () => {
             if (!selectedNV) return;
-            if (values.nhanVienLamViec.some((nv) => nv.id === selectedNV)) {
+            if (values.nhanVienLamViec.some((nv) => String(nv.id) === String(selectedNV))) {
               toast.info('Nhân viên đã có trong danh sách');
               return;
             }
-            const nv = nhanVienOptions.find((n) => n.id === selectedNV);
+            const nv = findWorker(selectedNV);
             if (nv) {
               setFieldValue('nhanVienLamViec', [...values.nhanVienLamViec, nv]);
               setSelectedNV('');
@@ -115,7 +117,7 @@ export default function ModalCreateWorkOrder({
           const removeNhanVien = (id) => {
             setFieldValue(
               'nhanVienLamViec',
-              values.nhanVienLamViec.filter((nv) => nv.id !== id)
+              values.nhanVienLamViec.filter((nv) => String(nv.id) !== String(id))
             );
           };
 
@@ -129,14 +131,14 @@ export default function ModalCreateWorkOrder({
                   <div>
                     <span className="pct-modal-title-main">Tạo Phiếu Công tác</span>
                     <span className="pct-modal-title-sub">
-                      Từ yêu cầu <strong>{request.maRequest}</strong>
+                      Từ yêu cầu <strong>{request.maKKS}</strong> — {request.tenThietBi}
                     </span>
                   </div>
                 </Modal.Title>
               </Modal.Header>
 
               <Modal.Body>
-                {/* ===== SECTION: THÔNG TIN THIẾT BỊ (từ Request) ===== */}
+                {/* ===== Thông tin thiết bị (chỉ đọc, từ yêu cầu) ===== */}
                 <div className="pct-section-title">
                   <BsCpu />
                   Thông tin thiết bị (lấy từ yêu cầu)
@@ -144,25 +146,32 @@ export default function ModalCreateWorkOrder({
 
                 <div className="pct-request-card">
                   <div className="pct-info-grid">
-                    <InfoItem label="Mã yêu cầu" value={request.maRequest} mono />
-                    <InfoItem label="Thiết bị" value={request.thietBi} />
                     <InfoItem label="Mã KKS" value={request.maKKS} mono />
-                    <InfoItem label="Hệ thống" value={request.heThong} />
-                    <InfoItem label="Người yêu cầu" value={request.nguoiYeuCau} />
+                    <InfoItem label="Thiết bị" value={request.tenThietBi} />
                     <div className="pct-info-item">
-                      <span className="pct-info-label">Mức độ</span>
+                      <span className="pct-info-label">Mức ưu tiên</span>
                       <span className="pct-info-value">
-                        <StatusBadge status={mucDo.status} label={mucDo.label} pulse={mucDo.pulse} />
+                        <span
+                          className="pct-priority-tag"
+                          style={{ '--priority-color': PRIORITY_COLOR[request.mucDoUuTien] }}
+                        >
+                          {PRIORITY_LABEL[request.mucDoUuTien]}
+                        </span>
                       </span>
                     </div>
+                    <InfoItem label="Người tạo" value={request.nguoiTao} />
+                    <InfoItem
+                      label="Trạng thái"
+                      value={<StatusBadge status="info" label="Đã duyệt" />}
+                    />
                   </div>
                   <div className="pct-info-item pct-info-full">
-                    <span className="pct-info-label">Mô tả hư hỏng</span>
-                    <span className="pct-info-value">{request.moTa}</span>
+                    <span className="pct-info-label">Mô tả sự cố</span>
+                    <span className="pct-info-value">{request.moTaSuCo}</span>
                   </div>
                 </div>
 
-                {/* ===== SECTION: NỘI DUNG PHIẾU CÔNG TÁC ===== */}
+                {/* ===== Nội dung PCT ===== */}
                 <div className="pct-section-title mt-4">
                   <BsClipboardData />
                   Nội dung phiếu công tác
@@ -170,18 +179,18 @@ export default function ModalCreateWorkOrder({
 
                 <Row className="mb-3">
                   <Col md={5}>
-                    <label htmlFor="pct-soPhieu" className="form-label">
+                    <label htmlFor="pct-maPhieu" className="form-label">
                       Số PCT <span className="required-asterisk">*</span>
                     </label>
                     <Field
-                      id="pct-soPhieu"
-                      name="soPhieu"
+                      id="pct-maPhieu"
+                      name="maPhieu"
                       type="text"
                       className={`form-control font-mono ${
-                        touched.soPhieu && errors.soPhieu ? 'is-invalid' : ''
+                        touched.maPhieu && errors.maPhieu ? 'is-invalid' : ''
                       }`}
                     />
-                    <ErrorMessage name="soPhieu" component="div" className="invalid-feedback" />
+                    <ErrorMessage name="maPhieu" component="div" className="invalid-feedback" />
                   </Col>
                   <Col md={7}>
                     <label htmlFor="pct-diaDiem" className="form-label">
@@ -247,7 +256,7 @@ export default function ModalCreateWorkOrder({
                   </Col>
                 </Row>
 
-                {/* ===== SECTION: NHÂN SỰ ===== */}
+                {/* ===== Nhân sự ===== */}
                 <div className="pct-section-title mt-4">
                   <BsPeopleFill />
                   Nhân sự thực hiện
@@ -256,7 +265,7 @@ export default function ModalCreateWorkOrder({
                 <Row className="mb-3">
                   <Col md={4}>
                     <label htmlFor="pct-nguoiLanhDao" className="form-label">
-                      Người lãnh đạo công việc <span className="required-asterisk">*</span>
+                      Tổ trưởng / Người lãnh đạo <span className="required-asterisk">*</span>
                     </label>
                     <Field
                       as="select"
@@ -267,7 +276,7 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {nhanVienOptions.map((nv) => (
+                      {AVAILABLE_WORKERS.map((nv) => (
                         <option key={nv.id} value={nv.id}>
                           {nv.hoTen} · {nv.chucVu}
                         </option>
@@ -288,7 +297,7 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {nhanVienOptions.map((nv) => (
+                      {AVAILABLE_WORKERS.map((nv) => (
                         <option key={nv.id} value={nv.id}>
                           {nv.hoTen} · {nv.chucVu}
                         </option>
@@ -309,7 +318,7 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {nhanVienOptions.map((nv) => (
+                      {AVAILABLE_WORKERS.map((nv) => (
                         <option key={nv.id} value={nv.id}>
                           {nv.hoTen} · {nv.chucVu}
                         </option>
@@ -319,21 +328,21 @@ export default function ModalCreateWorkOrder({
                   </Col>
                 </Row>
 
-                {/* --- Nhân viên làm việc (nhiều người) --- */}
+                {/* --- Đội thực hiện dự kiến --- */}
                 <div className="mb-2">
                   <label className="form-label">
-                    Nhân viên làm việc <span className="required-asterisk">*</span>
+                    Đội thực hiện dự kiến <span className="required-asterisk">*</span>
                   </label>
                   <div className="pct-add-nv">
                     <select
                       className="form-select"
                       value={selectedNV}
                       onChange={(e) => setSelectedNV(e.target.value)}
-                      aria-label="Chọn nhân viên làm việc"
+                      aria-label="Chọn nhân viên để thêm"
                     >
                       <option value="">— Chọn nhân viên để thêm —</option>
-                      {nhanVienOptions
-                        .filter((nv) => !values.nhanVienLamViec.some((s) => s.id === nv.id))
+                      {AVAILABLE_WORKERS
+                        .filter((nv) => !values.nhanVienLamViec.some((s) => String(s.id) === String(nv.id)))
                         .map((nv) => (
                           <option key={nv.id} value={nv.id}>
                             {nv.hoTen} · {nv.chucVu}
@@ -394,7 +403,6 @@ export default function ModalCreateWorkOrder({
   );
 }
 
-/* --- Item hiển thị thông tin chỉ đọc --- */
 function InfoItem({ label, value, mono }) {
   return (
     <div className="pct-info-item">

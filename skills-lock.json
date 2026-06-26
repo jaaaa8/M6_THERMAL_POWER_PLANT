@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/SKILL.md",
+      "computedHash": "228f87d57035100d9dc6efcfc05aafd4b6e3962adacaa04b8217ab2fadb15dc8"
+    },
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "computedHash": "0c877c8521ec97a5d55fa682d33122b811aebddd4788b92ac008efe85cd305cd"
+    },
+    "develop-userscripts": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/develop-userscripts/SKILL.md",
+      "computedHash": "6e5ec8cc0c02dac774eb4255615c272505237ac05220997d7ce673756ed1f0a6"
+    },
+    "diagnosing-bugs": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
+      "computedHash": "c8743c51df3760039b2dcb8a5a61437da3128c6efb4c5381734a3f05403e9a84"
+    },
+    "github-actions-docs": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/github-actions-docs/SKILL.md",
+      "computedHash": "ead3fa2aff18e829c468dee593e1dc897aa95dc7a07d9ff8ff9f30c296b19af8"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
+      "computedHash": "67e31b63e6e9e454cc2f51cd85b9cf1396ee46379a87c07a1450f33c47c1276a"
+    },
+    "grill-with-docs": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+      "computedHash": "559d4de044394b86af53a5cedd2d3a689770088c3c5361646c91f5d7ea59f78a"
+    },
+    "handoff": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/handoff/SKILL.md",
+      "computedHash": "b7c38b5061b73217e5478f9446fc403be17ce311d4c23a108cc37b5b4604fa37"
+    },
+    "opensource-guide-coach": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/opensource-guide-coach/SKILL.md",
+      "computedHash": "720db6b59f331be3bcabbf9082bbae9d2eb7d63483db7001578aa105a4d87985"
+    },
+    "prototype": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/prototype/SKILL.md",
+      "computedHash": "7bbb6ed6a73eb555026a79cc29e3ff9b26765637109f8974aba6c6f86cff85e6"
+    },
+    "readme-i18n": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/readme-i18n/SKILL.md",
+      "computedHash": "d441385bfe267d3c66de52af6f969a837d9d3a35a3dac78568605aaad52e7241"
+    },
+    "remotion-best-practices": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remotion/SKILL.md",
+      "computedHash": "664bd31140897056bd575ef57a15f22f517bd576c6b81df429c1f4ed6453e312"
+    },
+    "running-claude-code-via-litellm-copilot": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/running-claude-code-via-litellm-copilot/SKILL.md",
+      "computedHash": "dcc7f5319d26b08e7bed5e70a526df3a7713715371c4ba6bd2b1f06e3d324cf6"
+    },
+    "secure-linux-web-hosting": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/secure-linux-web-hosting/SKILL.md",
+      "computedHash": "6285f13dbc139e4067cea2adbbbecc85ba72f37c69c80300511af35b134a293a"
+    },
+    "setup-matt-pocock-skills": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "computedHash": "cbca37faf13eba4a3dfcd87be19c5d5580e0c89dfffddf7748b5d6d7b96e57cf"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "7e3c9cd74e9e2b4828527a857170e86310f2dab5ea8030a9043df2c7e6c88857"
+    },
+    "skills-cli": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skills-cli/SKILL.md",
+      "computedHash": "712dc9e845f46d88ec598f0fb372f10b3fbf18ed2546d1cc321eeb44f8db239a"
+    },
+    "sleek-design-mobile-apps": {
+      "source": "sleekdotdesign/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/design-mobile-apps/SKILL.md",
+      "computedHash": "3f6a4def225212c242600101910a3af5e77219084fc446d510429875d35ad97e"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "3639bed1f40b3fbadae79fee631c42c89b2d1f5c30b05d5aa3cca06422a6bbbc"
+    },
+    "to-issues": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-issues/SKILL.md",
+      "computedHash": "c1bfbb12c04ebfc14225a5553ec95acc42a57d09ae78e58377c648107b9605ed"
+    },
+    "to-prd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-prd/SKILL.md",
+      "computedHash": "7e1950ebb84721293b913d54481e0723172abb23fa5e0d0d488594ca45ffb421"
+    },
+    "triage": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/triage/SKILL.md",
+      "computedHash": "7caa274494d702d8c668d1ff17267b4a69b6d58e34a00c20b2df9de67ef6edc9"
+    },
+    "tzst": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tzst/SKILL.md",
+      "computedHash": "6a744a3e1aaca782d27d131bda88c6ec4216584f05c78628b8aa3ad5770ce29f"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "computedHash": "c7ddcc95cc869b281b766df85bef629acf655bfb516cb32647d5b8215cab2f4e"
+    },
+    "use-my-browser": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/use-my-browser/SKILL.md",
+      "computedHash": "c8c56bdd40ef33bb1848b6e051eb156c3b523f7b89edb838719962155074548f"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": "575757e3e25761c8c562d6e395d29f0b76c98b1273c0bd72d88e6ab1bc9c7d42"
+    },
+    "writing-great-skills": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/writing-great-skills/SKILL.md",
+      "computedHash": "314351c66f43189bd033b35ef36fb7fd2ebcc5fd8bea8b2796632e98fe82ded7"
+    },
+    "xdrop": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/xdrop/SKILL.md",
+      "computedHash": "1fcf3aa6fb7b44e6433ebf6f821b7e651bde33f42b678ff445137ac6561abe82"
+    },
+    "xget": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/xget/SKILL.md",
+      "computedHash": "663454ef32804adf5bc07068a9a053d4ad159f86470a9b34f891878848dd349d"
+    }
+  }
+}

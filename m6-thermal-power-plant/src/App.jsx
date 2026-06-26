@@ -14,8 +14,11 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import RepairRequest from './pages/RepairRequest.jsx';
 import NhanSuForm from './components/nhansu/NhanSuForm';
+import RoleManagementPage from './pages/RoleManagementPage';
+import RepairRequestPage from './pages/RepairRequestPage';
+import WorkOrderPage from './pages/WorkOrderPage';
+import WorkOrderListPage from './pages/WorkOrderListPage';
 
 function App() {
   return (
@@ -38,32 +41,72 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+            {/* --- Admin --- */}
+            <Route path="/admin/phan-quyen" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <RoleManagementPage />
+              </ProtectedRoute>
+            } />
+
             {/* --- Nhân sự --- */}
-            <Route path="/nhan-su/phong-ban" element={<PlaceholderPage title="Quản lý Phòng ban" />} />
-            <Route path="/nhan-su/nhan-vien" element={<PlaceholderPage title="Quản lý Nhân viên" />} />
-            <Route path="/nhan-su/them-moi" element={<NhanSuForm onCancel={() => window.history.back()} />} />
-            <Route path="/nhan-su/tai-khoan" element={<PlaceholderPage title="Tài khoản & Phân quyền" />} />
+            <Route path="/nhan-su/phong-ban" element={
+              <ProtectedRoute requireFunction="PHONG_BAN"><PlaceholderPage title="Quản lý Phòng ban" /></ProtectedRoute>
+            } />
+            <Route path="/nhan-su/nhan-vien" element={
+              <ProtectedRoute requireFunction="NHAN_SU"><PlaceholderPage title="Quản lý Nhân viên" /></ProtectedRoute>
+            } />
+            <Route path="/nhan-su/them-moi" element={
+              <ProtectedRoute requireFunction="NHAN_SU"><NhanSuForm onCancel={() => window.history.back()} /></ProtectedRoute>
+            } />
+            <Route path="/nhan-su/tai-khoan" element={
+              <ProtectedRoute requireFunction="TAI_KHOAN"><PlaceholderPage title="Tài khoản & Phân quyền" /></ProtectedRoute>
+            } />
 
             {/* --- Thiết bị --- */}
-            <Route path="/thiet-bi/he-thong" element={<PlaceholderPage title="Danh sách Hệ thống" />} />
-            <Route path="/thiet-bi/danh-sach" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
+            <Route path="/thiet-bi/he-thong" element={
+              <ProtectedRoute requireFunction="HE_THONG"><PlaceholderPage title="Danh sách Hệ thống" /></ProtectedRoute>
+            } />
+            <Route path="/thiet-bi/danh-sach" element={
+              <ProtectedRoute requireFunction="THIET_BI"><PlaceholderPage title="Danh sách Thiết bị" /></ProtectedRoute>
+            } />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
-            <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
-            <Route path="/sua-chua/danh-gia-kt" element={<PlaceholderPage title="Đánh giá Kỹ thuật" />} />
+            <Route path="/sua-chua/yeu-cau" element={
+              <ProtectedRoute requireFunction="YEU_CAU_SC"><RepairRequestPage /></ProtectedRoute>
+            } />
+            <Route path="/sua-chua/phieu-cong-tac" element={
+              <ProtectedRoute requireFunction="PHIEU_CT"><WorkOrderListPage /></ProtectedRoute>
+            } />
+            <Route path="/sua-chua/phieu-cong-tac/:id" element={
+              <ProtectedRoute requireFunction="PHIEU_CT"><WorkOrderPage /></ProtectedRoute>
+            } />
+            <Route path="/sua-chua/danh-gia-kt" element={
+              <ProtectedRoute requireFunction="DANH_GIA_KT"><PlaceholderPage title="Đánh giá Kỹ thuật" /></ProtectedRoute>
+            } />
 
             {/* --- Vật tư --- */}
-            <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
-            <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
+            <Route path="/vat-tu/danh-muc" element={
+              <ProtectedRoute requireFunction="VAT_TU"><PlaceholderPage title="Danh mục Vật tư" /></ProtectedRoute>
+            } />
+            <Route path="/vat-tu/nhap-xuat" element={
+              <ProtectedRoute requireFunction="VAT_TU"><PlaceholderPage title="Nhập / Xuất kho" /></ProtectedRoute>
+            } />
 
             {/* --- CCDC --- */}
-            <Route path="/ccdc/danh-sach" element={<PlaceholderPage title="Danh sách CCDC" />} />
-            <Route path="/ccdc/muon-tra" element={<PlaceholderPage title="Mượn / Trả CCDC" />} />
+            <Route path="/ccdc/danh-sach" element={
+              <ProtectedRoute requireFunction="CCDC"><PlaceholderPage title="Danh sách CCDC" /></ProtectedRoute>
+            } />
+            <Route path="/ccdc/muon-tra" element={
+              <ProtectedRoute requireFunction="CCDC"><PlaceholderPage title="Mượn / Trả CCDC" /></ProtectedRoute>
+            } />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            <Route path="/bao-duong/ke-hoach" element={
+              <ProtectedRoute requireFunction="BAO_DUONG"><PlaceholderPage title="Kế hoạch Bảo dưỡng" /></ProtectedRoute>
+            } />
+            <Route path="/bao-duong/lich-su" element={
+              <ProtectedRoute requireFunction="BAO_DUONG"><PlaceholderPage title="Lịch sử Bảo dưỡng" /></ProtectedRoute>
+            } />
           </Route>
 
           {/* 404 */}
@@ -89,7 +132,7 @@ function App() {
 /* --- Placeholder page cho các module chưa triển khai --- */
 function PlaceholderPage({ title }) {
   return (
-    <div className="animate-fade-in">
+    <div>
       <div style={{
         display: 'flex',
         flexDirection: 'column',

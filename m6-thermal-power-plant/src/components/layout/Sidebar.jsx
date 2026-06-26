@@ -9,27 +9,32 @@ import {
   BsDropletHalf, BsCalendar3, BsClockHistory,
   BsChevronRight, BsShieldLock
 } from 'react-icons/bs';
+import { authService } from '../../services/authService';
+import { canAccess, SYSTEM_ROLES } from '../../services/roleService';
 import './Sidebar.css';
 
 /* ============================================================
-   Menu Configuration — Cấu hình menu theo Role
+   Menu Configuration — Lọc theo ma trận phân quyền (func = mã chức năng).
+   - func: cần quyền XEM chức năng tương ứng (theo roleService).
+   - roles: kiểm tra cứng theo vai trò (cho mục không nằm trong ma trận).
+   - không có cả hai: ai cũng thấy.
    ============================================================ */
 const menuSections = [
   {
     heading: 'Tổng quan',
     items: [
-      { path: '/', icon: <BsGrid1X2 />, label: 'Dashboard', roles: [] },
+      { path: '/', icon: <BsGrid1X2 />, label: 'Dashboard' },
     ],
   },
   {
     heading: 'Nhân sự',
     items: [
       {
-        icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['ADMIN', 'NHAN_SU'],
+        icon: <BsPeople />, label: 'Quản lý Nhân sự',
         children: [
-          { path: '/nhan-su/phong-ban', icon: <BsBuilding />, label: 'Phòng ban' },
-          { path: '/nhan-su/nhan-vien', icon: <BsPersonBadge />, label: 'Nhân viên' },
-          { path: '/nhan-su/tai-khoan', icon: <BsShieldLock />, label: 'Tài khoản & Quyền' },
+          { path: '/nhan-su/phong-ban', icon: <BsBuilding />, label: 'Phòng ban', func: 'PHONG_BAN' },
+          { path: '/nhan-su/nhan-vien', icon: <BsPersonBadge />, label: 'Nhân viên', func: 'NHAN_SU' },
+          { path: '/nhan-su/tai-khoan', icon: <BsShieldLock />, label: 'Tài khoản & Quyền', func: 'TAI_KHOAN' },
         ],
       },
     ],
@@ -38,10 +43,10 @@ const menuSections = [
     heading: 'Thiết bị',
     items: [
       {
-        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['ADMIN', 'QUAN_DOC_VH', 'KY_THUAT_VIEN'],
+        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị',
         children: [
-          { path: '/thiet-bi/he-thong', icon: <BsListUl />, label: 'Hệ thống' },
-          { path: '/thiet-bi/danh-sach', icon: <BsCpu />, label: 'Thiết bị' },
+          { path: '/thiet-bi/he-thong', icon: <BsListUl />, label: 'Hệ thống', func: 'HE_THONG' },
+          { path: '/thiet-bi/danh-sach', icon: <BsCpu />, label: 'Thiết bị', func: 'THIET_BI' },
         ],
       },
     ],
@@ -50,11 +55,11 @@ const menuSections = [
     heading: 'Sửa chữa',
     items: [
       {
-        icon: <BsWrenchAdjustable />, label: 'Sửa chữa', roles: ['ADMIN', 'TRUONG_CA', 'TRUONG_KIP', 'QUAN_DOC_SC', 'TO_TRUONG'],
+        icon: <BsWrenchAdjustable />, label: 'Sửa chữa',
         children: [
-          { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
-          { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
-          { path: '/repair/danh-gia-kt', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
+          { path: '/sua-chua/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa', func: 'YEU_CAU_SC' },
+          { path: '/sua-chua/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', func: 'PHIEU_CT' },
+          { path: '/sua-chua/danh-gia-kt', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', func: 'DANH_GIA_KT' },
         ],
       },
     ],
@@ -63,17 +68,17 @@ const menuSections = [
     heading: 'Kho & Vật tư',
     items: [
       {
-        icon: <BsBoxSeam />, label: 'Kho Vật tư', roles: ['ADMIN', 'THU_KHO_VT'],
+        icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
-          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư' },
-          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
+          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư', func: 'VAT_TU' },
+          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho', func: 'VAT_TU' },
         ],
       },
       {
-        icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'THU_KHO_CCDC'],
+        icon: <BsTools />, label: 'Công cụ Dụng cụ',
         children: [
-          { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC' },
-          { path: '/ccdc/muon-tra', icon: <BsArrowLeftRight />, label: 'Mượn / Trả' },
+          { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC', func: 'CCDC' },
+          { path: '/ccdc/muon-tra', icon: <BsArrowLeftRight />, label: 'Mượn / Trả', func: 'CCDC' },
         ],
       },
     ],
@@ -82,12 +87,18 @@ const menuSections = [
     heading: 'Bảo dưỡng',
     items: [
       {
-        icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ', roles: ['ADMIN', 'TO_TRUONG'],
+        icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ',
         children: [
-          { path: '/bao-duong/ke-hoach', icon: <BsCalendar3 />, label: 'Kế hoạch' },
-          { path: '/bao-duong/lich-su', icon: <BsClockHistory />, label: 'Lịch sử' },
+          { path: '/bao-duong/ke-hoach', icon: <BsCalendar3 />, label: 'Kế hoạch', func: 'BAO_DUONG' },
+          { path: '/bao-duong/lich-su', icon: <BsClockHistory />, label: 'Lịch sử', func: 'BAO_DUONG' },
         ],
       },
+    ],
+  },
+  {
+    heading: 'Quản trị',
+    items: [
+      { path: '/admin/phan-quyen', icon: <BsShieldLock />, label: 'Phân quyền', roles: ['ADMIN'] },
     ],
   },
 ];
@@ -99,8 +110,12 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState({});
 
-  // TODO: Lấy role từ auth context khi có backend
-  const userRole = 'ADMIN';
+  // Lấy user/role thật từ authService
+  const currentUser = authService.getCurrentUser();
+  const userRole = currentUser?.role;
+  const roleLabel = SYSTEM_ROLES.find((r) => r.maVaiTro === userRole)?.tenVaiTro || 'Người dùng';
+  const userName = currentUser?.hoTen || 'Người dùng';
+  const userInitials = userName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -110,9 +125,11 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
     return children?.some((child) => location.pathname === child.path);
   };
 
-  const hasAccess = (roles) => {
-    if (!roles || roles.length === 0) return true;
-    return roles.includes(userRole);
+  // Quyền xem một mục (item hoặc child)
+  const canSee = (node) => {
+    if (node.roles && node.roles.length > 0) return node.roles.includes(userRole);
+    if (node.func) return canAccess(userRole, node.func);
+    return true;
   };
 
   const sidebarClasses = [
@@ -142,7 +159,17 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
         {/* Navigation */}
         <nav className="sidebar-nav">
           {menuSections.map((section, sIdx) => {
-            const visibleItems = section.items.filter((item) => hasAccess(item.roles));
+            // Lọc các item: item có children → còn ≥1 child xem được; item đơn → canSee
+            const visibleItems = section.items
+              .map((item) => {
+                if (item.children) {
+                  const visibleChildren = item.children.filter(canSee);
+                  return visibleChildren.length > 0 ? { ...item, children: visibleChildren } : null;
+                }
+                return canSee(item) ? item : null;
+              })
+              .filter(Boolean);
+
             if (visibleItems.length === 0) return null;
 
             return (
@@ -208,10 +235,10 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
         {/* Footer — User info */}
         <div className="sidebar-footer">
           <div className="sidebar-footer-user">
-            <div className="sidebar-footer-avatar">AD</div>
+            <div className="sidebar-footer-avatar">{userInitials || 'U'}</div>
             <div className="sidebar-footer-info">
-              <div className="name">Admin User</div>
-              <div className="role">Quản trị viên</div>
+              <div className="name">{userName}</div>
+              <div className="role">{roleLabel}</div>
             </div>
           </div>
         </div>

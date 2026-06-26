@@ -1,0 +1,241 @@
+/* ============================================================
+   RepairRequestPage — Danh sách Yêu cầu Sửa chữa
+   ============================================================ */
+
+/* --- Stats summary --- */
+.rr-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.rr-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.rr-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-hover);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.rr-stat-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.rr-stat-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.rr-stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-medium);
+}
+
+/* --- Filter pills --- */
+.rr-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.rr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.4rem 0.85rem;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.rr-pill:hover {
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-600);
+}
+
+.rr-pill.active {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: var(--text-on-primary);
+}
+
+.rr-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+}
+
+.rr-pill.active .rr-pill-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+/* --- Toolbar --- */
+.rr-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.rr-toolbar-left {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.rr-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rr-status-filter {
+  width: auto;
+  min-width: 180px;
+}
+
+/* --- Switch "Của tôi" --- */
+.rr-only-mine {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.rr-only-mine .form-check-label {
+  cursor: pointer;
+}
+
+.rr-result-count {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* --- Table Wrapper --- */
+.rr-table-wrapper {
+  overflow: hidden;
+}
+
+/* Tắt card hover-lift — dòng bảng đã có hover highlight riêng */
+.rr-table-wrapper:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Fixed layout để các cột nghe theo width đã khai báo,
+   không để cột "Mô tả sự cố" tự phình theo nội dung và đẩy các cột khác. */
+.rr-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Cell rút gọn (Thiết bị, Mô tả sự cố) — ép một dòng, ... khi tràn */
+.rr-cell-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Đảm bảo nội dung khác trong cell cũng không phá layout */
+.rr-table td {
+  word-break: break-word;
+}
+
+/* --- Priority Badge --- */
+.rr-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.2em 0.6em;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-sm);
+  color: var(--priority-color, var(--text-secondary));
+  background: color-mix(in srgb, var(--priority-color, var(--text-secondary)) 10%, transparent);
+  letter-spacing: 0.01em;
+}
+
+.rr-priority-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--priority-color, var(--text-secondary));
+  flex-shrink: 0;
+}
+
+/* --- Error State --- */
+.rr-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 20vh;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+/* --- Responsive --- */
+@media (max-width: 991.98px) {
+  .rr-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .rr-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rr-toolbar-left {
+    max-width: 100%;
+  }
+
+  .rr-toolbar-right {
+    justify-content: space-between;
+  }
+
+  .rr-status-filter {
+    flex: 1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .rr-stats {
+    grid-template-columns: 1fr;
+  }
+}
