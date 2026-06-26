@@ -15,7 +15,12 @@ import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import RepairRequest from './pages/RepairRequest.jsx';
-import NhanSuForm from './components/nhansu/NhanSuForm';
+import ListDepartment from './components/hr/department/ListDepartment';
+import AddDepartment from './components/hr/department/AddDepartment';
+import ListEmployee from './components/hr/employee/ListEmployee';
+import AddEmployee from './components/hr/employee/AddEmployee';
+import ListAccount from './components/hr/account/ListAccount';
+import AddAccount from './components/hr/account/AddAccount';
 import TechnicalAssessmentForm from "./components/technical_assessment/AddComponent.jsx";
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
@@ -43,10 +48,13 @@ function App() {
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* --- Nhân sự --- */}
-            <Route path="/nhan-su/phong-ban" element={<PlaceholderPage title="Quản lý Phòng ban" />} />
-            <Route path="/nhan-su/nhan-vien" element={<PlaceholderPage title="Quản lý Nhân viên" />} />
-            <Route path="/nhan-su/them-moi" element={<NhanSuForm onCancel={() => window.history.back()} />} />
-            <Route path="/nhan-su/tai-khoan" element={<PlaceholderPage title="Tài khoản & Phân quyền" />} />
+            <Route path="/nhan-su/phong-ban" element={<ListDepartment />} />
+            <Route path="/nhan-su/phong-ban/them-moi" element={<AddDepartment />} />
+            <Route path="/nhan-su/nhan-vien" element={<ListEmployee />} />
+            <Route path="/nhan-su/them-moi" element={<AddEmployee onCancel={() => window.history.back()} />} />
+            <Route path="/nhan-su/tai-khoan" element={<ListAccount />} />
+            <Route path="/nhan-su/tai-khoan/them-moi" element={<AddAccount />} />
+            <Route path="/nhan-su/thong-tin-chi-tiet/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
 
             {/* --- Thiết bị --- */}
             <Route path="/thiet-bi/he-thong" element={<PlaceholderPage title="Danh sách Hệ thống" />} />
