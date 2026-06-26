@@ -208,7 +208,7 @@ export default function NhanSuForm({
   }, [initialData]);
 
   return (
-    <div className="nhansu-form-card animate-fade-in">
+    <div className="nhansu-form-card">
       {/* ===== HEADER ===== */}
       <div className="nhansu-form-header">
         <div className="nhansu-form-header-icon">

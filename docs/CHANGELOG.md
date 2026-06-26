@@ -1,5 +1,137 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-06-26] — Bỏ cột "Mô tả sự cố" + sửa lại width cột WorkOrderListPage
+
+### Thay đổi
+- **`RepairRequestPage` — xóa cột "Mô tả sự cố"** khỏi bảng. Nội dung này dài, vốn chỉ xem đầy đủ trong modal Chi tiết. Bỏ cột giúp các cột còn lại thoáng và dễ đọc hơn.
+- **`WorkOrderListPage` — sửa lại width cột**: lần trước đặt `width: 28%` cho cột Thiết bị + các fixed cộng lại vượt container → bảng tràn ngang, các cột "Trạng thái / Ngày tạo / Thao tác" bị đẩy xa. Sửa bằng cách: để cột Thiết bị `auto` (cột co giãn duy nhất), Người chỉ huy fixed 180px, các cột nhỏ co lại. Tổng fixed = 778px, phần dư dồn hết cho Thiết bị.
+
+### Các file đã sửa
+| File | Mô tả |
+|------|-------|
+| `src/pages/RepairRequestPage.jsx` | Xóa `<th>Mô tả sự cố</th>` + `<td>` tương ứng; điều chỉnh width các cột còn lại |
+| `src/pages/WorkOrderListPage.jsx` | Đổi cột Thiết bị từ `width: 28%` sang `auto`; cột Người chỉ huy fixed 180px |
+
+---
+
+## [2026-06-26] — Fix UI bảng: hover lẻ tẻ, mô tả lấn cột, dọn quick-chip thừa
+
+### Thay đổi
+- **Bỏ quick-chip "Đang chờ xử lý"** trên toolbar `RepairRequestPage` (trùng chức năng với pill "Chờ duyệt" vừa thêm). Xóa state `pendingCount` và hàm `togglePending` không còn dùng.
+- **Sửa hover lẻ tẻ** trên mọi bảng dùng `<Table hover>`: đổi từ `background-color` cứng (bị `.table-hover` của Bootstrap 5 override) sang override CSS variable `--bs-table-hover-bg` + `--bs-table-hover-color`. Giờ toàn bộ td trong row đổi màu đồng đều, kể cả cell chứa `<code className="code-tag">`.
+- **Cột "Mô tả sự cố" không còn lấn cột khác**: thêm `table-layout: fixed` cho `.rr-table` + width cố định cho từng cột. `maxWidth` inline trên `<td>` không có tác dụng với `table-layout: auto` mặc định — nguyên nhân khiến cột mô tả tự phình theo nội dung.
+- **WorkOrderListPage — cột "Thiết bị / Người chỉ huy / Trạng thái" không còn xa nhau**: thêm `table-layout: fixed` + đặt width 28% cho cột Thiết bị, các cột phụ co lại đúng kích thước nội dung.
+
+### Các file đã sửa
+| File | Mô tả |
+|------|-------|
+| `src/index.css` | Hover bảng dùng `--bs-table-hover-bg` thay vì set `background-color` (thắng Bootstrap đúng cách) |
+| `src/pages/RepairRequestPage.jsx` | Bỏ quick-chip, `pendingCount`, `togglePending`; thay inline `maxWidth` bằng class `.rr-cell-truncate`; thêm width cho cột Mã KKS/Thiết bị |
+| `src/pages/RepairRequestPage.css` | Xóa style `.rr-quick-chip/.rr-quick-count`; thêm `table-layout: fixed` + `.rr-cell-truncate` |
+| `src/pages/WorkOrderListPage.jsx` | Class table `.wol-table`; thêm `width: 28%` cho cột Thiết bị; cell Thiết bị/Người chỉ huy dùng `.wol-cell-truncate` (kèm `title` để hover xem full) |
+| `src/pages/WorkOrderListPage.css` | Thêm `.wol-table { table-layout: fixed }` + `.wol-cell-truncate` |
+
+---
+
+## [2026-06-26] — Tích hợp UI nhánh trideptrai + sửa luồng "Tạo PCT"
+
+### Bối cảnh
+Nhánh `trideptrai` (đã merge vào main qua PR #1) có sẵn 2 file UI đẹp cho Yêu cầu Sửa chữa (`RepairRequest.jsx` + `ModalCreateWorkOrder.jsx`) nhưng chỉ dùng mock cục bộ, không kết nối service và đang là code mồ côi (không được route). Nhánh `trung-hieu` có CRUD đầy đủ qua service nhưng nút **"Tạo PCT"** lại navigate sang trang list mà không có form tạo — luồng bị hỏng. Bản tích hợp này lấy phần UI tốt nhất của trideptrai, ghép vào logic của trung-hieu.
+
+### Tính năng
+- **Stats card trên trang Yêu cầu Sửa chữa**: 4 thẻ tóm tắt (Tổng / Đang chờ duyệt / Đã duyệt / Khẩn cấp chờ duyệt) tự động cập nhật theo phạm vi "của tôi".
+- **Filter pills** (Tất cả / Chờ duyệt / Đã duyệt / Đang xử lý / Hoàn thành) song song dropdown hiện có. Pill có badge đếm số lượng. Dropdown vẫn dùng cho trạng thái ít gặp (Từ chối).
+- **Sửa luồng "Tạo PCT"**: thay vì navigate sang list, mở `CreateWorkOrderModal` ngay trên trang. Form Formik+Yup gồm: thông tin thiết bị (chỉ đọc, lấy từ yêu cầu), số PCT/địa điểm/nội dung/thời gian dự kiến, 3 vai trò quản lý (tổ trưởng-lãnh đạo / chỉ huy trực tiếp / giám sát AT), đội thực hiện dự kiến dạng multi-select có chip.
+- **Tạo PCT thành công** tự động chuyển yêu cầu nguồn từ `DA_DUYET` → `DANG_XU_LY` và reload list.
+
+### Mock API thêm mới
+- `workOrderService.createFromRequest(request, dto)` — tạo PCT mới ở trạng thái `CHUA_MO`, gắn `yeuCauId`, kèm bản ghi nhật ký đầu tiên, lưu `thanhVienDuKien`.
+- `repairRequestService.markAsProcessing(id)` — chuyển trạng thái yêu cầu `DA_DUYET` → `DANG_XU_LY`.
+
+### Các file đã sửa / thêm
+| File | Loại | Mô tả |
+|------|------|-------|
+| `src/services/workOrderService.js` | MODIFY | Thêm hàm `createFromRequest()` |
+| `src/services/repairRequestService.js` | MODIFY | Thêm hàm `markAsProcessing()` |
+| `src/components/requests/CreateWorkOrderModal.jsx` | ADD | Modal tạo PCT từ yêu cầu (Formik+Yup, multi-select nhân viên, chip) |
+| `src/components/requests/CreateWorkOrderModal.css` | ADD | Style cho modal (section title, request card, NV chip) |
+| `src/pages/RepairRequestPage.jsx` | MODIFY | Thêm stats cards, filter pills, wire CreateWorkOrderModal, bỏ navigate "Tạo PCT" hỏng |
+| `src/pages/RepairRequestPage.css` | MODIFY | Thêm style `.rr-stats`, `.rr-filter-pills`, `.rr-pill` + responsive |
+
+### Các file đã xóa (orphan)
+| File | Lý do |
+|------|-------|
+| `src/pages/RepairRequest.jsx` | Trùng chức năng với `RepairRequestPage.jsx`, không được route |
+| `src/pages/RepairRequest.css` | Đi kèm file trên |
+| `src/components/repair/ModalCreateWorkOrder.jsx` | Đã được tái sử dụng thành `components/requests/CreateWorkOrderModal.jsx` |
+| `src/components/repair/ModalCreateWorkOrder.css` | Đi kèm file trên |
+| `src/services/repairService.js` | File rỗng, không sử dụng |
+| Folder `src/components/repair/` | Trống sau khi xóa |
+
+### Ghi chú thiết kế
+- **Mapping vai trò**: form dùng nhãn UI "Tổ trưởng / Người lãnh đạo công việc", "Chỉ huy trực tiếp", "Giám sát AT" — submit map lần lượt vào `toTruong`, `nguoiChiHuy`, `nguoiGiamSat` của data model PCT. Không thêm trường mới vào data model PCT để tránh ảnh hưởng `WorkOrderPage`.
+- **Đội thực hiện dự kiến**: lưu vào trường mới `thanhVienDuKien` trên data PCT. `WorkOrderPage` hiện tại chưa hiển thị trường này — sẽ bổ sung khi cần.
+- **Nguồn danh sách nhân viên**: dùng `AVAILABLE_WORKERS` của `workOrderService` (đã có sẵn 10 người) cho cả 3 vai trò quản lý và đội thực hiện — single source of truth.
+- **Lint**: pre-existing warnings của các file khác (setState-in-effect, axios unused) không xử lý trong bản này.
+
+---
+
+## [2026-06-26] — Bổ sung CRUD đầy đủ cho module Yêu cầu sửa chữa
+
+### Tính năng
+- **Sửa yêu cầu**: Người tạo có thể sửa mô tả sự cố và mức độ ưu tiên khi trạng thái còn CHO_DUYET. Tái sử dụng `CreateRequestModal` ở chế độ edit (prop `editRequest`), thiết bị/hệ thống disabled khi sửa.
+- **Duyệt / Từ chối yêu cầu**: ADMIN và QUAN_DOC thấy nút Duyệt (✓) / Từ chối (✗) trên hàng CHO_DUYET. Xác nhận qua `ConfirmModal` trước khi chuyển trạng thái (CHO_DUYET → DA_DUYET / TU_CHOI).
+- **Tạo Phiếu công tác (PCT)**: ADMIN, QUAN_DOC, TO_TRUONG thấy nút Tạo PCT trên hàng DA_DUYET, navigate tới `/sua-chua/phieu-cong-tac` kèm state `fromRequest`.
+- **Mock API**: Thêm `update`, `approve`, `reject` trong `repairRequestService` với kiểm tra trạng thái hợp lệ.
+- **Sửa lint**: di chuyển `loadEquipments` lên trước `useEffect` trong `CreateRequestModal` để tránh lỗi "accessed before declared".
+
+### Các file đã sửa
+| File | Loại | Mô tả |
+|------|------|-------|
+| `src/services/repairRequestService.js` | MODIFY | Thêm `update()`, `approve()`, `reject()` mock API |
+| `src/components/requests/CreateRequestModal.jsx` | MODIFY | Thêm chế độ edit (prop `editRequest`, `enableReinitialize`, disabled fields), sửa thứ tự khai báo `loadEquipments` |
+| `src/pages/RepairRequestPage.jsx` | MODIFY | Thêm nút Sửa/Duyệt/Từ chối/Tạo PCT theo role+status, thêm Approve/Reject ConfirmModal, gộp Create/Edit modal |
+
+---
+
+## [2026-06-26] — Thêm bộ lọc Hệ thống vào modal Tạo yêu cầu sửa chữa
+
+### Tính năng
+- Thêm dropdown **Hệ thống** phía trên dropdown **Thiết bị** trong `CreateRequestModal`. Chọn hệ thống → danh sách thiết bị chỉ hiển thị thiết bị thuộc hệ thống đó (cascading dropdown).
+- **Bộ lọc thuần UI, KHÔNG gửi lên backend**: hệ thống suy ra từ trường `heThong` có sẵn trên thiết bị; form vẫn chỉ submit `thietBiId`. Tránh lưu trùng/lệch dữ liệu.
+- Tùy chọn: có option "— Tất cả hệ thống —" (mặc định hiển thị hết). Đổi hệ thống tự reset thiết bị đã chọn để tránh trạng thái mâu thuẫn. Reset bộ lọc mỗi lần mở modal.
+
+### Các file đã sửa
+| File | Loại | Mô tả |
+|------|------|-------|
+| `src/components/requests/CreateRequestModal.jsx` | MODIFY | Thêm state `selectedHeThong`, derive `heThongOptions`/`filteredEquipments`, dropdown Hệ thống lọc danh sách thiết bị |
+
+### Ghi chú
+- Không đổi data model (dùng `heThong` sẵn có). Khi nối backend thật nên cân nhắc lọc theo `heThongId` (entity `HeThong`) thay vì so khớp chuỗi tên.
+
+## [2026-06-26] — Gỡ thư viện AOS và animation thừa khỏi giao diện
+
+### Thay đổi
+- **Gỡ hoàn toàn thư viện `aos`** (Animate On Scroll): xóa dependency khỏi `package.json`, xóa `AOS.init()` trong `App.jsx`, xóa `AOS.refresh()` và toàn bộ thuộc tính `data-aos`/`data-aos-delay` (13 vị trí) trong `WorkOrderPage.jsx`, `Dashboard.jsx`, `RepairRequestPage.jsx`, `WorkOrderListPage.jsx`.
+- **Gỡ animation CSS tự viết** dùng cho hiệu ứng vào trang: `@keyframes fadeIn`, `fadeInLeft`, `slideDown` và class `.animate-fade-in`, `.animate-slide-down` trong `index.css`; `@keyframes fadeInUp` trong `RoleManagementPage.css`; `@keyframes patternMove` (nền chuyển động trang login) trong `AuthLayout.css`. Gỡ class `animate-fade-in` khỏi 13 vị trí JSX.
+- **Giữ nguyên**: `@keyframes spin`/`pulse` (spinner loading, chấm trạng thái pulse), shimmer loading bảng (`DataTable.css`), mọi `transition` hover (nút/card/link) và `scroll-behavior: smooth` — để UI vẫn phản hồi tự nhiên khi tương tác.
+
+### Các file đã sửa
+| File | Loại | Mô tả |
+|------|------|-------|
+| `package.json` | MODIFY | Xóa dependency `aos` |
+| `src/App.jsx` | MODIFY | Xóa import/khởi tạo AOS, xóa class `animate-fade-in` |
+| `src/pages/RepairRequestPage.jsx`, `WorkOrderListPage.jsx`, `RoleManagementPage.jsx` | MODIFY | Xóa `AOS.refresh()`, `data-aos`, class `animate-fade-in` |
+| `src/pages/WorkOrderPage.jsx`, `Dashboard.jsx`, `RepairRequest.jsx` | MODIFY | Xóa `data-aos`, class `animate-fade-in` |
+| `src/components/layout/AuthLayout.jsx`, `MainLayout.jsx`, `src/components/nhansu/NhanSuForm.jsx` | MODIFY | Xóa class `animate-fade-in` |
+| `src/index.css` | MODIFY | Xóa keyframes `fadeIn`/`fadeInLeft`/`slideDown` + class `.animate-fade-in`/`.animate-slide-down` |
+| `src/pages/RoleManagementPage.css` | MODIFY | Xóa keyframes `fadeInUp` + animation trên `.role-changes-badge`, `.role-matrix-wrapper` |
+| `src/components/layout/AuthLayout.css` | MODIFY | Xóa keyframes `patternMove` + animation trên `.auth-bg-pattern` |
+
+### Ghi chú
+- `npm run build` PASS, bundle CSS/JS nhỏ hơn trước (đã gỡ ~34 package phụ thuộc của `aos`).
+- 23 lỗi ESLint còn lại đều là lỗi tồn tại từ trước (axios/API_URL chưa dùng trong mock service, set-state-in-effect, biến unused) — không liên quan đến thay đổi này.
+
 ## [2026-06-26] — Task 37 & 38 (DEV5): Mở/Đóng PCT theo ngày + chấm giờ + Khóa phiếu
 
 ### Tính năng — Rework model Phiếu công tác

@@ -1,11 +1,6 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-// AOS — Animate On Scroll
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 
 // Layouts
 import MainLayout from './components/layout/MainLayout';
@@ -26,17 +21,6 @@ import WorkOrderPage from './pages/WorkOrderPage';
 import WorkOrderListPage from './pages/WorkOrderListPage';
 
 function App() {
-  // Khởi tạo AOS
-  useEffect(() => {
-    AOS.init({
-      duration: 600,
-      easing: 'ease-in-out',
-      once: true,
-      offset: 50,
-      delay: 0,
-    });
-  }, []);
-
   return (
     <ErrorBoundary>
       <BrowserRouter>
@@ -148,7 +132,7 @@ function App() {
 /* --- Placeholder page cho các module chưa triển khai --- */
 function PlaceholderPage({ title }) {
   return (
-    <div className="animate-fade-in">
+    <div>
       <div style={{
         display: 'flex',
         flexDirection: 'column',

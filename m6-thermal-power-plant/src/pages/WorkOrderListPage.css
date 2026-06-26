@@ -50,6 +50,20 @@
   display: block;
 }
 
+/* Fixed layout để cột "Thiết bị" + "Người chỉ huy" không chiếm hết phần còn lại
+   của bảng (đẩy cột Trạng thái/Ngày tạo/Thao tác xa nhau). */
+.wol-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Cell rút gọn — ép một dòng, ... khi tràn */
+.wol-cell-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* --- Error --- */
 .wol-error {
   display: flex;

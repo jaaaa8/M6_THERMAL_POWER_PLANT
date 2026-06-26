@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Form, Table } from 'react-bootstrap';
 import { BsFileEarmarkText, BsEye } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import AOS from 'aos';
 import PageHeader from '../components/common/PageHeader';
 import SearchBox from '../components/common/SearchBox';
 import StatusBadge from '../components/common/StatusBadge';
@@ -38,7 +37,6 @@ export default function WorkOrderListPage() {
       toast.error('Lỗi tải dữ liệu');
     } finally {
       setLoading(false);
-      setTimeout(() => AOS.refresh(), 100);
     }
   }, []);
 
@@ -77,7 +75,7 @@ export default function WorkOrderListPage() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <PageHeader
         title="Phiếu Công tác"
         subtitle="Danh sách tất cả phiếu công tác sửa chữa thiết bị"
@@ -85,7 +83,7 @@ export default function WorkOrderListPage() {
       />
 
       {/* Toolbar */}
-      <div className="wol-toolbar surface-card" data-aos="fade-up">
+      <div className="wol-toolbar surface-card">
         <div className="wol-toolbar-left">
           <SearchBox
             placeholder="Tìm theo mã phiếu, mã KKS hoặc tên thiết bị..."
@@ -133,19 +131,19 @@ export default function WorkOrderListPage() {
           />
         </div>
       ) : (
-        <div className="wol-table-wrapper surface-card" data-aos="fade-up" data-aos-delay="100">
+        <div className="wol-table-wrapper surface-card">
           <div className="data-table-scroll">
-            <Table hover className="data-table">
+            <Table hover className="data-table wol-table">
               <thead>
                 <tr>
-                  <th style={{ width: 48 }}>#</th>
-                  <th style={{ width: 140 }}>Mã phiếu</th>
-                  <th style={{ width: 100 }}>Mã KKS</th>
-                  <th>Thiết bị</th>
-                  <th>Người chỉ huy</th>
-                  <th style={{ width: 130 }}>Trạng thái</th>
-                  <th style={{ width: 110 }}>Ngày tạo</th>
-                  <th style={{ width: 100 }}>Thao tác</th>
+                  <th style={{ width: '5%' }}>#</th>
+                  <th style={{ width: '14%' }}>Mã phiếu</th>
+                  <th style={{ width: '12%' }}>Mã KKS</th>
+                  <th style={{ width: '18%' }}>Thiết bị</th>
+                  <th style={{ width: '18%' }}>Người chỉ huy</th>
+                  <th style={{ width: '13%' }}>Trạng thái</th>
+                  <th style={{ width: '12%' }}>Ngày tạo</th>
+                  <th style={{ width: '8%' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,10 +156,12 @@ export default function WorkOrderListPage() {
                     <td>
                       <code className="code-tag">{wo.maKKS}</code>
                     </td>
-                    <td className="text-truncate" style={{ maxWidth: 200 }}>
+                    <td className="wol-cell-truncate" title={wo.tenThietBi}>
                       {wo.tenThietBi}
                     </td>
-                    <td>{wo.nguoiChiHuy}</td>
+                    <td className="wol-cell-truncate" title={wo.nguoiChiHuy}>
+                      {wo.nguoiChiHuy}
+                    </td>
                     <td>
                       <StatusBadge
                         status={WO_STATUS_VARIANT[wo.trangThai]}

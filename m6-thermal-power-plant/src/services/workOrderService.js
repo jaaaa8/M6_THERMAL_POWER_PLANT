@@ -327,4 +327,52 @@ export const workOrderService = {
     pushLog(wo, 'Khóa phiếu / Nghiệm thu', ghiChu || 'Đơn vị sửa chữa đã hoàn thành công việc');
     return resolve(wo, 450);
   },
+
+  /**
+   * Tạo phiếu công tác mới từ một yêu cầu sửa chữa đã được duyệt.
+   * Trạng thái khởi tạo: CHUA_MO. Đội thực hiện dự kiến được lưu vào
+   * `thanhVienDuKien` để khi Trưởng ca mở phiên đầu tiên có thể tham khảo.
+   *
+   * @param {object} request - Đối tượng yêu cầu sửa chữa nguồn (cần id, maKKS, tenThietBi).
+   * @param {object} dto - Dữ liệu form:
+   *   { maPhieu, noiDung, diaDiem, thoiGianBatDau, thoiGianKetThuc,
+   *     toTruong, nguoiChiHuy, nguoiGiamSat, thanhVienDuKien: [{hoTen, chucVu}] }
+   */
+  createFromRequest: (request, dto) => {
+    if (!request?.id) return reject(400, 'Thiếu thông tin yêu cầu nguồn');
+    if (mockWorkOrders.some((wo) => wo.maPhieu === dto.maPhieu))
+      return reject(400, `Số phiếu ${dto.maPhieu} đã tồn tại`);
+
+    const newId = (mockWorkOrders.reduce((m, wo) => Math.max(m, wo.id), 0) || 0) + 1;
+    const now = nowLocalISO();
+    const newWO = {
+      id: newId,
+      maPhieu: dto.maPhieu,
+      yeuCauId: request.id,
+      maKKS: request.maKKS,
+      tenThietBi: request.tenThietBi,
+      moTaCongViec: dto.noiDung,
+      diaDiem: dto.diaDiem || '',
+      thoiGianBatDauDuKien: dto.thoiGianBatDau || null,
+      thoiGianKetThucDuKien: dto.thoiGianKetThuc || null,
+      nguoiChiHuy: dto.nguoiChiHuy,
+      nguoiGiamSat: dto.nguoiGiamSat,
+      toTruong: dto.toTruong,
+      thanhVienDuKien: Array.isArray(dto.thanhVienDuKien) ? dto.thanhVienDuKien : [],
+      trangThai: WORK_ORDER_STATUS.CHUA_MO,
+      ngayTao: now,
+      phienLamViec: [],
+      nhatKy: [
+        {
+          id: nextLogId++,
+          thoiGian: now,
+          hanhDong: 'Tạo phiếu công tác',
+          nguoiThucHien: currentUserName(),
+          ghiChu: `Phiếu được tạo từ yêu cầu sửa chữa #${request.id}`,
+        },
+      ],
+    };
+    mockWorkOrders = [newWO, ...mockWorkOrders];
+    return resolve(newWO, 500);
+  },
 };

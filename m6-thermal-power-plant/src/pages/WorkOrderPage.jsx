@@ -200,7 +200,7 @@ export default function WorkOrderPage() {
   /* --- Render states --- */
   if (loading) {
     return (
-      <div className="animate-fade-in">
+      <div>
         <PageHeader title="Phiếu Công tác" icon={<BsClipboard2Check />} />
         <LoadingSpinner />
       </div>
@@ -209,7 +209,7 @@ export default function WorkOrderPage() {
 
   if (error || !workOrder) {
     return (
-      <div className="animate-fade-in">
+      <div>
         <PageHeader title="Phiếu Công tác" icon={<BsClipboard2Check />} />
         <div className="wo-error surface-card">
           <p className="text-danger">{error || 'Không tìm thấy dữ liệu'}</p>
@@ -229,7 +229,7 @@ export default function WorkOrderPage() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <PageHeader
         title={`Phiếu Công tác ${workOrder.maPhieu}`}
         subtitle="Quản lý phiên làm việc theo ngày & chấm giờ nhân viên"
@@ -314,7 +314,7 @@ export default function WorkOrderPage() {
 
       {/* Info Cards */}
       <Row className="g-3 mb-4">
-        <Col lg={6} data-aos="fade-up">
+        <Col lg={6}>
           <Card className="wo-info-card">
             <Card.Header>
               <BsGearWideConnected className="me-2" style={{ color: 'var(--color-primary-600)' }} />
@@ -339,7 +339,7 @@ export default function WorkOrderPage() {
           </Card>
         </Col>
 
-        <Col lg={6} data-aos="fade-up" data-aos-delay="100">
+        <Col lg={6}>
           <Card className="wo-info-card">
             <Card.Header>
               <BsPersonBadge className="me-2" style={{ color: 'var(--color-accent)' }} />
@@ -367,7 +367,7 @@ export default function WorkOrderPage() {
 
       {/* Phiên đang mở — quản lý thành viên & chấm giờ */}
       {activeSession && (
-        <Card className="wo-info-card mb-4" data-aos="fade-up">
+        <Card className="wo-info-card mb-4">
           <Card.Header className="wo-session-header">
             <span>
               <BsPeople className="me-2" style={{ color: 'var(--color-status-info)' }} />
@@ -471,7 +471,7 @@ export default function WorkOrderPage() {
 
       {/* Bảng tổng hợp giờ công (tính lương) */}
       {payroll.length > 0 && (
-        <Card className="wo-info-card mb-4" data-aos="fade-up">
+        <Card className="wo-info-card mb-4">
           <Card.Header>
             <BsClockHistory className="me-2" style={{ color: 'var(--color-status-normal)' }} />
             Tổng hợp giờ công (toàn bộ phiên)
@@ -506,7 +506,7 @@ export default function WorkOrderPage() {
 
       {/* Lịch sử các phiên đã đóng */}
       {closedSessions.length > 0 && (
-        <Card className="wo-info-card mb-4" data-aos="fade-up">
+        <Card className="wo-info-card mb-4">
           <Card.Header>
             <BsCalendar3 className="me-2" style={{ color: 'var(--color-status-info)' }} />
             Lịch sử phiên làm việc ({closedSessions.length})
@@ -534,7 +534,7 @@ export default function WorkOrderPage() {
       )}
 
       {/* Nhật ký hoạt động */}
-      <Card className="wo-info-card mb-4" data-aos="fade-up">
+      <Card className="wo-info-card mb-4">
         <Card.Header>
           <BsClockHistory className="me-2" style={{ color: 'var(--color-primary-600)' }} />
           Nhật ký hoạt động

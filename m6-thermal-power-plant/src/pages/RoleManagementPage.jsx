@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Form, Button, Spinner } from 'react-bootstrap';
 import { BsShieldCheck, BsSave, BsArrowClockwise } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import AOS from 'aos';
 import PageHeader from '../components/common/PageHeader';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { roleService, PERMISSION_LABELS } from '../services/roleService';
@@ -40,8 +39,6 @@ export default function RoleManagementPage() {
       toast.error('Lỗi tải dữ liệu phân quyền');
     } finally {
       setLoading(false);
-      // Re-scan AOS vì matrix render sau async load
-      setTimeout(() => AOS.refresh(), 100);
     }
   };
 
@@ -109,7 +106,7 @@ export default function RoleManagementPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="animate-fade-in">
+      <div>
         <PageHeader
           title="Phân quyền hệ thống"
           subtitle="Đang tải..."
@@ -126,7 +123,7 @@ export default function RoleManagementPage() {
   // Error state
   if (error) {
     return (
-      <div className="animate-fade-in">
+      <div>
         <PageHeader title="Phân quyền hệ thống" icon={<BsShieldCheck />} />
         <div className="role-error">
           <p className="text-danger">{error}</p>
@@ -139,7 +136,7 @@ export default function RoleManagementPage() {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <PageHeader
         title="Phân quyền hệ thống"
         subtitle={`${roles.length} vai trò · ${functions.length} chức năng`}

@@ -62,7 +62,7 @@ export default function Dashboard() {
       <Row className="g-3 mb-4">
         {stats.map((stat, i) => (
           <Col key={i} xs={6} lg={3}>
-            <div className="stat-card surface-card" data-aos="fade-up" data-aos-delay={i * 100}>
+            <div className="stat-card surface-card">
               <div className="stat-card-icon" style={{ color: stat.color }}>
                 {stat.icon}
               </div>
@@ -81,7 +81,7 @@ export default function Dashboard() {
 
       <Row className="g-3">
         {/* Recent repair requests */}
-        <Col lg={8} data-aos="fade-right">
+        <Col lg={8}>
           <Card className="mb-3">
             <Card.Header className="d-flex align-items-center justify-content-between">
               <span><BsFileEarmarkText className="me-2" />Yêu cầu sửa chữa gần đây</span>
@@ -99,7 +99,7 @@ export default function Dashboard() {
         </Col>
 
         {/* Equipment status summary */}
-        <Col lg={4} data-aos="fade-left" data-aos-delay="100">
+        <Col lg={4}>
           <Card>
             <Card.Header>
               <BsCpu className="me-2" />Trạng thái Thiết bị

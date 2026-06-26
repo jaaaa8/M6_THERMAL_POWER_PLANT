@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { BsPlusCircle } from 'react-icons/bs';
+import { BsPlusCircle, BsPencilSquare } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { repairRequestService, PRIORITY, PRIORITY_LABEL } from '../../services/repairRequestService';
 import { equipmentService } from '../../services/equipmentService';
@@ -25,22 +25,19 @@ const createRequestSchema = Yup.object({
 });
 
 /**
- * CreateRequestModal — Modal tạo yêu cầu sửa chữa mới.
+ * CreateRequestModal — Modal tạo mới hoặc sửa yêu cầu sửa chữa.
  *
  * @param {boolean} props.show
  * @param {Function} props.onClose
- * @param {Function} props.onSuccess - Callback sau khi tạo thành công
+ * @param {Function} props.onSuccess - Callback sau khi tạo/sửa thành công
+ * @param {object|null} props.editRequest - Nếu truyền vào thì mở ở chế độ sửa
  */
-export default function CreateRequestModal({ show, onClose, onSuccess }) {
+export default function CreateRequestModal({ show, onClose, onSuccess, editRequest = null }) {
+  const isEditMode = !!editRequest;
   const [equipments, setEquipments] = useState([]);
   const [loadingEquipments, setLoadingEquipments] = useState(false);
-
-  // Load danh sách thiết bị khi mở modal
-  useEffect(() => {
-    if (show) {
-      loadEquipments();
-    }
-  }, [show]);
+  // Bộ lọc UI theo hệ thống (không gửi lên backend — chỉ để thu hẹp danh sách thiết bị)
+  const [selectedHeThong, setSelectedHeThong] = useState('');
 
   const loadEquipments = async () => {
     try {
@@ -54,14 +51,35 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
     }
   };
 
+  useEffect(() => {
+    if (show) {
+      loadEquipments();
+      setSelectedHeThong('');
+    }
+  }, [show]);
+
+  const heThongOptions = [...new Set(equipments.map((eq) => eq.heThong))];
+
+  const filteredEquipments = selectedHeThong
+    ? equipments.filter((eq) => eq.heThong === selectedHeThong)
+    : equipments;
+
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      await repairRequestService.create(values);
-      toast.success('Tạo yêu cầu sửa chữa thành công!');
-      resetForm();
+      if (isEditMode) {
+        await repairRequestService.update(editRequest.id, {
+          moTaSuCo: values.moTaSuCo,
+          mucDoUuTien: values.mucDoUuTien,
+        });
+        toast.success('Cập nhật yêu cầu thành công!');
+      } else {
+        await repairRequestService.create(values);
+        toast.success('Tạo yêu cầu sửa chữa thành công!');
+        resetForm();
+      }
       onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo yêu cầu');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
     } finally {
       setSubmitting(false);
     }
@@ -78,16 +96,20 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
     <Modal show={show} onHide={onClose} centered size="lg" className="create-request-modal">
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsPlusCircle className="me-2" style={{ color: 'var(--color-primary-600)' }} />
-          Tạo yêu cầu sửa chữa mới
+          {isEditMode ? (
+            <><BsPencilSquare className="me-2" style={{ color: 'var(--color-accent)' }} />Sửa yêu cầu sửa chữa</>
+          ) : (
+            <><BsPlusCircle className="me-2" style={{ color: 'var(--color-primary-600)' }} />Tạo yêu cầu sửa chữa mới</>
+          )}
         </Modal.Title>
       </Modal.Header>
 
       <Formik
+        enableReinitialize
         initialValues={{
-          thietBiId: '',
-          moTaSuCo: '',
-          mucDoUuTien: '',
+          thietBiId: editRequest?.thietBiId || '',
+          moTaSuCo: editRequest?.moTaSuCo || '',
+          mucDoUuTien: editRequest?.mucDoUuTien || '',
         }}
         validationSchema={createRequestSchema}
         onSubmit={handleSubmit}
@@ -104,6 +126,25 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
         }) => (
           <Form onSubmit={formikSubmit} noValidate>
             <Modal.Body>
+              {/* Lọc theo hệ thống (tùy chọn) */}
+              <Form.Group className="mb-4">
+                <Form.Label className="crm-label">Hệ thống</Form.Label>
+                <Form.Select
+                  value={selectedHeThong}
+                  disabled={loadingEquipments || isEditMode}
+                  onChange={(e) => {
+                    setSelectedHeThong(e.target.value);
+                    // Đổi hệ thống → reset thiết bị đã chọn (tránh thiết bị không thuộc hệ thống mới)
+                    setFieldValue('thietBiId', '');
+                  }}
+                >
+                  <option value="">— Tất cả hệ thống —</option>
+                  {heThongOptions.map((ht) => (
+                    <option key={ht} value={ht}>{ht}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
               {/* Chọn thiết bị */}
               <Form.Group className="mb-4">
                 <Form.Label className="crm-label">
@@ -115,12 +156,12 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   isInvalid={touched.thietBiId && !!errors.thietBiId}
-                  disabled={loadingEquipments}
+                  disabled={loadingEquipments || isEditMode}
                 >
                   <option value="">
                     {loadingEquipments ? 'Đang tải thiết bị...' : '— Chọn thiết bị —'}
                   </option>
-                  {equipments.map((eq) => (
+                  {filteredEquipments.map((eq) => (
                     <option key={eq.id} value={eq.id}>
                       [{eq.maKKS}] {eq.tenThietBi} — {eq.heThong}
                     </option>
@@ -195,7 +236,10 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
                 Huỷ
               </Button>
               <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
-                {isSubmitting ? 'Đang tạo...' : 'Tạo yêu cầu'}
+                {isSubmitting
+                  ? (isEditMode ? 'Đang lưu...' : 'Đang tạo...')
+                  : (isEditMode ? 'Lưu thay đổi' : 'Tạo yêu cầu')
+                }
               </Button>
             </Modal.Footer>
           </Form>

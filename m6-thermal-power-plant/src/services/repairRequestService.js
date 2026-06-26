@@ -214,6 +214,93 @@ export const repairRequestService = {
   },
 
   /**
+   * Cập nhật yêu cầu (chỉ khi CHO_DUYET, bởi người tạo)
+   * @param {number} id
+   * @param {{ moTaSuCo?: string, mucDoUuTien?: string }} dto
+   */
+  update: (id, dto) => {
+    return new Promise((resolve, reject) => {
+      const idx = mockRequests.findIndex((r) => r.id === Number(id));
+      setTimeout(() => {
+        if (idx === -1) {
+          reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
+          return;
+        }
+        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+          reject({ response: { status: 400, data: { message: 'Chỉ sửa được yêu cầu đang chờ duyệt' } } });
+          return;
+        }
+        mockRequests[idx] = { ...mockRequests[idx], ...dto };
+        resolve({ data: { ...mockRequests[idx] } });
+      }, 400);
+    });
+  },
+
+  /**
+   * Duyệt yêu cầu (CHO_DUYET → DA_DUYET)
+   */
+  approve: (id) => {
+    return new Promise((resolve, reject) => {
+      const idx = mockRequests.findIndex((r) => r.id === Number(id));
+      setTimeout(() => {
+        if (idx === -1) {
+          reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
+          return;
+        }
+        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+          reject({ response: { status: 400, data: { message: 'Chỉ duyệt được yêu cầu đang chờ duyệt' } } });
+          return;
+        }
+        mockRequests[idx].trangThai = REQUEST_STATUS.DA_DUYET;
+        resolve({ data: { ...mockRequests[idx] } });
+      }, 400);
+    });
+  },
+
+  /**
+   * Từ chối yêu cầu (CHO_DUYET → TU_CHOI)
+   */
+  reject: (id) => {
+    return new Promise((resolve, reject) => {
+      const idx = mockRequests.findIndex((r) => r.id === Number(id));
+      setTimeout(() => {
+        if (idx === -1) {
+          reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
+          return;
+        }
+        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+          reject({ response: { status: 400, data: { message: 'Chỉ từ chối được yêu cầu đang chờ duyệt' } } });
+          return;
+        }
+        mockRequests[idx].trangThai = REQUEST_STATUS.TU_CHOI;
+        resolve({ data: { ...mockRequests[idx] } });
+      }, 400);
+    });
+  },
+
+  /**
+   * Chuyển yêu cầu sang "Đang xử lý" (DA_DUYET → DANG_XU_LY).
+   * Gọi sau khi tạo PCT thành công từ yêu cầu đã được duyệt.
+   */
+  markAsProcessing: (id) => {
+    return new Promise((resolve, reject) => {
+      const idx = mockRequests.findIndex((r) => r.id === Number(id));
+      setTimeout(() => {
+        if (idx === -1) {
+          reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
+          return;
+        }
+        if (mockRequests[idx].trangThai !== REQUEST_STATUS.DA_DUYET) {
+          reject({ response: { status: 400, data: { message: 'Chỉ chuyển trạng thái cho yêu cầu đã duyệt' } } });
+          return;
+        }
+        mockRequests[idx].trangThai = REQUEST_STATUS.DANG_XU_LY;
+        resolve({ data: { ...mockRequests[idx] } });
+      }, 300);
+    });
+  },
+
+  /**
    * Xoá yêu cầu (chỉ khi trạng thái CHO_DUYET)
    */
   remove: (id) => {

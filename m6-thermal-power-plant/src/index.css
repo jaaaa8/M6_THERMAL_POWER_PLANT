@@ -303,22 +303,6 @@ a:hover {
   color: var(--text-tertiary) !important;
 }
 
-/* --- Fade in animation --- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
@@ -326,14 +310,6 @@ a:hover {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-.animate-slide-down {
-  animation: slideDown 0.25s ease-out forwards;
 }
 
 /* --- Surface card --- */
@@ -453,8 +429,12 @@ a:hover {
   vertical-align: middle;
 }
 
-.table > tbody > tr:hover > td {
-  background-color: var(--bg-surface-hover);
+/* Hover: override CSS variable của Bootstrap 5 để toàn bộ td trong row đổi màu đồng đều.
+   Đặt cứng background-color không hoạt động vì .table-hover của Bootstrap dùng layered
+   var --bs-table-bg-state với độ ưu tiên cao hơn. */
+.table-hover > tbody > tr {
+  --bs-table-hover-bg: var(--bg-surface-hover);
+  --bs-table-hover-color: var(--text-primary);
 }
 
 .table > tbody > tr:last-child > td {

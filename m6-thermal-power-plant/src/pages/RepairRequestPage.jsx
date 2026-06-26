@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button, Form, Table } from 'react-bootstrap';
-import { BsWrenchAdjustable, BsPlusLg, BsEye, BsTrash } from 'react-icons/bs';
+import {
+  BsWrenchAdjustable, BsPlusLg, BsEye, BsTrash,
+  BsPencilSquare, BsCheckCircle, BsXCircle, BsFileEarmarkPlus,
+  BsListUl, BsHourglassSplit, BsFileEarmarkCheck, BsLightningChargeFill,
+} from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import AOS from 'aos';
 import PageHeader from '../components/common/PageHeader';
 import SearchBox from '../components/common/SearchBox';
 import StatusBadge from '../components/common/StatusBadge';
@@ -10,21 +13,41 @@ import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ConfirmModal from '../components/common/ConfirmModal';
 import CreateRequestModal from '../components/requests/CreateRequestModal';
+import CreateWorkOrderModal from '../components/requests/CreateWorkOrderModal';
 import RequestDetailModal from '../components/requests/RequestDetailModal';
 import {
   repairRequestService,
   REQUEST_STATUS,
   REQUEST_STATUS_LABEL,
   REQUEST_STATUS_VARIANT,
+  PRIORITY,
   PRIORITY_LABEL,
   PRIORITY_COLOR,
 } from '../services/repairRequestService';
 import { authService } from '../services/authService';
 import './RepairRequestPage.css';
 
+// Pill nhanh cho các trạng thái dùng nhiều (TU_CHOI vẫn truy cập qua dropdown)
+const FILTER_PILLS = [
+  { key: 'ALL', label: 'Tất cả' },
+  { key: REQUEST_STATUS.CHO_DUYET, label: 'Chờ duyệt' },
+  { key: REQUEST_STATUS.DA_DUYET, label: 'Đã duyệt' },
+  { key: REQUEST_STATUS.DANG_XU_LY, label: 'Đang xử lý' },
+  { key: REQUEST_STATUS.HOAN_THANH, label: 'Hoàn thành' },
+];
+
+// Vai trò được duyệt/từ chối yêu cầu
+const APPROVER_ROLES = ['ADMIN', 'QUAN_DOC'];
+// Vai trò được tạo PCT từ yêu cầu đã duyệt
+const PCT_CREATOR_ROLES = ['ADMIN', 'QUAN_DOC', 'TO_TRUONG'];
+
 export default function RepairRequestPage() {
-  // Người dùng hiện tại (để lọc "yêu cầu của tôi")
-  const currentUserName = authService.getCurrentUser()?.hoTen || '';
+  const currentUser = authService.getCurrentUser();
+  const currentUserName = currentUser?.hoTen || '';
+  const currentUserRole = currentUser?.role || '';
+
+  const canApprove = APPROVER_ROLES.includes(currentUserRole);
+  const canCreatePCT = PCT_CREATOR_ROLES.includes(currentUserRole);
 
   // Data state
   const [requests, setRequests] = useState([]);
@@ -34,13 +57,19 @@ export default function RepairRequestPage() {
   // Filter state
   const [searchKKS, setSearchKKS] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
-  const [onlyMine, setOnlyMine] = useState(true); // Mặc định: chỉ yêu cầu mình tạo
+  const [onlyMine, setOnlyMine] = useState(true);
 
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [pctTarget, setPctTarget] = useState(null);
 
   // Load danh sách yêu cầu
   const loadRequests = useCallback(async () => {
@@ -54,7 +83,6 @@ export default function RepairRequestPage() {
       toast.error('Lỗi tải dữ liệu');
     } finally {
       setLoading(false);
-      setTimeout(() => AOS.refresh(), 100);
     }
   }, []);
 
@@ -70,11 +98,51 @@ export default function RepairRequestPage() {
     return requests;
   }, [requests, onlyMine, currentUserName]);
 
-  // Số yêu cầu đang chờ xử lý trong phạm vi
-  const pendingCount = useMemo(
-    () => scopedRequests.filter((r) => r.trangThai === REQUEST_STATUS.CHO_DUYET).length,
-    [scopedRequests]
-  );
+  // Đếm theo từng pill — phụ thuộc scopedRequests (đã áp "của tôi")
+  const pillCounts = useMemo(() => {
+    const counts = { ALL: scopedRequests.length };
+    FILTER_PILLS.forEach((p) => {
+      if (p.key !== 'ALL') {
+        counts[p.key] = scopedRequests.filter((r) => r.trangThai === p.key).length;
+      }
+    });
+    return counts;
+  }, [scopedRequests]);
+
+  // Thống kê hiển thị 4 thẻ tóm tắt
+  const stats = useMemo(() => {
+    const choDuyet = scopedRequests.filter((r) => r.trangThai === REQUEST_STATUS.CHO_DUYET);
+    return [
+      {
+        key: 'total',
+        label: onlyMine ? 'Yêu cầu của tôi' : 'Tổng yêu cầu',
+        value: scopedRequests.length,
+        icon: <BsListUl />,
+        color: 'var(--color-primary-500)',
+      },
+      {
+        key: 'pending',
+        label: 'Đang chờ duyệt',
+        value: choDuyet.length,
+        icon: <BsHourglassSplit />,
+        color: 'var(--color-status-warning)',
+      },
+      {
+        key: 'approved',
+        label: 'Đã duyệt',
+        value: scopedRequests.filter((r) => r.trangThai === REQUEST_STATUS.DA_DUYET).length,
+        icon: <BsFileEarmarkCheck />,
+        color: 'var(--color-status-info)',
+      },
+      {
+        key: 'urgent',
+        label: 'Khẩn cấp (chờ duyệt)',
+        value: choDuyet.filter((r) => r.mucDoUuTien === PRIORITY.KHAN_CAP).length,
+        icon: <BsLightningChargeFill />,
+        color: 'var(--color-status-danger)',
+      },
+    ];
+  }, [scopedRequests, onlyMine]);
 
   // Filter & Search
   const filteredRequests = useMemo(() => {
@@ -98,13 +166,6 @@ export default function RepairRequestPage() {
     return result;
   }, [scopedRequests, filterStatus, searchKKS]);
 
-  // Bật/tắt nhanh bộ lọc "Đang chờ xử lý"
-  const togglePending = () => {
-    setFilterStatus((prev) =>
-      prev === REQUEST_STATUS.CHO_DUYET ? 'ALL' : REQUEST_STATUS.CHO_DUYET
-    );
-  };
-
   // Xử lý xóa
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -121,9 +182,42 @@ export default function RepairRequestPage() {
     }
   };
 
-  // Xử lý sau khi tạo mới thành công
+  // Duyệt yêu cầu
+  const handleApprove = async () => {
+    if (!approveTarget) return;
+    try {
+      setApproving(true);
+      await repairRequestService.approve(approveTarget.id);
+      toast.success(`Đã duyệt yêu cầu [${approveTarget.maKKS}]`);
+      setApproveTarget(null);
+      loadRequests();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể duyệt yêu cầu');
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  // Từ chối yêu cầu
+  const handleReject = async () => {
+    if (!rejectTarget) return;
+    try {
+      setRejecting(true);
+      await repairRequestService.reject(rejectTarget.id);
+      toast.success(`Đã từ chối yêu cầu [${rejectTarget.maKKS}]`);
+      setRejectTarget(null);
+      loadRequests();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể từ chối yêu cầu');
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  // Xử lý sau khi tạo mới / sửa thành công
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
+    setEditTarget(null);
     loadRequests();
   };
 
@@ -140,7 +234,7 @@ export default function RepairRequestPage() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <PageHeader
         title="Yêu cầu Sửa chữa"
         subtitle="Quản lý các yêu cầu sửa chữa thiết bị trong nhà máy"
@@ -156,8 +250,36 @@ export default function RepairRequestPage() {
         }
       />
 
+      {/* Stats summary */}
+      <div className="rr-stats">
+        {stats.map((s) => (
+          <div key={s.key} className="rr-stat surface-card">
+            <span className="rr-stat-icon" style={{ color: s.color }}>{s.icon}</span>
+            <div className="rr-stat-body">
+              <span className="rr-stat-value">{s.value}</span>
+              <span className="rr-stat-label">{s.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter pills (truy cập nhanh các trạng thái thường dùng) */}
+      <div className="rr-filter-pills">
+        {FILTER_PILLS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            className={`rr-pill ${filterStatus === p.key ? 'active' : ''}`}
+            onClick={() => setFilterStatus(p.key)}
+          >
+            {p.label}
+            <span className="rr-pill-count">{pillCounts[p.key] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Toolbar: Search + Filter */}
-      <div className="rr-toolbar surface-card" data-aos="fade-up">
+      <div className="rr-toolbar surface-card">
         <div className="rr-toolbar-left">
           <SearchBox
             placeholder="Tìm theo mã KKS hoặc tên thiết bị..."
@@ -166,17 +288,6 @@ export default function RepairRequestPage() {
           />
         </div>
         <div className="rr-toolbar-right">
-          {/* Quick filter: Đang chờ xử lý */}
-          <button
-            type="button"
-            className={`rr-quick-chip ${filterStatus === REQUEST_STATUS.CHO_DUYET ? 'active' : ''}`}
-            onClick={togglePending}
-            title="Lọc nhanh các yêu cầu đang chờ xử lý"
-          >
-            Đang chờ xử lý
-            <span className="rr-quick-count">{pendingCount}</span>
-          </button>
-
           {/* Switch: Chỉ yêu cầu của tôi */}
           <Form.Check
             type="switch"
@@ -226,19 +337,18 @@ export default function RepairRequestPage() {
           />
         </div>
       ) : (
-        <div className="rr-table-wrapper surface-card" data-aos="fade-up" data-aos-delay="100">
+        <div className="rr-table-wrapper surface-card">
           <div className="data-table-scroll">
             <Table hover className="data-table rr-table">
               <thead>
                 <tr>
-                  <th style={{ width: 48 }}>#</th>
-                  <th style={{ width: 100 }}>Mã KKS</th>
-                  <th>Thiết bị</th>
-                  <th>Mô tả sự cố</th>
-                  <th style={{ width: 110 }}>Ưu tiên</th>
-                  <th style={{ width: 130 }}>Trạng thái</th>
-                  <th style={{ width: 145 }}>Ngày tạo</th>
-                  <th style={{ width: 120 }}>Thao tác</th>
+                  <th style={{ width: '5%' }}>#</th>
+                  <th style={{ width: '15%' }}>Mã KKS</th>
+                  <th style={{ width: '22%' }}>Thiết bị</th>
+                  <th style={{ width: '16%' }}>Ưu tiên</th>
+                  <th style={{ width: '16%' }}>Trạng thái</th>
+                  <th style={{ width: '16%' }}>Ngày tạo</th>
+                  <th style={{ width: '10%' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,11 +358,8 @@ export default function RepairRequestPage() {
                     <td>
                       <code className="code-tag">{req.maKKS}</code>
                     </td>
-                    <td className="text-truncate" style={{ maxWidth: 180 }}>
+                    <td className="rr-cell-truncate" title={req.tenThietBi}>
                       {req.tenThietBi}
-                    </td>
-                    <td className="text-truncate" style={{ maxWidth: 250 }}>
-                      {req.moTaSuCo}
                     </td>
                     <td>
                       <span
@@ -283,6 +390,46 @@ export default function RepairRequestPage() {
                         >
                           <BsEye />
                         </button>
+                        {/* Sửa: chỉ khi CHO_DUYET và là người tạo */}
+                        {req.trangThai === REQUEST_STATUS.CHO_DUYET && req.nguoiTao === currentUserName && (
+                          <button
+                            className="btn btn-sm btn-outline-warning"
+                            onClick={() => setEditTarget(req)}
+                            title="Sửa"
+                          >
+                            <BsPencilSquare />
+                          </button>
+                        )}
+                        {/* Duyệt / Từ chối: chỉ khi CHO_DUYET và user có quyền */}
+                        {req.trangThai === REQUEST_STATUS.CHO_DUYET && canApprove && (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline-success"
+                              onClick={() => setApproveTarget(req)}
+                              title="Duyệt"
+                            >
+                              <BsCheckCircle />
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => setRejectTarget(req)}
+                              title="Từ chối"
+                            >
+                              <BsXCircle />
+                            </button>
+                          </>
+                        )}
+                        {/* Tạo PCT: chỉ khi DA_DUYET và user có quyền */}
+                        {req.trangThai === REQUEST_STATUS.DA_DUYET && canCreatePCT && (
+                          <button
+                            className="btn btn-sm btn-outline-info"
+                            onClick={() => setPctTarget(req)}
+                            title="Tạo Phiếu công tác"
+                          >
+                            <BsFileEarmarkPlus />
+                          </button>
+                        )}
+                        {/* Xóa: chỉ khi CHO_DUYET */}
                         {req.trangThai === REQUEST_STATUS.CHO_DUYET && (
                           <button
                             className="btn btn-sm btn-outline-danger"
@@ -302,17 +449,49 @@ export default function RepairRequestPage() {
         </div>
       )}
 
-      {/* Create Request Modal */}
+      {/* Create / Edit Request Modal */}
       <CreateRequestModal
-        show={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        show={showCreateModal || !!editTarget}
+        onClose={() => { setShowCreateModal(false); setEditTarget(null); }}
         onSuccess={handleCreateSuccess}
+        editRequest={editTarget}
       />
 
-      {/* Detail Modal (read-only) — Phiếu yêu cầu KHÁC Phiếu công tác */}
+      {/* Detail Modal (read-only) */}
       <RequestDetailModal
         request={detailTarget}
         onClose={() => setDetailTarget(null)}
+      />
+
+      {/* Approve Confirm Modal */}
+      <ConfirmModal
+        show={!!approveTarget}
+        onClose={() => setApproveTarget(null)}
+        onConfirm={handleApprove}
+        title="Duyệt yêu cầu sửa chữa"
+        message={
+          approveTarget
+            ? `Duyệt yêu cầu cho thiết bị "${approveTarget.tenThietBi}" (${approveTarget.maKKS})? Sau khi duyệt, yêu cầu sẽ chuyển sang trạng thái "Đã duyệt" và có thể tạo Phiếu công tác.`
+            : ''
+        }
+        confirmText="Duyệt"
+        variant="primary"
+        loading={approving}
+      />
+
+      {/* Reject Confirm Modal */}
+      <ConfirmModal
+        show={!!rejectTarget}
+        onClose={() => setRejectTarget(null)}
+        onConfirm={handleReject}
+        title="Từ chối yêu cầu sửa chữa"
+        message={
+          rejectTarget
+            ? `Từ chối yêu cầu cho thiết bị "${rejectTarget.tenThietBi}" (${rejectTarget.maKKS})? Hành động này không thể hoàn tác.`
+            : ''
+        }
+        confirmText="Từ chối"
+        loading={rejecting}
       />
 
       {/* Delete Confirm Modal */}
@@ -328,6 +507,17 @@ export default function RepairRequestPage() {
         }
         confirmText="Xoá"
         loading={deleting}
+      />
+
+      {/* Tạo Phiếu Công tác từ Yêu cầu */}
+      <CreateWorkOrderModal
+        show={!!pctTarget}
+        request={pctTarget}
+        onClose={() => setPctTarget(null)}
+        onCreated={() => {
+          setPctTarget(null);
+          loadRequests();
+        }}
       />
     </div>
   );
