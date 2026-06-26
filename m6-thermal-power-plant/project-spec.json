@@ -1,0 +1,1915 @@
+{
+    "project":  {
+                    "name":  "Phần mềm SCMS",
+                    "description":  "Hệ thống quản lý thiết bị, sửa chữa và bảo dưỡng nhà máy nhiệt điện ",
+                    "sourceFile":  "userstory_SCMS.xlsx",
+                    "firstSheet":  "Chức năng dự án (2)"
+                },
+    "focusTask":  {
+                      "scope":  "Sheet 1, columns D-G, rows 43-48",
+                      "member":  "TRITP",
+                      "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                      "stories":  [
+                                      {
+                                          "excelRow":  43,
+                                          "stt":  "39",
+                                          "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                          "feature":  "Có thể xem danh sách các request có trạng thái đang chờ xử lý",
+                                          "note":  "",
+                                          "member":  "TRITP",
+                                          "sprint":  "Sprint 1"
+                                      },
+                                      {
+                                          "excelRow":  44,
+                                          "stt":  "40",
+                                          "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                          "feature":  "Tôi có thể tạo một phiếu công tác (PCT) từ 1 Request của trưởng ca/trưởng kip ",
+                                          "note":  "Thông tin thiết bị lấy từ request, thêm người lãnh đạo công việc, Chỉ huy trực tiếp, Người giám sát an toàn và nhân viên làm việc",
+                                          "member":  "TRITP",
+                                          "sprint":  "Sprint 1"
+                                      },
+                                      {
+                                          "excelRow":  45,
+                                          "stt":  "41",
+                                          "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                          "feature":  "Tôi có thể tạo phiếu cấp vật tư tiêu hoa dựa trên Phiếu Công tác. Xuất file PDF",
+                                          "note":  "",
+                                          "member":  "TRITP",
+                                          "sprint":  "Sprint 2"
+                                      },
+                                      {
+                                          "excelRow":  46,
+                                          "stt":  "42",
+                                          "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                          "feature":  "Xem danh sách các PCT, tìm kiếm các phiếu công tác theo nội dụng hoặc theo số PCT",
+                                          "note":  "",
+                                          "member":  "TRITP",
+                                          "sprint":  "Sprint 3"
+                                      },
+                                      {
+                                          "excelRow":  47,
+                                          "stt":  "43",
+                                          "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                          "feature":  "Xuất phiếu công tác => để cho các bên ký vào trước khi sử chữa",
+                                          "note":  "In ra fle PDF",
+                                          "member":  "TRITP",
+                                          "sprint":  "Sprint 3"
+                                      },
+                                      {
+                                          "excelRow":  48,
+                                          "stt":  "44",
+                                          "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                          "feature":  "Xem chi tiết một phiếu công tác, cập nhật nhân viên tham gia trong  phiếu công tác",
+                                          "note":  "",
+                                          "member":  "TRITP",
+                                          "sprint":  "Sprint 4"
+                                      }
+                                  ]
+                  },
+    "functionalRequirements":  [
+                                   {
+                                       "excelRow":  8,
+                                       "stt":  "1",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể thêm mới , cập nhật một phòng ban(Phân xưởng vận hành, Phân Xưởng sửa chữa, Phòng kế hoạch vật tư, Nhân sự)",
+                                       "note":  "",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  9,
+                                       "stt":  "2",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể xem danh sách, xoá các phòng ban",
+                                       "note":  "",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  10,
+                                       "stt":  "3",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể thêm mới  và cập nhật một nhân viên cho một phòng bản",
+                                       "note":  "lưu hình ảnh",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  11,
+                                       "stt":  "4",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể xem danh sách và tìm kiếm, xoá nhân viên của một phòng ban",
+                                       "note":  "",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  12,
+                                       "stt":  "5",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể tạo mới, khoá 1 tài khoản",
+                                       "note":  "",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  13,
+                                       "stt":  "6",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể xem danh sách các tài khoản",
+                                       "note":  "",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  14,
+                                       "stt":  "7",
+                                       "role":  "Nhân sự",
+                                       "feature":  "Tôi có thể  cấp tài khoản cho một nhân viên",
+                                       "note":  "Công ty có nhiều nhân viên, chỉ cấp tài khoản cho nhân viên làm việc trong hệ thống",
+                                       "member":  "HIEUNV",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  15,
+                                       "stt":  "9",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tôi có thể xem danh sách và tìm kiếm và xoá hệ thống thiết bị",
+                                       "note":  "",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  16,
+                                       "stt":  "10",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tôi có thể thêm mới, cập nhật một hệ thống",
+                                       "note":  "",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  17,
+                                       "stt":  "11",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tôi có thể xem danh sách các thiết bị có trong một hệ thống",
+                                       "note":  "",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  18,
+                                       "stt":  "12",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tìm kiếm thiết bị theo tên, mã KKS, trạng thái, loại thiết bị của một hệ thống",
+                                       "note":  "",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  19,
+                                       "stt":  "13",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tôi có thể thêm một thiết bị vào trong một hệ thống",
+                                       "note":  "Có hình ảnh thiết bị, tên, KKS",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  20,
+                                       "stt":  "14",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tôi có thể xem thông số chi tiết của một thiết bị trong hệ thống => xuất file PDF",
+                                       "note":  "Xuất file PDF khi cần thiết",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  21,
+                                       "stt":  "15",
+                                       "role":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                       "feature":  "Tôi có thể  thêm các thông số  cụ thể  cho  một thiết bị  trong hệ thống",
+                                       "note":  "Các thông số vận hành, chi tiết của một thiết bị",
+                                       "member":  "THUNA",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  22,
+                                       "stt":  "18",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể thêm mới và cập nhật 1 danh mục vật tư tiêu hao",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  23,
+                                       "stt":  "19",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể xem danh sách, tìm kiếm và xoá một danh mục vật tư tiêu hao",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  24,
+                                       "stt":  "20",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể thêm mới và cập nhật 1 danh mục vật tư thay thế",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  25,
+                                       "stt":  "21",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể xem danh sách, tìm kiếm và xoá một danh mục vật tư thay thế",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  26,
+                                       "stt":  "22",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể nhập vật tư tiêu hao vào trong kho",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  27,
+                                       "stt":  "23",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể xem danh sách, tìm kiếm các loại vật tư tiêu hao có trong kho",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  28,
+                                       "stt":  "24",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể nhập vật tư thay thế hao vào trong kho",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  29,
+                                       "stt":  "25",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Tôi có thể xem danh sách, tìm kiếm các loại vật tư tiêu thay thế có trong kho",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  30,
+                                       "stt":  "26",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Cấp phát vật tư tiêu hao cho từng phiếu cấp vật ",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  31,
+                                       "stt":  "27",
+                                       "role":  "Thủ kho vật tư",
+                                       "feature":  "Cấp phát vật tư thay thế cho từng phiếu cấp vật",
+                                       "note":  "",
+                                       "member":  "TRUONGNT",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  32,
+                                       "stt":  "28",
+                                       "role":  "Thu kho CCDC",
+                                       "feature":  "Tôi có thể thêm, cập nhật số lượng CCDC vào trong kho",
+                                       "note":  "",
+                                       "member":  "TRUNGNH",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  33,
+                                       "stt":  "29",
+                                       "role":  "Thu kho CCDC",
+                                       "feature":  "Tôi có thể xem danh sách tìm kiếm theo tên, chủng loại  CCDC trong kho",
+                                       "note":  "",
+                                       "member":  "TRUNGNH",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  34,
+                                       "stt":  "30",
+                                       "role":  "Thu kho CCDC",
+                                       "feature":  "Tôi có thể huỷ các CCDC bị hư hỏng",
+                                       "note":  "",
+                                       "member":  "TRUNGNH",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  35,
+                                       "stt":  "31",
+                                       "role":  "Thu kho CCDC",
+                                       "feature":  "Quản lý cho mượn và trả CCDC",
+                                       "note":  "",
+                                       "member":  "TRUNGNH",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  36,
+                                       "stt":  "32",
+                                       "role":  "Hệ thống ",
+                                       "feature":  "Tự động Gửi thông báo email đến cách nhân viên mượn công cụ dụng quá thời hạn quy định",
+                                       "note":  "",
+                                       "member":  "TRUNGNH",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  37,
+                                       "stt":  "33",
+                                       "role":  "Người dùng",
+                                       "feature":  "Đăng nhập",
+                                       "note":  "Sau khi đăng nhập tuỳ thuộc vào role sẽ chuyển hướng đến màn hình của từng Role",
+                                       "member":  "HIEUNT",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  38,
+                                       "stt":  "34",
+                                       "role":  "Hệ thống",
+                                       "feature":  "Phân quyền hệ thống",
+                                       "note":  "Phân quyền cho tất cả cá Role trong hệ thống",
+                                       "member":  "HIEUNT",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  39,
+                                       "stt":  "35",
+                                       "role":  "Trưởng Ca/Kíp vận hành",
+                                       "feature":  "Tôi có thể tạo mới, xoá một yêu cầu(request) sửa chữa 1 thiết bị",
+                                       "note":  "Khi có một thiết bị bị hỏng cần sửa chữa thì TC/TK sẽ tạo một request để yêu cầu bên phân xưởng sửa chữa khắc phục",
+                                       "member":  "HIEUNT",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  40,
+                                       "stt":  "36",
+                                       "role":  "Trưởng Ca/Kíp vận hành",
+                                       "feature":  "Xem danh sách các request đã tạo, lọc các reqest đang chờ xử lý",
+                                       "note":  "",
+                                       "member":  "HIEUNT",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  41,
+                                       "stt":  "37",
+                                       "role":  "Trưởng Ca/Kíp vận hành",
+                                       "feature":  "Có thể mở Phiếu công tác (PCT) hoặc đóng phiếu công tác hàng ngày",
+                                       "note":  "Một phiếu công tác có thể  làm trong nhiều ngày",
+                                       "member":  "HIEUNT",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  42,
+                                       "stt":  "38",
+                                       "role":  "Trưởng Ca/Kíp vận hành",
+                                       "feature":  "Khoá  phiếu công tác khi đơn vị sửa chữa đã hoàn thành xong sửa chữa",
+                                       "note":  "Sau kho độ sửa chữa đã xong, TC, TK xá nhận phiếu đã hoàn thành",
+                                       "member":  "HIEUNT",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  43,
+                                       "stt":  "39",
+                                       "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                       "feature":  "Có thể xem danh sách các request có trạng thái đang chờ xử lý",
+                                       "note":  "",
+                                       "member":  "TRITP",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  44,
+                                       "stt":  "40",
+                                       "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                       "feature":  "Tôi có thể tạo một phiếu công tác (PCT) từ 1 Request của trưởng ca/trưởng kip ",
+                                       "note":  "Thông tin thiết bị lấy từ request, thêm người lãnh đạo công việc, Chỉ huy trực tiếp, Người giám sát an toàn và nhân viên làm việc",
+                                       "member":  "TRITP",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  45,
+                                       "stt":  "41",
+                                       "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                       "feature":  "Tôi có thể tạo phiếu cấp vật tư tiêu hoa dựa trên Phiếu Công tác. Xuất file PDF",
+                                       "note":  "",
+                                       "member":  "TRITP",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  46,
+                                       "stt":  "42",
+                                       "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                       "feature":  "Xem danh sách các PCT, tìm kiếm các phiếu công tác theo nội dụng hoặc theo số PCT",
+                                       "note":  "",
+                                       "member":  "TRITP",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  47,
+                                       "stt":  "43",
+                                       "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                       "feature":  "Xuất phiếu công tác => để cho các bên ký vào trước khi sử chữa",
+                                       "note":  "In ra fle PDF",
+                                       "member":  "TRITP",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  48,
+                                       "stt":  "44",
+                                       "role":  "Quản đốc sửa chữa /Tổ trưởng",
+                                       "feature":  "Xem chi tiết một phiếu công tác, cập nhật nhân viên tham gia trong  phiếu công tác",
+                                       "note":  "",
+                                       "member":  "TRITP",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  49,
+                                       "stt":  "45",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Tạo biên bản đánh giá kỹ thuật đối với thiết bị hư hỏng  và Xuất biên bản đánh giá ký thuật",
+                                       "note":  "Trong quá trình sửa chữa, nếu thiết bị hư hỏng cần vật tư thay thế thì phải làm biên bản đánh giá kỹ thuật\nTạo bản đánh giá kỹ thuật trên hệ thống có một số mô tả chung \n=> Xuất biểu mẫu file PDF , các bên ký => sau đó upload lưu trên hệ thống",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 1"
+                                   },
+                                   {
+                                       "excelRow":  50,
+                                       "stt":  "46",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Tôi có thể tạo phiếu  vật tư thay thế  dựa trên bản đánh giá kỹ thuật của thiết bị. Xuất file PDF",
+                                       "note":  "In ra fle PDF",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  51,
+                                       "stt":  "47",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Ghi lại lịch sửa chữa của thiết bị",
+                                       "note":  "Sau khi tiết bị sửa xong cần ghi lại lịch sử sửa chữa",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 2"
+                                   },
+                                   {
+                                       "excelRow":  52,
+                                       "stt":  "48",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Tôi có thể thêm mới, cập nhất  thiết bị sử dụng mỡ nhớt vào trong danh sách quản lý dầu mỡ",
+                                       "note":  "",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  53,
+                                       "stt":  "49",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Tôi có thể xem danh sách, tìm kiếm ( theo tên, theo loại dầu/mỡ) các thiết bị sử dụng dầu mỡ",
+                                       "note":  "",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 3"
+                                   },
+                                   {
+                                       "excelRow":  54,
+                                       "stt":  "50",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Tự động thông báo trước 3 ngày đối với thiết bị cần phải bổ sung  mỡ hoặc thay thế dầu",
+                                       "note":  "",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 4"
+                                   },
+                                   {
+                                       "excelRow":  55,
+                                       "stt":  "51",
+                                       "role":  "Tổ Trưởng",
+                                       "feature":  "Chọn một số thiết bị đã đến thời kỳ thay dầu  hoặc bổ sung mỡ và xuất ra file PDF 1 bản checklist",
+                                       "note":  "",
+                                       "member":  "HAOCTP",
+                                       "sprint":  "Sprint 4"
+                                   }
+                               ],
+    "rawSheets":  {
+                      "Chức năng dự án (2)":  [
+                                                  {
+                                                      "row":  3,
+                                                      "cells":  {
+                                                                    "D":  "Phần mềm SCMS",
+                                                                    "E":  "Hệ thống quản lý thiết bị, sửa chữa và bảo dưỡng nhà máy nhiệt điện "
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  5,
+                                                      "cells":  {
+                                                                    "A":  "STT",
+                                                                    "B":  "Role"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  6,
+                                                      "cells":  {
+                                                                    "A":  "1",
+                                                                    "B":  "Nhân sự"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  7,
+                                                      "cells":  {
+                                                                    "A":  "2",
+                                                                    "B":  "Thủ kho vật tư",
+                                                                    "C":  "STT",
+                                                                    "D":  "Role",
+                                                                    "E":  "Chức năng",
+                                                                    "F":  "Ghi chú",
+                                                                    "G":  "Thành viên",
+                                                                    "H":  "Sprint"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  8,
+                                                      "cells":  {
+                                                                    "A":  "3",
+                                                                    "B":  "Thủ kho CCDC",
+                                                                    "C":  "1",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể thêm mới , cập nhật một phòng ban(Phân xưởng vận hành, Phân Xưởng sửa chữa, Phòng kế hoạch vật tư, Nhân sự)",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  9,
+                                                      "cells":  {
+                                                                    "A":  "4",
+                                                                    "B":  "Quản đốc phân xưởng vận hành",
+                                                                    "C":  "2",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể xem danh sách, xoá các phòng ban",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  10,
+                                                      "cells":  {
+                                                                    "A":  "5",
+                                                                    "B":  "Trưởng Ca",
+                                                                    "C":  "3",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể thêm mới  và cập nhật một nhân viên cho một phòng bản",
+                                                                    "F":  "lưu hình ảnh",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  11,
+                                                      "cells":  {
+                                                                    "A":  "6",
+                                                                    "B":  "Trưởng Kíp",
+                                                                    "C":  "4",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể xem danh sách và tìm kiếm, xoá nhân viên của một phòng ban",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  12,
+                                                      "cells":  {
+                                                                    "A":  "7",
+                                                                    "B":  "Quản đốc sửa chữa",
+                                                                    "C":  "5",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể tạo mới, khoá 1 tài khoản",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  13,
+                                                      "cells":  {
+                                                                    "A":  "8",
+                                                                    "B":  "Tổ trưởng",
+                                                                    "C":  "6",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể xem danh sách các tài khoản",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  14,
+                                                      "cells":  {
+                                                                    "A":  "9",
+                                                                    "B":  "Admin (tất cả các quyền)",
+                                                                    "C":  "7",
+                                                                    "D":  "Nhân sự",
+                                                                    "E":  "Tôi có thể  cấp tài khoản cho một nhân viên",
+                                                                    "F":  "Công ty có nhiều nhân viên, chỉ cấp tài khoản cho nhân viên làm việc trong hệ thống",
+                                                                    "G":  "HIEUNV",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  15,
+                                                      "cells":  {
+                                                                    "C":  "9",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tôi có thể xem danh sách và tìm kiếm và xoá hệ thống thiết bị",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  16,
+                                                      "cells":  {
+                                                                    "C":  "10",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tôi có thể thêm mới, cập nhật một hệ thống",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  17,
+                                                      "cells":  {
+                                                                    "C":  "11",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tôi có thể xem danh sách các thiết bị có trong một hệ thống",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  18,
+                                                      "cells":  {
+                                                                    "C":  "12",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tìm kiếm thiết bị theo tên, mã KKS, trạng thái, loại thiết bị của một hệ thống",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  19,
+                                                      "cells":  {
+                                                                    "C":  "13",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tôi có thể thêm một thiết bị vào trong một hệ thống",
+                                                                    "F":  "Có hình ảnh thiết bị, tên, KKS",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  20,
+                                                      "cells":  {
+                                                                    "C":  "14",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tôi có thể xem thông số chi tiết của một thiết bị trong hệ thống => xuất file PDF",
+                                                                    "F":  "Xuất file PDF khi cần thiết",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  21,
+                                                      "cells":  {
+                                                                    "C":  "15",
+                                                                    "D":  "Quản đốc vận hành/kỹ thuật viên PXVH",
+                                                                    "E":  "Tôi có thể  thêm các thông số  cụ thể  cho  một thiết bị  trong hệ thống",
+                                                                    "F":  "Các thông số vận hành, chi tiết của một thiết bị",
+                                                                    "G":  "THUNA",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  22,
+                                                      "cells":  {
+                                                                    "C":  "18",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể thêm mới và cập nhật 1 danh mục vật tư tiêu hao",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  23,
+                                                      "cells":  {
+                                                                    "C":  "19",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể xem danh sách, tìm kiếm và xoá một danh mục vật tư tiêu hao",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  24,
+                                                      "cells":  {
+                                                                    "C":  "20",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể thêm mới và cập nhật 1 danh mục vật tư thay thế",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  25,
+                                                      "cells":  {
+                                                                    "C":  "21",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể xem danh sách, tìm kiếm và xoá một danh mục vật tư thay thế",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  26,
+                                                      "cells":  {
+                                                                    "C":  "22",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể nhập vật tư tiêu hao vào trong kho",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  27,
+                                                      "cells":  {
+                                                                    "C":  "23",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể xem danh sách, tìm kiếm các loại vật tư tiêu hao có trong kho",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  28,
+                                                      "cells":  {
+                                                                    "C":  "24",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể nhập vật tư thay thế hao vào trong kho",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  29,
+                                                      "cells":  {
+                                                                    "C":  "25",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Tôi có thể xem danh sách, tìm kiếm các loại vật tư tiêu thay thế có trong kho",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  30,
+                                                      "cells":  {
+                                                                    "C":  "26",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Cấp phát vật tư tiêu hao cho từng phiếu cấp vật ",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  31,
+                                                      "cells":  {
+                                                                    "C":  "27",
+                                                                    "D":  "Thủ kho vật tư",
+                                                                    "E":  "Cấp phát vật tư thay thế cho từng phiếu cấp vật",
+                                                                    "G":  "TRUONGNT",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  32,
+                                                      "cells":  {
+                                                                    "C":  "28",
+                                                                    "D":  "Thu kho CCDC",
+                                                                    "E":  "Tôi có thể thêm, cập nhật số lượng CCDC vào trong kho",
+                                                                    "G":  "TRUNGNH",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  33,
+                                                      "cells":  {
+                                                                    "C":  "29",
+                                                                    "D":  "Thu kho CCDC",
+                                                                    "E":  "Tôi có thể xem danh sách tìm kiếm theo tên, chủng loại  CCDC trong kho",
+                                                                    "G":  "TRUNGNH",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  34,
+                                                      "cells":  {
+                                                                    "C":  "30",
+                                                                    "D":  "Thu kho CCDC",
+                                                                    "E":  "Tôi có thể huỷ các CCDC bị hư hỏng",
+                                                                    "G":  "TRUNGNH",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  35,
+                                                      "cells":  {
+                                                                    "C":  "31",
+                                                                    "D":  "Thu kho CCDC",
+                                                                    "E":  "Quản lý cho mượn và trả CCDC",
+                                                                    "G":  "TRUNGNH",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  36,
+                                                      "cells":  {
+                                                                    "C":  "32",
+                                                                    "D":  "Hệ thống ",
+                                                                    "E":  "Tự động Gửi thông báo email đến cách nhân viên mượn công cụ dụng quá thời hạn quy định",
+                                                                    "G":  "TRUNGNH",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  37,
+                                                      "cells":  {
+                                                                    "C":  "33",
+                                                                    "D":  "Người dùng",
+                                                                    "E":  "Đăng nhập",
+                                                                    "F":  "Sau khi đăng nhập tuỳ thuộc vào role sẽ chuyển hướng đến màn hình của từng Role",
+                                                                    "G":  "HIEUNT",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  38,
+                                                      "cells":  {
+                                                                    "C":  "34",
+                                                                    "D":  "Hệ thống",
+                                                                    "E":  "Phân quyền hệ thống",
+                                                                    "F":  "Phân quyền cho tất cả cá Role trong hệ thống",
+                                                                    "G":  "HIEUNT",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  39,
+                                                      "cells":  {
+                                                                    "C":  "35",
+                                                                    "D":  "Trưởng Ca/Kíp vận hành",
+                                                                    "E":  "Tôi có thể tạo mới, xoá một yêu cầu(request) sửa chữa 1 thiết bị",
+                                                                    "F":  "Khi có một thiết bị bị hỏng cần sửa chữa thì TC/TK sẽ tạo một request để yêu cầu bên phân xưởng sửa chữa khắc phục",
+                                                                    "G":  "HIEUNT",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  40,
+                                                      "cells":  {
+                                                                    "C":  "36",
+                                                                    "D":  "Trưởng Ca/Kíp vận hành",
+                                                                    "E":  "Xem danh sách các request đã tạo, lọc các reqest đang chờ xử lý",
+                                                                    "G":  "HIEUNT",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  41,
+                                                      "cells":  {
+                                                                    "C":  "37",
+                                                                    "D":  "Trưởng Ca/Kíp vận hành",
+                                                                    "E":  "Có thể mở Phiếu công tác (PCT) hoặc đóng phiếu công tác hàng ngày",
+                                                                    "F":  "Một phiếu công tác có thể  làm trong nhiều ngày",
+                                                                    "G":  "HIEUNT",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  42,
+                                                      "cells":  {
+                                                                    "C":  "38",
+                                                                    "D":  "Trưởng Ca/Kíp vận hành",
+                                                                    "E":  "Khoá  phiếu công tác khi đơn vị sửa chữa đã hoàn thành xong sửa chữa",
+                                                                    "F":  "Sau kho độ sửa chữa đã xong, TC, TK xá nhận phiếu đã hoàn thành",
+                                                                    "G":  "HIEUNT",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  43,
+                                                      "cells":  {
+                                                                    "C":  "39",
+                                                                    "D":  "Quản đốc sửa chữa /Tổ trưởng",
+                                                                    "E":  "Có thể xem danh sách các request có trạng thái đang chờ xử lý",
+                                                                    "G":  "TRITP",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  44,
+                                                      "cells":  {
+                                                                    "C":  "40",
+                                                                    "D":  "Quản đốc sửa chữa /Tổ trưởng",
+                                                                    "E":  "Tôi có thể tạo một phiếu công tác (PCT) từ 1 Request của trưởng ca/trưởng kip ",
+                                                                    "F":  "Thông tin thiết bị lấy từ request, thêm người lãnh đạo công việc, Chỉ huy trực tiếp, Người giám sát an toàn và nhân viên làm việc",
+                                                                    "G":  "TRITP",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  45,
+                                                      "cells":  {
+                                                                    "C":  "41",
+                                                                    "D":  "Quản đốc sửa chữa /Tổ trưởng",
+                                                                    "E":  "Tôi có thể tạo phiếu cấp vật tư tiêu hoa dựa trên Phiếu Công tác. Xuất file PDF",
+                                                                    "G":  "TRITP",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  46,
+                                                      "cells":  {
+                                                                    "C":  "42",
+                                                                    "D":  "Quản đốc sửa chữa /Tổ trưởng",
+                                                                    "E":  "Xem danh sách các PCT, tìm kiếm các phiếu công tác theo nội dụng hoặc theo số PCT",
+                                                                    "G":  "TRITP",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  47,
+                                                      "cells":  {
+                                                                    "C":  "43",
+                                                                    "D":  "Quản đốc sửa chữa /Tổ trưởng",
+                                                                    "E":  "Xuất phiếu công tác => để cho các bên ký vào trước khi sử chữa",
+                                                                    "F":  "In ra fle PDF",
+                                                                    "G":  "TRITP",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  48,
+                                                      "cells":  {
+                                                                    "C":  "44",
+                                                                    "D":  "Quản đốc sửa chữa /Tổ trưởng",
+                                                                    "E":  "Xem chi tiết một phiếu công tác, cập nhật nhân viên tham gia trong  phiếu công tác",
+                                                                    "G":  "TRITP",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  49,
+                                                      "cells":  {
+                                                                    "C":  "45",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Tạo biên bản đánh giá kỹ thuật đối với thiết bị hư hỏng  và Xuất biên bản đánh giá ký thuật",
+                                                                    "F":  "Trong quá trình sửa chữa, nếu thiết bị hư hỏng cần vật tư thay thế thì phải làm biên bản đánh giá kỹ thuật\nTạo bản đánh giá kỹ thuật trên hệ thống có một số mô tả chung \n=> Xuất biểu mẫu file PDF , các bên ký => sau đó upload lưu trên hệ thống",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 1"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  50,
+                                                      "cells":  {
+                                                                    "C":  "46",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Tôi có thể tạo phiếu  vật tư thay thế  dựa trên bản đánh giá kỹ thuật của thiết bị. Xuất file PDF",
+                                                                    "F":  "In ra fle PDF",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  51,
+                                                      "cells":  {
+                                                                    "C":  "47",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Ghi lại lịch sửa chữa của thiết bị",
+                                                                    "F":  "Sau khi tiết bị sửa xong cần ghi lại lịch sử sửa chữa",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 2"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  52,
+                                                      "cells":  {
+                                                                    "C":  "48",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Tôi có thể thêm mới, cập nhất  thiết bị sử dụng mỡ nhớt vào trong danh sách quản lý dầu mỡ",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  53,
+                                                      "cells":  {
+                                                                    "C":  "49",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Tôi có thể xem danh sách, tìm kiếm ( theo tên, theo loại dầu/mỡ) các thiết bị sử dụng dầu mỡ",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 3"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  54,
+                                                      "cells":  {
+                                                                    "C":  "50",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Tự động thông báo trước 3 ngày đối với thiết bị cần phải bổ sung  mỡ hoặc thay thế dầu",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  },
+                                                  {
+                                                      "row":  55,
+                                                      "cells":  {
+                                                                    "C":  "51",
+                                                                    "D":  "Tổ Trưởng",
+                                                                    "E":  "Chọn một số thiết bị đã đến thời kỳ thay dầu  hoặc bổ sung mỡ và xuất ra file PDF 1 bản checklist",
+                                                                    "G":  "HAOCTP",
+                                                                    "H":  "Sprint 4"
+                                                                }
+                                                  }
+                                              ],
+                      "CCDC":  [
+                                   {
+                                       "row":  2,
+                                       "cells":  {
+                                                     "D":  "Danh mục CCCD trong khó"
+                                                 }
+                                   },
+                                   {
+                                       "row":  5,
+                                       "cells":  {
+                                                     "D":  "Mã CCDC",
+                                                     "E":  "Tên loại",
+                                                     "F":  "Loại",
+                                                     "G":  "Đơn vị",
+                                                     "H":  "Số lượng",
+                                                     "I":  "Mô tả thêm",
+                                                     "J":  "Ghi chủ"
+                                                 }
+                                   },
+                                   {
+                                       "row":  6,
+                                       "cells":  {
+                                                     "D":  "MCCDC -0001",
+                                                     "E":  "Bộ cơ lê 12 món",
+                                                     "F":  "Tháo lắp",
+                                                     "G":  "Bộ",
+                                                     "H":  "2",
+                                                     "I":  "từ 8 đến 32"
+                                                 }
+                                   },
+                                   {
+                                       "row":  7,
+                                       "cells":  {
+                                                     "D":  "MCCDC -0002",
+                                                     "E":  "Đồng hồ đo điện",
+                                                     "F":  "Đo điện",
+                                                     "G":  "Bộ",
+                                                     "H":  "4"
+                                                 }
+                                   },
+                                   {
+                                       "row":  8,
+                                       "cells":  {
+                                                     "D":  "MCCDC -0003"
+                                                 }
+                                   },
+                                   {
+                                       "row":  12,
+                                       "cells":  {
+                                                     "D":  "Bảng mượn"
+                                                 }
+                                   },
+                                   {
+                                       "row":  13,
+                                       "cells":  {
+                                                     "D":  "Mã mượn",
+                                                     "E":  "Mã CCDC",
+                                                     "F":  "Đơn vị",
+                                                     "G":  "Số lượng",
+                                                     "H":  " Mã Người mượn",
+                                                     "I":  "Mã nhân viện thủ kho",
+                                                     "J":  "Đang mượn/đã trả"
+                                                 }
+                                   }
+                               ],
+                      "Nhân sự":  [
+                                      {
+                                          "row":  5,
+                                          "cells":  {
+                                                        "D":  "PHONG BAN"
+                                                    }
+                                      },
+                                      {
+                                          "row":  6,
+                                          "cells":  {
+                                                        "C":  "SST",
+                                                        "D":  "Tên",
+                                                        "E":  "Ghi chú"
+                                                    }
+                                      },
+                                      {
+                                          "row":  7,
+                                          "cells":  {
+                                                        "C":  "1",
+                                                        "D":  "Nhân sự"
+                                                    }
+                                      },
+                                      {
+                                          "row":  8,
+                                          "cells":  {
+                                                        "C":  "2",
+                                                        "D":  "PX Vận hành"
+                                                    }
+                                      },
+                                      {
+                                          "row":  9,
+                                          "cells":  {
+                                                        "C":  "3",
+                                                        "D":  "PX Sửa chữa"
+                                                    }
+                                      },
+                                      {
+                                          "row":  10,
+                                          "cells":  {
+                                                        "C":  "4",
+                                                        "D":  "Kế hoạch vật tư"
+                                                    }
+                                      },
+                                      {
+                                          "row":  14,
+                                          "cells":  {
+                                                        "D":  "NHÂN SỰ"
+                                                    }
+                                      },
+                                      {
+                                          "row":  15,
+                                          "cells":  {
+                                                        "C":  "STT",
+                                                        "D":  "Mã NV",
+                                                        "E":  "Tên",
+                                                        "F":  "…",
+                                                        "G":  "Mã Phong ban"
+                                                    }
+                                      }
+                                  ],
+                      "Hệ thống thiết bị":  [
+                                                {
+                                                    "row":  4,
+                                                    "cells":  {
+                                                                  "D":  "Hệ thống",
+                                                                  "E":  "Lĩnh vực",
+                                                                  "F":  "Loại",
+                                                                  "G":  "KKS",
+                                                                  "H":  "Tên thiết bị",
+                                                                  "I":  "Tình trạng"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  5,
+                                                    "cells":  {
+                                                                  "D":  "Hệ thống xử lý nước thô",
+                                                                  "E":  "Cơ nhiệt",
+                                                                  "F":  "Bơm",
+                                                                  "G":  "ABC002M1",
+                                                                  "H":  "Bơm cấp nước thô",
+                                                                  "I":  "Đang vận hành"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  6,
+                                                    "cells":  {
+                                                                  "D":  "Hệ thống xử lý nước thô",
+                                                                  "E":  "Điện",
+                                                                  "F":  "Điện động",
+                                                                  "G":  "ABC002E1",
+                                                                  "H":  "Động cơ bơm nước thô",
+                                                                  "I":  "Đang sửa chữa"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  7,
+                                                    "cells":  {
+                                                                  "D":  "Hệ thống xử lý nước thô",
+                                                                  "E":  "CI",
+                                                                  "F":  "Thiết bị đo",
+                                                                  "G":  "ABC002I1",
+                                                                  "H":  "Đồng hồ đo áp suất đầu hút bơm nước thô",
+                                                                  "I":  "Đang dự phòng"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  18,
+                                                    "cells":  {
+                                                                  "D":  "HỆ THÔNNGS",
+                                                                  "H":  "Thiết bị",
+                                                                  "O":  "Chi tiết thiết bị"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  19,
+                                                    "cells":  {
+                                                                  "D":  "Mã hệ thống",
+                                                                  "E":  "Tên ",
+                                                                  "F":  "Ghi chú",
+                                                                  "H":  "Mã KKS",
+                                                                  "I":  "Tên thiết bị",
+                                                                  "J":  "Tình trạng",
+                                                                  "K":  "Mã HTT",
+                                                                  "L":  "Lĩnh Vực",
+                                                                  "M":  "Mã chi tiết thiết bị",
+                                                                  "O":  "Bơm/Quạt/Máy nén",
+                                                                  "S":  "Van"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  20,
+                                                    "cells":  {
+                                                                  "D":  "MHT -001",
+                                                                  "E":  "Hệ thống xử lý nước",
+                                                                  "O":  "STT",
+                                                                  "P":  "Thông số",
+                                                                  "Q":  "Giá trị",
+                                                                  "S":  "STT",
+                                                                  "T":  "Thông số",
+                                                                  "U":  "Giá trị"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  21,
+                                                    "cells":  {
+                                                                  "D":  "MHT -002",
+                                                                  "E":  "Hệ thống xử lý nước thải",
+                                                                  "O":  "1",
+                                                                  "P":  "Mã KKS",
+                                                                  "T":  "Mã KKS"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  22,
+                                                    "cells":  {
+                                                                  "D":  "MHT -003",
+                                                                  "E":  "Hệ thống Chữa cháy",
+                                                                  "O":  "1",
+                                                                  "P":  "Công suất (KW)",
+                                                                  "S":  "1",
+                                                                  "T":  "Loại"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  23,
+                                                    "cells":  {
+                                                                  "D":  "MHT -004",
+                                                                  "E":  "Hệ thống lò hơi phụ",
+                                                                  "O":  "2",
+                                                                  "P":  "Vòng quay (vòng/phút)",
+                                                                  "S":  "2",
+                                                                  "T":  "Áp suất  làm việc (bar)"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  24,
+                                                    "cells":  {
+                                                                  "D":  "MHT -005",
+                                                                  "E":  "Hệ thống nước làm mát",
+                                                                  "O":  "3",
+                                                                  "P":  "Loại ",
+                                                                  "S":  "3",
+                                                                  "T":  "Lưu lượng (m3/h)"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  25,
+                                                    "cells":  {
+                                                                  "O":  "4",
+                                                                  "P":  "Áp suất đầu đẩy (bar)",
+                                                                  "S":  "4",
+                                                                  "T":  "Môi chất làm việc"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  26,
+                                                    "cells":  {
+                                                                  "O":  "5",
+                                                                  "P":  "Lưu lượng (m3/h)",
+                                                                  "S":  "5",
+                                                                  "T":  "Đường kính đầu vào"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  27,
+                                                    "cells":  {
+                                                                  "O":  "6",
+                                                                  "P":  "Vòng bị DE",
+                                                                  "S":  "6",
+                                                                  "T":  "Đường kính đầu ra"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  28,
+                                                    "cells":  {
+                                                                  "O":  "7",
+                                                                  "P":  "Vòng NDE",
+                                                                  "S":  "7",
+                                                                  "T":  "Mô tả thêm"
+                                                              }
+                                                },
+                                                {
+                                                    "row":  29,
+                                                    "cells":  {
+                                                                  "O":  "8",
+                                                                  "P":  "Loại khớp nối",
+                                                                  "S":  "8"
+                                                              }
+                                                }
+                                            ],
+                      "Danh mục vật tư":  [
+                                              {
+                                                  "row":  4,
+                                                  "cells":  {
+                                                                "D":  "Vật tư tiêu hoa",
+                                                                "I":  "Vật tư thay thế"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  5,
+                                                  "cells":  {
+                                                                "D":  "STT",
+                                                                "E":  "Mã vật tư",
+                                                                "F":  "Tên vật tư",
+                                                                "G":  "Mô tả chung",
+                                                                "I":  "STT",
+                                                                "J":  "Mã vật tư",
+                                                                "K":  "Tên vật tư",
+                                                                "L":  "Vị trí thay mới",
+                                                                "M":  "Mô tả thêm"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  6,
+                                                  "cells":  {
+                                                                "D":  "1",
+                                                                "E":  "MVTH-001",
+                                                                "F":  "RP7",
+                                                                "G":  "Dùng tẩy rửa",
+                                                                "I":  "1",
+                                                                "J":  "VTTT-001",
+                                                                "K":  "Vòng bi SKF 2212EK",
+                                                                "L":  "Thay cho rulo băng tải than",
+                                                                "M":  "Vòng bi chịu tải"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  7,
+                                                  "cells":  {
+                                                                "D":  "2",
+                                                                "E":  "MVTH-002",
+                                                                "F":  "Dẻ lau"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  8,
+                                                  "cells":  {
+                                                                "D":  "3",
+                                                                "E":  "MVTH-003",
+                                                                "F":  "Dầu bôi trơn loại 1"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  9,
+                                                  "cells":  {
+                                                                "D":  "4",
+                                                                "E":  "MVTH-004"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  16,
+                                                  "cells":  {
+                                                                "E":  "Xuất và Nhập vật tư tiêu hao"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  17,
+                                                  "cells":  {
+                                                                "D":  "STT",
+                                                                "E":  "Mã hoá  đơn",
+                                                                "F":  "Ngày nhập kho/xuất kho",
+                                                                "G":  "Mã vật tư",
+                                                                "H":  "Loại (Xuất/Nhập)",
+                                                                "I":  "Đơn vị",
+                                                                "J":  "Số lượng",
+                                                                "K":  "Mã nhân viên"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  18,
+                                                  "cells":  {
+                                                                "D":  "1",
+                                                                "E":  "HDNK-001",
+                                                                "F":  "46299",
+                                                                "G":  "MVTH-001",
+                                                                "H":  "IMPORT",
+                                                                "I":  "Chai",
+                                                                "J":  "10",
+                                                                "K":  "ChanhtTV"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  19,
+                                                  "cells":  {
+                                                                "D":  "2",
+                                                                "E":  "HDNK-001",
+                                                                "F":  "46299",
+                                                                "G":  "MVTH-002",
+                                                                "H":  "IMPORT",
+                                                                "I":  "kg",
+                                                                "J":  "3",
+                                                                "K":  "ChanhtTV"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  20,
+                                                  "cells":  {
+                                                                "D":  "3",
+                                                                "E":  "HDNK-001",
+                                                                "F":  "46299",
+                                                                "G":  "MVTH-003",
+                                                                "H":  "IMPORT",
+                                                                "I":  "lít",
+                                                                "J":  "5",
+                                                                "K":  "ChanhtTV"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  21,
+                                                  "cells":  {
+                                                                "D":  "4",
+                                                                "E":  "HDXK-001",
+                                                                "F":  "15/4/2026",
+                                                                "G":  "MVTH-003",
+                                                                "H":  "EXPORT",
+                                                                "I":  "kg",
+                                                                "J":  "1",
+                                                                "K":  "ChanhtTV"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  22,
+                                                  "cells":  {
+                                                                "D":  "5",
+                                                                "E":  "HDXK-001",
+                                                                "F":  "15/4/2026",
+                                                                "G":  "MVTH-002",
+                                                                "H":  "EXPORT",
+                                                                "I":  "lít",
+                                                                "J":  "2",
+                                                                "K":  "ChanhtTV"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  23,
+                                                  "cells":  {
+                                                                "D":  "6"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  26,
+                                                  "cells":  {
+                                                                "E":  "Xuất và Nhập vật tư thay thế"
+                                                            }
+                                              },
+                                              {
+                                                  "row":  27,
+                                                  "cells":  {
+                                                                "D":  "STT",
+                                                                "E":  "Mã hoá  đơn",
+                                                                "F":  "Ngày nhập kho/xuất kho",
+                                                                "G":  "Mã vật tư",
+                                                                "H":  "Loại (Xuất/Nhập)",
+                                                                "I":  "Đơn vị",
+                                                                "J":  "Số lượng",
+                                                                "K":  "Mã nhân viên"
+                                                            }
+                                              }
+                                          ],
+                      "catalogy":  [
+                                       {
+                                           "row":  4,
+                                           "cells":  {
+                                                         "B":  "STT",
+                                                         "C":  "Hệ thống",
+                                                         "D":  "Lĩnh vực",
+                                                         "E":  "Phân loại",
+                                                         "F":  "Tình trạng"
+                                                     }
+                                       },
+                                       {
+                                           "row":  5,
+                                           "cells":  {
+                                                         "B":  "1",
+                                                         "C":  "Hệ thống xử lý nước",
+                                                         "D":  "Cơ nhiệt",
+                                                         "E":  "Bơm",
+                                                         "F":  "Đang vận hành"
+                                                     }
+                                       },
+                                       {
+                                           "row":  6,
+                                           "cells":  {
+                                                         "B":  "2",
+                                                         "C":  "Hệ thống xử lý nước thải",
+                                                         "E":  "Quạt",
+                                                         "F":  "Đang sửa chữa"
+                                                     }
+                                       },
+                                       {
+                                           "row":  7,
+                                           "cells":  {
+                                                         "B":  "3",
+                                                         "C":  "Hệ thống Chữa cháy",
+                                                         "E":  "Máy nén",
+                                                         "F":  "Đang hỏng"
+                                                     }
+                                       },
+                                       {
+                                           "row":  8,
+                                           "cells":  {
+                                                         "B":  "4",
+                                                         "C":  "Hệ thống lò hơi phụ",
+                                                         "E":  "Van",
+                                                         "F":  "Đang dự phòng"
+                                                     }
+                                       },
+                                       {
+                                           "row":  9,
+                                           "cells":  {
+                                                         "B":  "5",
+                                                         "C":  "Hệ thống nước làm mát",
+                                                         "E":  "Khác"
+                                                     }
+                                       },
+                                       {
+                                           "row":  10,
+                                           "cells":  {
+                                                         "B":  "6",
+                                                         "D":  "Điện",
+                                                         "E":  "Động cơ"
+                                                     }
+                                       },
+                                       {
+                                           "row":  11,
+                                           "cells":  {
+                                                         "B":  "7",
+                                                         "E":  "Máy biến áp"
+                                                     }
+                                       },
+                                       {
+                                           "row":  12,
+                                           "cells":  {
+                                                         "E":  "Khác"
+                                                     }
+                                       },
+                                       {
+                                           "row":  13,
+                                           "cells":  {
+                                                         "B":  "8",
+                                                         "D":  "CI",
+                                                         "E":  "Thiết bị đo"
+                                                     }
+                                       },
+                                       {
+                                           "row":  14,
+                                           "cells":  {
+                                                         "B":  "9",
+                                                         "E":  "Thiết bị điều khiển"
+                                                     }
+                                       },
+                                       {
+                                           "row":  15,
+                                           "cells":  {
+                                                         "E":  "Khác"
+                                                     }
+                                       }
+                                   ],
+                      "Thông số và chủng loại":  [
+                                                     {
+                                                         "row":  1,
+                                                         "cells":  {
+                                                                       "C":  "DETAIL"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  2,
+                                                         "cells":  {
+                                                                       "B":  "Thiết bị cơ nhiệt",
+                                                                       "C":  "Bơm/Quạt/Máy nén",
+                                                                       "G":  "Van",
+                                                                       "K":  "Khác"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  3,
+                                                         "cells":  {
+                                                                       "C":  "STT",
+                                                                       "D":  "Thông số",
+                                                                       "E":  "Giá trị",
+                                                                       "G":  "STT",
+                                                                       "H":  "Thông số",
+                                                                       "I":  "Giá trị",
+                                                                       "K":  "STT",
+                                                                       "L":  "Thông số",
+                                                                       "M":  "Giá trị"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  4,
+                                                         "cells":  {
+                                                                       "C":  "1",
+                                                                       "D":  "Mã KKS",
+                                                                       "H":  "Mã KKS",
+                                                                       "L":  "Mã KKS"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  5,
+                                                         "cells":  {
+                                                                       "C":  "1",
+                                                                       "D":  "Công suất (KW)",
+                                                                       "G":  "1",
+                                                                       "H":  "Loại",
+                                                                       "K":  "1",
+                                                                       "L":  "Tên thiết bị"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  6,
+                                                         "cells":  {
+                                                                       "C":  "2",
+                                                                       "D":  "Vòng quay (vòng/phút)",
+                                                                       "G":  "2",
+                                                                       "H":  "Áp suất  làm việc (bar)",
+                                                                       "K":  "2",
+                                                                       "L":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  7,
+                                                         "cells":  {
+                                                                       "C":  "3",
+                                                                       "D":  "Loại ",
+                                                                       "G":  "3",
+                                                                       "H":  "Lưu lượng (m3/h)"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  8,
+                                                         "cells":  {
+                                                                       "C":  "4",
+                                                                       "D":  "Áp suất đầu đẩy (bar)",
+                                                                       "G":  "4",
+                                                                       "H":  "Môi chất làm việc"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  9,
+                                                         "cells":  {
+                                                                       "C":  "5",
+                                                                       "D":  "Lưu lượng (m3/h)",
+                                                                       "G":  "5",
+                                                                       "H":  "Đường kính đầu vào"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  10,
+                                                         "cells":  {
+                                                                       "C":  "6",
+                                                                       "D":  "Vòng bị DE",
+                                                                       "G":  "6",
+                                                                       "H":  "Đường kính đầu ra"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  11,
+                                                         "cells":  {
+                                                                       "C":  "7",
+                                                                       "D":  "Vòng NDE",
+                                                                       "G":  "7",
+                                                                       "H":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  12,
+                                                         "cells":  {
+                                                                       "C":  "8",
+                                                                       "D":  "Loại khớp nối",
+                                                                       "G":  "8"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  13,
+                                                         "cells":  {
+                                                                       "C":  "9",
+                                                                       "D":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  14,
+                                                         "cells":  {
+                                                                       "C":  "Động cơ",
+                                                                       "G":  "Máy biến áp",
+                                                                       "K":  "Máy cắt"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  15,
+                                                         "cells":  {
+                                                                       "B":  "Thiết bị điện",
+                                                                       "C":  "STT",
+                                                                       "D":  "Thông số",
+                                                                       "E":  "Giá trị",
+                                                                       "G":  "STT",
+                                                                       "H":  "Thông số",
+                                                                       "I":  "Giá trị",
+                                                                       "K":  "STT",
+                                                                       "L":  "Thông số",
+                                                                       "M":  "Giá trị",
+                                                                       "O":  "Khác"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  16,
+                                                         "cells":  {
+                                                                       "D":  "Mã KKS",
+                                                                       "H":  "Mã KKS",
+                                                                       "L":  "Mã KKS",
+                                                                       "O":  "STT",
+                                                                       "P":  "Thông số",
+                                                                       "Q":  "Giá trị"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  17,
+                                                         "cells":  {
+                                                                       "C":  "1",
+                                                                       "D":  "Công suất (KW)",
+                                                                       "G":  "1",
+                                                                       "H":  "Công suất (KW)",
+                                                                       "K":  "1",
+                                                                       "L":  "Công suất (KW)",
+                                                                       "P":  "Mã KKS"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  18,
+                                                         "cells":  {
+                                                                       "C":  "2",
+                                                                       "D":  "Vòng quay (vòng/phút)",
+                                                                       "G":  "2",
+                                                                       "H":  "Điệp áp đầu vào (V)",
+                                                                       "K":  "2",
+                                                                       "L":  "Điệp áp(V)",
+                                                                       "O":  "1",
+                                                                       "P":  "Tên thiết bị"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  19,
+                                                         "cells":  {
+                                                                       "C":  "3",
+                                                                       "D":  "Loại ",
+                                                                       "G":  "3",
+                                                                       "H":  "Điện áp đầu ra",
+                                                                       "K":  "3",
+                                                                       "L":  "Dòng điện làm việc",
+                                                                       "O":  "2",
+                                                                       "P":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  20,
+                                                         "cells":  {
+                                                                       "C":  "4",
+                                                                       "D":  "Vòng bị DE",
+                                                                       "G":  "4",
+                                                                       "H":  "Môi chất làm mát",
+                                                                       "K":  "4",
+                                                                       "L":  "Dòng điện bảo vệ"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  21,
+                                                         "cells":  {
+                                                                       "C":  "5",
+                                                                       "D":  "Vòng NDE",
+                                                                       "G":  "5",
+                                                                       "H":  "Mô tả thêm",
+                                                                       "K":  "5",
+                                                                       "L":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  22,
+                                                         "cells":  {
+                                                                       "C":  "6",
+                                                                       "D":  "Loại khớp nối"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  23,
+                                                         "cells":  {
+                                                                       "C":  "7",
+                                                                       "D":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  25,
+                                                         "cells":  {
+                                                                       "D":  "Thiết bị đo",
+                                                                       "H":  "Thiết bị điều khiển"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  26,
+                                                         "cells":  {
+                                                                       "B":  "Thiết bị CI",
+                                                                       "C":  "STT",
+                                                                       "D":  "Thông số",
+                                                                       "E":  "Giá trị",
+                                                                       "G":  "STT",
+                                                                       "H":  "Thông số",
+                                                                       "I":  "Giá trị",
+                                                                       "K":  "Khác"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  27,
+                                                         "cells":  {
+                                                                       "D":  "Mã KKS",
+                                                                       "H":  "Mã KKS",
+                                                                       "K":  "STT",
+                                                                       "L":  "Thông số",
+                                                                       "M":  "Giá trị"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  28,
+                                                         "cells":  {
+                                                                       "C":  "1",
+                                                                       "D":  "Loại",
+                                                                       "G":  "1",
+                                                                       "H":  "Loại",
+                                                                       "L":  "Mã KKS"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  29,
+                                                         "cells":  {
+                                                                       "C":  "2",
+                                                                       "D":  "Điện áp",
+                                                                       "G":  "2",
+                                                                       "H":  "Điện áp",
+                                                                       "K":  "1",
+                                                                       "L":  "Tên thiết bị"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  30,
+                                                         "cells":  {
+                                                                       "C":  "3",
+                                                                       "D":  "Dòng điện ",
+                                                                       "G":  "3",
+                                                                       "H":  "Dòng điện ",
+                                                                       "K":  "2",
+                                                                       "L":  "Mô tả thêm"
+                                                                   }
+                                                     },
+                                                     {
+                                                         "row":  31,
+                                                         "cells":  {
+                                                                       "C":  "4",
+                                                                       "D":  "Mô tả thêm",
+                                                                       "G":  "4",
+                                                                       "H":  "Mô tả thêm"
+                                                                   }
+                                                     }
+                                                 ]
+                  }
+}
