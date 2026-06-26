@@ -1,33 +1,57 @@
 import axios from 'axios';
+import { authService } from './authService';
 
 const API_URL = '/api/phieu-cong-tac';
 
 /**
- * Trạng thái phiếu công tác
+ * Trạng thái phiếu công tác (theo chu kỳ làm việc nhiều ngày).
+ * - CHUA_MO : Chưa từng mở phiên nào.
+ * - DANG_MO : Có một phiên đang mở (đang làm việc trong ngày).
+ * - TAM_DONG: Đã đóng phiên trong ngày, chờ mở lại ngày tiếp theo hoặc chờ khóa.
+ * - DA_KHOA : Đã hoàn thành & khóa phiếu — không thao tác được nữa.
  */
 export const WORK_ORDER_STATUS = {
   CHUA_MO: 'CHUA_MO',
-  DANG_THUC_HIEN: 'DANG_THUC_HIEN',
-  TAM_DUNG: 'TAM_DUNG',
-  NGHIEM_THU: 'NGHIEM_THU',
+  DANG_MO: 'DANG_MO',
+  TAM_DONG: 'TAM_DONG',
+  DA_KHOA: 'DA_KHOA',
 };
 
 export const WO_STATUS_LABEL = {
   CHUA_MO: 'Chưa mở',
-  DANG_THUC_HIEN: 'Đang thực hiện',
-  TAM_DUNG: 'Tạm dừng',
-  NGHIEM_THU: 'Đã nghiệm thu',
+  DANG_MO: 'Đang mở',
+  TAM_DONG: 'Tạm đóng',
+  DA_KHOA: 'Đã khóa',
 };
 
 export const WO_STATUS_VARIANT = {
   CHUA_MO: 'inactive',
-  DANG_THUC_HIEN: 'info',
-  TAM_DUNG: 'warning',
-  NGHIEM_THU: 'normal',
+  DANG_MO: 'info',
+  TAM_DONG: 'warning',
+  DA_KHOA: 'normal',
 };
 
 /**
- * Mock data phiếu công tác
+ * Pool nhân sự thi công có thể thêm vào phiếu (mock).
+ */
+export const AVAILABLE_WORKERS = [
+  { id: 101, hoTen: 'Nguyễn Văn A', chucVu: 'Thợ hàn' },
+  { id: 102, hoTen: 'Trần Văn B', chucVu: 'Thợ ống' },
+  { id: 103, hoTen: 'Lê Văn C', chucVu: 'Thợ điện' },
+  { id: 104, hoTen: 'Phạm Văn D', chucVu: 'Thợ cơ khí' },
+  { id: 105, hoTen: 'Hoàng Văn E', chucVu: 'Thợ cơ khí' },
+  { id: 106, hoTen: 'Vũ Văn F', chucVu: 'Thợ cơ khí' },
+  { id: 107, hoTen: 'Đỗ Văn G', chucVu: 'Thợ hàn' },
+  { id: 108, hoTen: 'Bùi Văn H', chucVu: 'Thợ điện' },
+  { id: 109, hoTen: 'Đặng Văn I', chucVu: 'Thợ ống' },
+  { id: 110, hoTen: 'Ngô Văn K', chucVu: 'Phụ việc' },
+];
+
+/**
+ * Mock data phiếu công tác.
+ * Mỗi phiếu gồm nhiều `phienLamViec` (phiên theo ngày). Mỗi phiên ghi nhận
+ * thời điểm mở/đóng và danh sách thành viên thi công kèm giờ vào / giờ ra.
+ * 3 vai trò quản lý (chỉ huy, giám sát, tổ trưởng) cố định ở cấp phiếu.
  */
 let mockWorkOrders = [
   {
@@ -42,13 +66,7 @@ let mockWorkOrders = [
     toTruong: 'Nguyễn Văn Tổ Trưởng',
     trangThai: 'CHUA_MO',
     ngayTao: '2026-06-20T09:00:00',
-    ngayBatDau: null,
-    ngayKetThuc: null,
-    danhSachThanhVien: [
-      { id: 1, hoTen: 'Nguyễn Văn A', chucVu: 'Thợ hàn' },
-      { id: 2, hoTen: 'Trần Văn B', chucVu: 'Thợ ống' },
-      { id: 3, hoTen: 'Lê Văn C', chucVu: 'Thợ điện' },
-    ],
+    phienLamViec: [],
     nhatKy: [
       {
         id: 1,
@@ -69,29 +87,39 @@ let mockWorkOrders = [
     nguoiChiHuy: 'Lê Văn Quản Đốc',
     nguoiGiamSat: 'Phạm Thị An Toàn',
     toTruong: 'Nguyễn Văn Tổ Trưởng',
-    trangThai: 'DANG_THUC_HIEN',
+    trangThai: 'DANG_MO',
     ngayTao: '2026-06-19T14:00:00',
-    ngayBatDau: '2026-06-19T14:30:00',
-    ngayKetThuc: null,
-    danhSachThanhVien: [
-      { id: 4, hoTen: 'Phạm Văn D', chucVu: 'Thợ cơ khí' },
-      { id: 5, hoTen: 'Hoàng Văn E', chucVu: 'Thợ cơ khí' },
-    ],
-    nhatKy: [
+    phienLamViec: [
       {
         id: 1,
-        thoiGian: '2026-06-19T14:00:00',
-        hanhDong: 'Tạo phiếu công tác',
-        nguoiThucHien: 'Lê Văn Quản Đốc',
-        ghiChu: 'Phiếu được tạo từ yêu cầu sửa chữa #8',
+        ngay: '2026-06-19',
+        gioMo: '2026-06-19T07:30:00',
+        gioDong: '2026-06-19T16:30:00',
+        nguoiMo: 'Trần Minh Trưởng Ca',
+        nguoiDong: 'Trần Minh Trưởng Ca',
+        thanhVien: [
+          { id: 1, hoTen: 'Phạm Văn D', chucVu: 'Thợ cơ khí', gioVao: '2026-06-19T07:30:00', gioRa: '2026-06-19T16:30:00' },
+          { id: 2, hoTen: 'Hoàng Văn E', chucVu: 'Thợ cơ khí', gioVao: '2026-06-19T07:30:00', gioRa: '2026-06-19T16:30:00' },
+        ],
       },
       {
         id: 2,
-        thoiGian: '2026-06-19T14:30:00',
-        hanhDong: 'Mở phiếu công tác',
-        nguoiThucHien: 'Lê Văn Quản Đốc',
-        ghiChu: 'Bắt đầu công việc sửa chữa',
+        ngay: '2026-06-20',
+        gioMo: '2026-06-20T07:30:00',
+        gioDong: null,
+        nguoiMo: 'Trần Minh Trưởng Ca',
+        nguoiDong: null,
+        thanhVien: [
+          { id: 3, hoTen: 'Phạm Văn D', chucVu: 'Thợ cơ khí', gioVao: '2026-06-20T07:30:00', gioRa: null },
+          { id: 4, hoTen: 'Vũ Văn F', chucVu: 'Thợ cơ khí', gioVao: '2026-06-20T08:00:00', gioRa: null },
+        ],
       },
+    ],
+    nhatKy: [
+      { id: 1, thoiGian: '2026-06-19T14:00:00', hanhDong: 'Tạo phiếu công tác', nguoiThucHien: 'Lê Văn Quản Đốc', ghiChu: 'Phiếu được tạo từ yêu cầu sửa chữa #8' },
+      { id: 2, thoiGian: '2026-06-19T07:30:00', hanhDong: 'Mở phiếu (ngày 19/06)', nguoiThucHien: 'Trần Minh Trưởng Ca', ghiChu: 'Bắt đầu ca làm việc' },
+      { id: 3, thoiGian: '2026-06-19T16:30:00', hanhDong: 'Đóng phiếu (ngày 19/06)', nguoiThucHien: 'Trần Minh Trưởng Ca', ghiChu: 'Kết thúc ca, chờ tiếp tục ngày mai' },
+      { id: 4, thoiGian: '2026-06-20T07:30:00', hanhDong: 'Mở phiếu (ngày 20/06)', nguoiThucHien: 'Trần Minh Trưởng Ca', ghiChu: 'Tiếp tục công việc' },
     ],
   },
   {
@@ -104,128 +132,199 @@ let mockWorkOrders = [
     nguoiChiHuy: 'Lê Văn Quản Đốc',
     nguoiGiamSat: 'Phạm Thị An Toàn',
     toTruong: 'Nguyễn Văn Tổ Trưởng',
-    trangThai: 'TAM_DUNG',
+    trangThai: 'TAM_DONG',
     ngayTao: '2026-06-15T10:00:00',
-    ngayBatDau: '2026-06-15T10:30:00',
-    ngayKetThuc: null,
-    danhSachThanhVien: [
-      { id: 6, hoTen: 'Vũ Văn F', chucVu: 'Thợ cơ khí' },
-      { id: 7, hoTen: 'Đỗ Văn G', chucVu: 'Thợ hàn' },
-    ],
-    nhatKy: [
+    phienLamViec: [
       {
         id: 1,
-        thoiGian: '2026-06-15T10:00:00',
-        hanhDong: 'Tạo phiếu công tác',
-        nguoiThucHien: 'Lê Văn Quản Đốc',
-        ghiChu: 'Phiếu được tạo từ yêu cầu sửa chữa #4',
+        ngay: '2026-06-15',
+        gioMo: '2026-06-15T08:00:00',
+        gioDong: '2026-06-15T17:00:00',
+        nguoiMo: 'Trần Minh Trưởng Ca',
+        nguoiDong: 'Trần Minh Trưởng Ca',
+        thanhVien: [
+          { id: 1, hoTen: 'Vũ Văn F', chucVu: 'Thợ cơ khí', gioVao: '2026-06-15T08:00:00', gioRa: '2026-06-15T17:00:00' },
+          { id: 2, hoTen: 'Đỗ Văn G', chucVu: 'Thợ hàn', gioVao: '2026-06-15T08:00:00', gioRa: '2026-06-15T12:00:00' },
+        ],
       },
-      {
-        id: 2,
-        thoiGian: '2026-06-15T10:30:00',
-        hanhDong: 'Mở phiếu công tác',
-        nguoiThucHien: 'Lê Văn Quản Đốc',
-        ghiChu: 'Bắt đầu thi công',
-      },
-      {
-        id: 3,
-        thoiGian: '2026-06-16T17:00:00',
-        hanhDong: 'Đóng phiếu công tác',
-        nguoiThucHien: 'Lê Văn Quản Đốc',
-        ghiChu: 'Tạm dừng cuối ngày, chờ vật tư thay thế',
-      },
+    ],
+    nhatKy: [
+      { id: 1, thoiGian: '2026-06-15T10:00:00', hanhDong: 'Tạo phiếu công tác', nguoiThucHien: 'Lê Văn Quản Đốc', ghiChu: 'Phiếu được tạo từ yêu cầu sửa chữa #4' },
+      { id: 2, thoiGian: '2026-06-15T08:00:00', hanhDong: 'Mở phiếu (ngày 15/06)', nguoiThucHien: 'Trần Minh Trưởng Ca', ghiChu: 'Bắt đầu thi công' },
+      { id: 3, thoiGian: '2026-06-15T17:00:00', hanhDong: 'Đóng phiếu (ngày 15/06)', nguoiThucHien: 'Trần Minh Trưởng Ca', ghiChu: 'Tạm dừng cuối ngày, chờ vật tư thay thế' },
     ],
   },
 ];
 
-let nextLogId = 10;
+let nextLogId = 100;
+let nextSessionId = 100;
+let nextMemberId = 1000;
+
+/* --- Helpers --- */
+const clone = (obj) => JSON.parse(JSON.stringify(obj));
+const currentUserName = () => authService.getCurrentUser()?.hoTen || 'Người dùng hiện tại';
+const pad = (n) => String(n).padStart(2, '0');
+// Thời gian local dạng 'YYYY-MM-DDTHH:mm:ss' (không Z) để tránh lệch múi giờ
+const nowLocalISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+const todayStr = () => nowLocalISO().slice(0, 10);
+const ddmm = (ngay) => {
+  const [, m, d] = ngay.split('-');
+  return `${d}/${m}`;
+};
+
+const findWO = (id) => mockWorkOrders.find((wo) => wo.id === Number(id));
+const activeSession = (wo) =>
+  wo.phienLamViec.find((p) => p.gioDong === null) || null;
+
+const pushLog = (wo, hanhDong, ghiChu = '') => {
+  wo.nhatKy.push({
+    id: nextLogId++,
+    thoiGian: nowLocalISO(),
+    hanhDong,
+    nguoiThucHien: currentUserName(),
+    ghiChu,
+  });
+};
+
+const resolve = (data, delay = 350) =>
+  new Promise((res) => setTimeout(() => res({ data: clone(data) }), delay));
+const reject = (status, message, delay = 300) =>
+  new Promise((_, rej) =>
+    setTimeout(() => rej({ response: { status, data: { message } } }), delay)
+  );
 
 export const workOrderService = {
-  /**
-   * Lấy danh sách tất cả phiếu công tác
-   */
-  getAll: () => {
-    // TODO: return axios.get(API_URL);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve({ data: [...mockWorkOrders] }), 400);
-    });
-  },
+  /** Lấy danh sách tất cả phiếu công tác */
+  getAll: () => resolve(mockWorkOrders, 400),
 
-  /**
-   * Lấy phiếu công tác theo ID
-   */
+  /** Lấy phiếu công tác theo ID */
   getById: (id) => {
-    // TODO: return axios.get(`${API_URL}/${id}`);
-    return new Promise((resolve, reject) => {
-      const item = mockWorkOrders.find((wo) => wo.id === Number(id));
-      setTimeout(() => {
-        if (item) {
-          resolve({ data: JSON.parse(JSON.stringify(item)) });
-        } else {
-          reject({ response: { status: 404, data: { message: 'Không tìm thấy phiếu công tác' } } });
-        }
-      }, 300);
-    });
+    const wo = findWO(id);
+    return wo ? resolve(wo) : reject(404, 'Không tìm thấy phiếu công tác');
   },
 
   /**
-   * Cập nhật trạng thái phiếu công tác
-   * @param {number} id
-   * @param {string} newStatus - DANG_THUC_HIEN | TAM_DUNG | NGHIEM_THU
-   * @param {string} ghiChu - Ghi chú khi thay đổi trạng thái
+   * Mở phiếu cho ngày làm việc mới.
+   * Kế thừa thành viên đang làm từ phiên trước (nếu có) làm danh sách khởi tạo.
    */
-  updateStatus: (id, newStatus, ghiChu = '') => {
-    // TODO: return axios.patch(`${API_URL}/${id}/status`, { status: newStatus, ghiChu });
-    return new Promise((resolve, reject) => {
-      const idx = mockWorkOrders.findIndex((wo) => wo.id === Number(id));
-      setTimeout(() => {
-        if (idx === -1) {
-          reject({ response: { status: 404, data: { message: 'Không tìm thấy phiếu công tác' } } });
-          return;
-        }
+  openSession: (id) => {
+    const wo = findWO(id);
+    if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
+    if (wo.trangThai === WORK_ORDER_STATUS.DA_KHOA)
+      return reject(400, 'Phiếu đã khóa, không thể mở lại');
+    if (activeSession(wo))
+      return reject(400, 'Phiếu đang mở, hãy đóng phiên hiện tại trước');
 
-        const wo = mockWorkOrders[idx];
-        const actionLabels = {
-          DANG_THUC_HIEN: 'Mở phiếu công tác',
-          TAM_DUNG: 'Đóng phiếu công tác',
-          NGHIEM_THU: 'Khóa phiếu / Nghiệm thu',
-        };
+    const now = nowLocalISO();
+    const ngay = todayStr();
 
-        // Validate transition
-        const validTransitions = {
-          CHUA_MO: ['DANG_THUC_HIEN'],
-          DANG_THUC_HIEN: ['TAM_DUNG'],
-          TAM_DUNG: ['DANG_THUC_HIEN', 'NGHIEM_THU'],
-        };
+    // Kế thừa thành viên từ phiên gần nhất
+    const lastSession = wo.phienLamViec[wo.phienLamViec.length - 1];
+    const carriedMembers = (lastSession?.thanhVien || []).map((m) => ({
+      id: nextMemberId++,
+      hoTen: m.hoTen,
+      chucVu: m.chucVu,
+      gioVao: now,
+      gioRa: null,
+    }));
 
-        if (!validTransitions[wo.trangThai]?.includes(newStatus)) {
-          reject({
-            response: {
-              status: 400,
-              data: { message: `Không thể chuyển từ "${WO_STATUS_LABEL[wo.trangThai]}" sang "${WO_STATUS_LABEL[newStatus]}"` },
-            },
-          });
-          return;
-        }
-
-        wo.trangThai = newStatus;
-        if (newStatus === 'DANG_THUC_HIEN' && !wo.ngayBatDau) {
-          wo.ngayBatDau = new Date().toISOString();
-        }
-        if (newStatus === 'NGHIEM_THU') {
-          wo.ngayKetThuc = new Date().toISOString();
-        }
-
-        wo.nhatKy.push({
-          id: nextLogId++,
-          thoiGian: new Date().toISOString(),
-          hanhDong: actionLabels[newStatus] || newStatus,
-          nguoiThucHien: 'Người dùng hiện tại',
-          ghiChu: ghiChu || `Chuyển trạng thái sang ${WO_STATUS_LABEL[newStatus]}`,
-        });
-
-        resolve({ data: JSON.parse(JSON.stringify(wo)) });
-      }, 500);
+    wo.phienLamViec.push({
+      id: nextSessionId++,
+      ngay,
+      gioMo: now,
+      gioDong: null,
+      nguoiMo: currentUserName(),
+      nguoiDong: null,
+      thanhVien: carriedMembers,
     });
+    wo.trangThai = WORK_ORDER_STATUS.DANG_MO;
+    pushLog(wo, `Mở phiếu (ngày ${ddmm(ngay)})`, 'Bắt đầu ca làm việc');
+    return resolve(wo, 450);
+  },
+
+  /**
+   * Đóng phiếu cuối ngày. Tự động chốt giờ ra cho thành viên chưa có giờ ra.
+   */
+  closeSession: (id) => {
+    const wo = findWO(id);
+    if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
+    const session = activeSession(wo);
+    if (!session) return reject(400, 'Không có phiên nào đang mở');
+
+    const now = nowLocalISO();
+    session.gioDong = now;
+    session.nguoiDong = currentUserName();
+    session.thanhVien.forEach((m) => {
+      if (!m.gioRa) m.gioRa = now;
+    });
+    wo.trangThai = WORK_ORDER_STATUS.TAM_DONG;
+    pushLog(wo, `Đóng phiếu (ngày ${ddmm(session.ngay)})`, 'Kết thúc ca làm việc');
+    return resolve(wo, 450);
+  },
+
+  /** Thêm một thành viên thi công vào phiên đang mở */
+  addMember: (id, worker) => {
+    const wo = findWO(id);
+    if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
+    const session = activeSession(wo);
+    if (!session) return reject(400, 'Chỉ thêm được nhân viên khi phiếu đang mở');
+    if (session.thanhVien.some((m) => m.hoTen === worker.hoTen))
+      return reject(400, `${worker.hoTen} đã có trong phiên`);
+
+    session.thanhVien.push({
+      id: nextMemberId++,
+      hoTen: worker.hoTen,
+      chucVu: worker.chucVu,
+      gioVao: nowLocalISO(),
+      gioRa: null,
+    });
+    pushLog(wo, 'Thêm nhân viên', `${worker.hoTen} (${worker.chucVu}) tham gia`);
+    return resolve(wo);
+  },
+
+  /** Cho một thành viên rút khỏi / xóa khỏi phiên đang mở */
+  removeMember: (id, memberId) => {
+    const wo = findWO(id);
+    if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
+    const session = activeSession(wo);
+    if (!session) return reject(400, 'Chỉ chỉnh sửa được khi phiếu đang mở');
+    const m = session.thanhVien.find((x) => x.id === Number(memberId));
+    session.thanhVien = session.thanhVien.filter((x) => x.id !== Number(memberId));
+    if (m) pushLog(wo, 'Xóa nhân viên', `${m.hoTen} rời khỏi phiên`);
+    return resolve(wo);
+  },
+
+  /**
+   * Cập nhật giờ vào / giờ ra của một thành viên (chỉ khi đang mở).
+   * @param {object} times - { gioVao?: ISOString, gioRa?: ISOString|null }
+   */
+  updateMemberTime: (id, memberId, times) => {
+    const wo = findWO(id);
+    if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
+    const session = activeSession(wo);
+    if (!session) return reject(400, 'Chỉ chỉnh sửa được khi phiếu đang mở');
+    const m = session.thanhVien.find((x) => x.id === Number(memberId));
+    if (!m) return reject(404, 'Không tìm thấy nhân viên');
+    if (times.gioVao !== undefined) m.gioVao = times.gioVao;
+    if (times.gioRa !== undefined) m.gioRa = times.gioRa;
+    return resolve(wo, 200);
+  },
+
+  /**
+   * Khóa phiếu (Task 38) — chỉ thực hiện khi đang TAM_DONG.
+   * Quyền do tầng UI kiểm soát (Trưởng ca / Admin).
+   */
+  lock: (id, ghiChu = '') => {
+    const wo = findWO(id);
+    if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
+    if (wo.trangThai !== WORK_ORDER_STATUS.TAM_DONG)
+      return reject(400, 'Chỉ khóa được khi phiếu đang ở trạng thái "Tạm đóng"');
+
+    wo.trangThai = WORK_ORDER_STATUS.DA_KHOA;
+    pushLog(wo, 'Khóa phiếu / Nghiệm thu', ghiChu || 'Đơn vị sửa chữa đã hoàn thành công việc');
+    return resolve(wo, 450);
   },
 };

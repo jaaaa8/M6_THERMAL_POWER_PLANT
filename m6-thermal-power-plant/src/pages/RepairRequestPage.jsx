@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button, Form, Table } from 'react-bootstrap';
 import { BsWrenchAdjustable, BsPlusLg, BsEye, BsTrash } from 'react-icons/bs';
 import { toast } from 'react-toastify';
@@ -11,6 +10,7 @@ import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ConfirmModal from '../components/common/ConfirmModal';
 import CreateRequestModal from '../components/requests/CreateRequestModal';
+import RequestDetailModal from '../components/requests/RequestDetailModal';
 import {
   repairRequestService,
   REQUEST_STATUS,
@@ -19,10 +19,12 @@ import {
   PRIORITY_LABEL,
   PRIORITY_COLOR,
 } from '../services/repairRequestService';
+import { authService } from '../services/authService';
 import './RepairRequestPage.css';
 
 export default function RepairRequestPage() {
-  const navigate = useNavigate();
+  // Người dùng hiện tại (để lọc "yêu cầu của tôi")
+  const currentUserName = authService.getCurrentUser()?.hoTen || '';
 
   // Data state
   const [requests, setRequests] = useState([]);
@@ -32,9 +34,11 @@ export default function RepairRequestPage() {
   // Filter state
   const [searchKKS, setSearchKKS] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [onlyMine, setOnlyMine] = useState(true); // Mặc định: chỉ yêu cầu mình tạo
 
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [detailTarget, setDetailTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -58,9 +62,23 @@ export default function RepairRequestPage() {
     loadRequests();
   }, [loadRequests]);
 
+  // Danh sách trong phạm vi (theo bộ lọc "của tôi") — dùng để đếm & lọc tiếp
+  const scopedRequests = useMemo(() => {
+    if (onlyMine && currentUserName) {
+      return requests.filter((r) => r.nguoiTao === currentUserName);
+    }
+    return requests;
+  }, [requests, onlyMine, currentUserName]);
+
+  // Số yêu cầu đang chờ xử lý trong phạm vi
+  const pendingCount = useMemo(
+    () => scopedRequests.filter((r) => r.trangThai === REQUEST_STATUS.CHO_DUYET).length,
+    [scopedRequests]
+  );
+
   // Filter & Search
   const filteredRequests = useMemo(() => {
-    let result = requests;
+    let result = scopedRequests;
 
     // Filter theo trạng thái
     if (filterStatus !== 'ALL') {
@@ -78,7 +96,14 @@ export default function RepairRequestPage() {
     }
 
     return result;
-  }, [requests, filterStatus, searchKKS]);
+  }, [scopedRequests, filterStatus, searchKKS]);
+
+  // Bật/tắt nhanh bộ lọc "Đang chờ xử lý"
+  const togglePending = () => {
+    setFilterStatus((prev) =>
+      prev === REQUEST_STATUS.CHO_DUYET ? 'ALL' : REQUEST_STATUS.CHO_DUYET
+    );
+  };
 
   // Xử lý xóa
   const handleDelete = async () => {
@@ -141,6 +166,27 @@ export default function RepairRequestPage() {
           />
         </div>
         <div className="rr-toolbar-right">
+          {/* Quick filter: Đang chờ xử lý */}
+          <button
+            type="button"
+            className={`rr-quick-chip ${filterStatus === REQUEST_STATUS.CHO_DUYET ? 'active' : ''}`}
+            onClick={togglePending}
+            title="Lọc nhanh các yêu cầu đang chờ xử lý"
+          >
+            Đang chờ xử lý
+            <span className="rr-quick-count">{pendingCount}</span>
+          </button>
+
+          {/* Switch: Chỉ yêu cầu của tôi */}
+          <Form.Check
+            type="switch"
+            id="rr-only-mine"
+            label="Của tôi"
+            checked={onlyMine}
+            onChange={(e) => setOnlyMine(e.target.checked)}
+            className="rr-only-mine"
+          />
+
           <Form.Select
             size="sm"
             value={filterStatus}
@@ -173,7 +219,7 @@ export default function RepairRequestPage() {
           <EmptyState
             title="Không tìm thấy"
             message={
-              searchKKS || filterStatus !== 'ALL'
+              searchKKS || filterStatus !== 'ALL' || onlyMine
                 ? 'Không có yêu cầu nào phù hợp với bộ lọc'
                 : 'Chưa có yêu cầu sửa chữa nào. Bấm "Tạo mới" để bắt đầu.'
             }
@@ -232,7 +278,7 @@ export default function RepairRequestPage() {
                       <div className="data-table-actions">
                         <button
                           className="btn btn-sm btn-outline-primary"
-                          onClick={() => navigate(`/sua-chua/phieu-cong-tac/${req.id}`)}
+                          onClick={() => setDetailTarget(req)}
                           title="Xem chi tiết"
                         >
                           <BsEye />
@@ -261,6 +307,12 @@ export default function RepairRequestPage() {
         show={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleCreateSuccess}
+      />
+
+      {/* Detail Modal (read-only) — Phiếu yêu cầu KHÁC Phiếu công tác */}
+      <RequestDetailModal
+        request={detailTarget}
+        onClose={() => setDetailTarget(null)}
       />
 
       {/* Delete Confirm Modal */}

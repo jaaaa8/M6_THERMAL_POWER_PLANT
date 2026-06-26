@@ -20,11 +20,17 @@ const loginSchema = Yup.object({
 });
 
 /**
- * Chuyển hướng dựa theo Role
+ * Chuyển hướng dựa theo Role — màn hình chủ của từng vai trò.
+ * Mã Role thống nhất theo roleService.SYSTEM_ROLES.
  */
 const ROLE_REDIRECT = {
   ADMIN: '/admin/phan-quyen',
+  NHAN_SU: '/nhan-su/nhan-vien',
+  THU_KHO_VT: '/vat-tu/danh-muc',
+  THU_KHO_CCDC: '/ccdc/danh-sach',
+  QUAN_DOC: '/thiet-bi/danh-sach',
   TRUONG_CA: '/sua-chua/yeu-cau',
+  TO_TRUONG: '/sua-chua/phieu-cong-tac',
 };
 
 export default function LoginPage() {
@@ -143,11 +149,16 @@ export default function LoginPage() {
                 fontSize: 'var(--text-xs)',
                 color: 'rgba(255,255,255,0.35)',
                 margin: 0,
-                lineHeight: 1.6,
+                lineHeight: 1.7,
               }}>
-                <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Demo accounts:</strong><br />
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>admin / admin123</code> → Quản trị viên<br />
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>truongca / truongca123</code> → Trưởng ca
+                <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Demo accounts</strong> (mật khẩu = tên đăng nhập + "123"):<br />
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>admin</code> → Quản trị viên ·{' '}
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>nhansu</code> → Nhân sự<br />
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>thukhovt</code> → Thủ kho VT ·{' '}
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>thukhoccdc</code> → Thủ kho CCDC<br />
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>quandoc</code> → Quản đốc ·{' '}
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>truongca</code> → Trưởng ca<br />
+                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>totruong</code> → Tổ trưởng
               </p>
             </div>
           </Form>

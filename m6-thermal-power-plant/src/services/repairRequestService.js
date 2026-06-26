@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { authService } from './authService';
 
 const API_URL = '/api/phieu-yeu-cau';
 
@@ -203,7 +204,7 @@ export const repairRequestService = {
         moTaSuCo: dto.moTaSuCo,
         mucDoUuTien: dto.mucDoUuTien,
         trangThai: REQUEST_STATUS.CHO_DUYET,
-        nguoiTao: 'Trần Minh Trưởng Ca',
+        nguoiTao: authService.getCurrentUser()?.hoTen || 'Trần Minh Trưởng Ca',
         ngayTao: new Date().toISOString(),
         thietBiId: Number(dto.thietBiId),
       };

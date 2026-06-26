@@ -3,7 +3,9 @@ import axios from 'axios';
 const API_URL = '/api/auth';
 
 /**
- * Mock users — sẽ thay bằng API thực khi có Backend
+ * Mock users — mỗi Role một tài khoản demo.
+ * Mã Role thống nhất theo roleService.SYSTEM_ROLES.
+ * Sẽ thay bằng API thực khi có Backend.
  */
 const MOCK_USERS = [
   {
@@ -16,11 +18,51 @@ const MOCK_USERS = [
   },
   {
     id: 2,
+    username: 'nhansu',
+    password: 'nhansu123',
+    role: 'NHAN_SU',
+    hoTen: 'Lê Thị Nhân Sự',
+    email: 'nhansu@scms.vn',
+  },
+  {
+    id: 3,
+    username: 'thukhovt',
+    password: 'thukhovt123',
+    role: 'THU_KHO_VT',
+    hoTen: 'Phạm Văn Thủ Kho VT',
+    email: 'thukhovt@scms.vn',
+  },
+  {
+    id: 4,
+    username: 'thukhoccdc',
+    password: 'thukhoccdc123',
+    role: 'THU_KHO_CCDC',
+    hoTen: 'Đỗ Thị Thủ Kho CCDC',
+    email: 'thukhoccdc@scms.vn',
+  },
+  {
+    id: 5,
+    username: 'quandoc',
+    password: 'quandoc123',
+    role: 'QUAN_DOC',
+    hoTen: 'Lê Văn Quản Đốc',
+    email: 'quandoc@scms.vn',
+  },
+  {
+    id: 6,
     username: 'truongca',
     password: 'truongca123',
     role: 'TRUONG_CA',
     hoTen: 'Trần Minh Trưởng Ca',
     email: 'truongca@scms.vn',
+  },
+  {
+    id: 7,
+    username: 'totruong',
+    password: 'totruong123',
+    role: 'TO_TRUONG',
+    hoTen: 'Nguyễn Văn Tổ Trưởng',
+    email: 'totruong@scms.vn',
   },
 ];
 

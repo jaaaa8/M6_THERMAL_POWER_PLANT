@@ -30,6 +30,59 @@
   min-width: 180px;
 }
 
+/* --- Quick filter chip: Đang chờ xử lý --- */
+.rr-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.rr-quick-chip:hover {
+  border-color: var(--color-status-warning);
+  color: var(--color-accent-hover);
+}
+
+.rr-quick-chip.active {
+  border-color: var(--color-status-warning);
+  background: var(--color-status-warning-bg);
+  color: var(--color-accent-hover);
+}
+
+.rr-quick-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.7rem;
+  font-weight: var(--font-bold);
+  color: #fff;
+  background: var(--color-status-warning);
+  border-radius: var(--radius-full);
+}
+
+/* --- Switch "Của tôi" --- */
+.rr-only-mine {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.rr-only-mine .form-check-label {
+  cursor: pointer;
+}
+
 .rr-result-count {
   font-size: var(--text-xs);
   color: var(--text-tertiary);

@@ -80,6 +80,30 @@ function initPermissions() {
 
 initPermissions();
 
+/**
+ * Kiểm tra một Role có quyền XEM một chức năng hay không (đồng bộ).
+ * Dùng cho gating route & lọc menu Sidebar.
+ * @param {string} role - mã vai trò (vd: 'TRUONG_CA')
+ * @param {string} maChucNang - mã chức năng (vd: 'YEU_CAU_SC')
+ * @returns {boolean}
+ */
+export function canAccess(role, maChucNang) {
+  if (!role || !maChucNang) return false;
+  return !!mockPermissions[`${role}_${maChucNang}_XEM`];
+}
+
+/**
+ * Lấy danh sách mã chức năng mà Role được XEM (đồng bộ).
+ * @param {string} role
+ * @returns {string[]}
+ */
+export function getAccessibleFunctions(role) {
+  if (!role) return [];
+  return SYSTEM_FUNCTIONS
+    .filter((f) => mockPermissions[`${role}_${f.maChucNang}_XEM`])
+    .map((f) => f.maChucNang);
+}
+
 export const roleService = {
   /**
    * Lấy toàn bộ ma trận phân quyền

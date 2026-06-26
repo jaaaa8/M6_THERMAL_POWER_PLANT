@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Form, Table } from 'react-bootstrap';
-import {
-  BsFileEarmarkText, BsEye, BsPlayCircle,
-} from 'react-icons/bs';
+import { BsFileEarmarkText, BsEye } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import AOS from 'aos';
 import PageHeader from '../components/common/PageHeader';
@@ -168,7 +166,7 @@ export default function WorkOrderListPage() {
                       <StatusBadge
                         status={WO_STATUS_VARIANT[wo.trangThai]}
                         label={WO_STATUS_LABEL[wo.trangThai]}
-                        pulse={wo.trangThai === 'DANG_THUC_HIEN'}
+                        pulse={wo.trangThai === 'DANG_MO'}
                       />
                     </td>
                     <td className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
