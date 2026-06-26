@@ -21,7 +21,6 @@ import ListEmployee from './components/hr/employee/ListEmployee';
 import AddEmployee from './components/hr/employee/AddEmployee';
 import ListAccount from './components/hr/account/ListAccount';
 import AddAccount from './components/hr/account/AddAccount';
-import NhanSuForm from './components/nhansu/NhanSuForm';
 import TechnicalAssessmentForm from "./components/technical_assessment/AddComponent.jsx";
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
