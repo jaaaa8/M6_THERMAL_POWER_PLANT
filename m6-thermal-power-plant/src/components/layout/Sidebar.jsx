@@ -7,7 +7,7 @@ import {
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,
   BsDropletHalf, BsCalendar3, BsClockHistory,
-  BsChevronRight, BsShieldLock
+  BsChevronRight, BsShieldLock, BsCheck
 } from 'react-icons/bs';
 import './Sidebar.css';
 
@@ -54,7 +54,8 @@ const menuSections = [
         children: [
           { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
           { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
-          { path: '/repair/danh-gia-kt', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
+          { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
+          { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư' },
         ],
       },
     ],
@@ -84,8 +85,9 @@ const menuSections = [
       {
         icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ', roles: ['ADMIN', 'TO_TRUONG'],
         children: [
-          { path: '/bao-duong/ke-hoach', icon: <BsCalendar3 />, label: 'Kế hoạch' },
-          { path: '/bao-duong/lich-su', icon: <BsClockHistory />, label: 'Lịch sử' },
+          { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
+          { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
+          { path: '/lubrication/history', icon: <BsClockHistory />, label: 'Lịch sử' },
         ],
       },
     ],

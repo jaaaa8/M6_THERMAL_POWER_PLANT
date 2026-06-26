@@ -24,6 +24,7 @@ import {
   BsXCircle,
   BsArrowClockwise,
 } from "react-icons/bs";
+import {Link} from "react-router-dom";
 
 export default function TechnicalAssessmentForm() {
     const [formData, setFormData] = useState({
@@ -33,7 +34,6 @@ export default function TechnicalAssessmentForm() {
 
         systemId: "1",
         equipmentId: "1",
-        sparePartId: "1",
 
         result:
             "Động cơ bơm nước làm mát bị mòn vòng bi, phát sinh rung động lớn.",
@@ -123,29 +123,6 @@ export default function TechnicalAssessmentForm() {
         },
     ];
 
-    const spareParts = [
-        {
-            id: 1,
-            code: "VT-001",
-            name: "Vòng bi SKF 6205",
-        },
-        {
-            id: 2,
-            code: "VT-002",
-            name: "Phớt cơ khí",
-        },
-        {
-            id: 3,
-            code: "VT-003",
-            name: "Dây curoa B65",
-        },
-        {
-            id: 4,
-            code: "VT-004",
-            name: "Bánh răng truyền động",
-        },
-    ];
-
   const assessors = [
     {
       id: 1,
@@ -168,19 +145,12 @@ export default function TechnicalAssessmentForm() {
         e.target.value,
     });
   };
-
-    const selectedSystem = systems.find(
+    systems.find(
         s => s.id.toString() === formData.systemId
     );
-
-    const selectedEquipment = equipments.find(
+    equipments.find(
         e => e.id.toString() === formData.equipmentId
     );
-
-    const selectedSparePart = spareParts.find(
-        sp => sp.id.toString() === formData.sparePartId
-    );
-
     return (
         <div className="technical-form-card">
 
@@ -291,26 +261,7 @@ export default function TechnicalAssessmentForm() {
                         </Form.Group>
                     </Col>
 
-                    <Col md={4}>
-                        <Form.Group>
-                            <Form.Label>Vật tư thay thế</Form.Label>
 
-                            <Form.Select
-                                name="sparePartId"
-                                value={formData.sparePartId}
-                                onChange={handleChange}
-                            >
-                                {spareParts.map((item) => (
-                                    <option
-                                        key={item.id}
-                                        value={item.id}
-                                    >
-                                        {item.code} - {item.name}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                    </Col>
 
                 </Row>
 
@@ -353,28 +304,28 @@ export default function TechnicalAssessmentForm() {
                 </Row>
 
                 {/* PDF */}
-                <div className="form-section-title">
-                    <BsFilePdf />
-                    <span>Biên bản PDF</span>
-                </div>
+                {/*<div className="form-section-title">*/}
+                {/*    <BsFilePdf />*/}
+                {/*    <span>Biên bản PDF</span>*/}
+                {/*</div>*/}
 
-                <div className="pdf-upload-zone mb-4">
-                    <BsFilePdf className="pdf-upload-icon" />
+                {/*<div className="pdf-upload-zone mb-4">*/}
+                {/*    <BsFilePdf className="pdf-upload-icon" />*/}
 
-                    <div className="pdf-upload-title">
-                        Tải lên biên bản đánh giá
-                    </div>
+                {/*    <div className="pdf-upload-title">*/}
+                {/*        Tải lên biên bản đánh giá*/}
+                {/*    </div>*/}
 
-                    <div className="pdf-upload-subtitle">
-                        Chỉ hỗ trợ file PDF
-                    </div>
+                {/*    <div className="pdf-upload-subtitle">*/}
+                {/*        Chỉ hỗ trợ file PDF*/}
+                {/*    </div>*/}
 
-                    <Form.Control
-                        className="mt-3"
-                        type="file"
-                        accept=".pdf"
-                    />
-                </div>
+                {/*    <Form.Control*/}
+                {/*        className="mt-3"*/}
+                {/*        type="file"*/}
+                {/*        accept=".pdf"*/}
+                {/*    />*/}
+                {/*</div>*/}
 
                 {/* HÌNH ẢNH */}
                 <div className="form-section-title">
@@ -418,75 +369,75 @@ export default function TechnicalAssessmentForm() {
                 </div>
 
                 {/* TRẠNG THÁI */}
-                <div className="mt-4">
-                    <div className="form-section-title">
-                        Trạng thái xử lý
-                    </div>
+                {/*<div className="mt-4">*/}
+                {/*    <div className="form-section-title">*/}
+                {/*        Trạng thái xử lý*/}
+                {/*    </div>*/}
 
-                    <div className="status-radio-group">
+                {/*    <div className="status-radio-group">*/}
 
-                        <div className="status-radio-pill">
-                            <input
-                                type="radio"
-                                id="pending"
-                                name="status"
-                                value="PENDING"
-                                checked={formData.status === "PENDING"}
-                                onChange={handleChange}
-                            />
-                            <label htmlFor="pending">
-                                <span className="status-dot pending"></span>
-                                Chờ xử lý
-                            </label>
-                        </div>
+                {/*        <div className="status-radio-pill">*/}
+                {/*            <input*/}
+                {/*                type="radio"*/}
+                {/*                id="pending"*/}
+                {/*                name="status"*/}
+                {/*                value="PENDING"*/}
+                {/*                checked={formData.status === "PENDING"}*/}
+                {/*                onChange={handleChange}*/}
+                {/*            />*/}
+                {/*            <label htmlFor="pending">*/}
+                {/*                <span className="status-dot pending"></span>*/}
+                {/*                Chờ xử lý*/}
+                {/*            </label>*/}
+                {/*        </div>*/}
 
-                        <div className="status-radio-pill">
-                            <input
-                                type="radio"
-                                id="progress"
-                                name="status"
-                                value="IN_PROGRESS"
-                                checked={formData.status === "IN_PROGRESS"}
-                                onChange={handleChange}
-                            />
-                            <label htmlFor="progress">
-                                <span className="status-dot progress"></span>
-                                Đang xử lý
-                            </label>
-                        </div>
+                {/*        <div className="status-radio-pill">*/}
+                {/*            <input*/}
+                {/*                type="radio"*/}
+                {/*                id="progress"*/}
+                {/*                name="status"*/}
+                {/*                value="IN_PROGRESS"*/}
+                {/*                checked={formData.status === "IN_PROGRESS"}*/}
+                {/*                onChange={handleChange}*/}
+                {/*            />*/}
+                {/*            <label htmlFor="progress">*/}
+                {/*                <span className="status-dot progress"></span>*/}
+                {/*                Đang xử lý*/}
+                {/*            </label>*/}
+                {/*        </div>*/}
 
-                        <div className="status-radio-pill">
-                            <input
-                                type="radio"
-                                id="completed"
-                                name="status"
-                                value="COMPLETED"
-                                checked={formData.status === "COMPLETED"}
-                                onChange={handleChange}
-                            />
-                            <label htmlFor="completed">
-                                <span className="status-dot completed"></span>
-                                Hoàn thành
-                            </label>
-                        </div>
+                {/*        <div className="status-radio-pill">*/}
+                {/*            <input*/}
+                {/*                type="radio"*/}
+                {/*                id="completed"*/}
+                {/*                name="status"*/}
+                {/*                value="COMPLETED"*/}
+                {/*                checked={formData.status === "COMPLETED"}*/}
+                {/*                onChange={handleChange}*/}
+                {/*            />*/}
+                {/*            <label htmlFor="completed">*/}
+                {/*                <span className="status-dot completed"></span>*/}
+                {/*                Hoàn thành*/}
+                {/*            </label>*/}
+                {/*        </div>*/}
 
-                        <div className="status-radio-pill">
-                            <input
-                                type="radio"
-                                id="rejected"
-                                name="status"
-                                value="REJECTED"
-                                checked={formData.status === "REJECTED"}
-                                onChange={handleChange}
-                            />
-                            <label htmlFor="rejected">
-                                <span className="status-dot rejected"></span>
-                                Từ chối
-                            </label>
-                        </div>
+                {/*        <div className="status-radio-pill">*/}
+                {/*            <input*/}
+                {/*                type="radio"*/}
+                {/*                id="rejected"*/}
+                {/*                name="status"*/}
+                {/*                value="REJECTED"*/}
+                {/*                checked={formData.status === "REJECTED"}*/}
+                {/*                onChange={handleChange}*/}
+                {/*            />*/}
+                {/*            <label htmlFor="rejected">*/}
+                {/*                <span className="status-dot rejected"></span>*/}
+                {/*                Từ chối*/}
+                {/*            </label>*/}
+                {/*        </div>*/}
 
-                    </div>
-                </div>
+                {/*    </div>*/}
+                {/*</div>*/}
 
             </div>
 
@@ -498,10 +449,12 @@ export default function TechnicalAssessmentForm() {
                     Đặt lại
                 </Button>
 
-                <Button variant="outline-danger">
-                    <BsXCircle />
-                    Huỷ bỏ
-                </Button>
+                <Link to="/repair/technical-assessment">
+                    <Button variant="outline-danger">
+                        <BsXCircle />
+                        Huỷ bỏ
+                    </Button>
+                </Link>
 
                 <PDFDownloadLink
                     document={
@@ -511,7 +464,6 @@ export default function TechnicalAssessmentForm() {
                             assessors={assessors}
                             systems={systems}
                             equipments={equipments}
-                            spareParts={spareParts}
                             images={imageFiles}
                         />
                     }
@@ -520,15 +472,15 @@ export default function TechnicalAssessmentForm() {
                     {({ loading }) => (
                         <Button variant="outline-primary">
                             <BsFileEarmarkPdf />
-                            {loading ? "Đang tạo PDF..." : "Xuất PDF"}
+                            {loading ? "Đang tạo PDF..." : "Xuất PDF & Lưu Phiếu"}
                         </Button>
                     )}
                 </PDFDownloadLink>
 
-                <Button variant="primary">
-                    <BsSave />
-                    Lưu phiếu
-                </Button>
+                {/*<Button variant="primary">*/}
+                {/*    <BsSave />*/}
+                {/*    Lưu phiếu*/}
+                {/*</Button>*/}
 
             </div>
 

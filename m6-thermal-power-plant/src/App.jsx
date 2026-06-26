@@ -20,6 +20,9 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
 import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import TechnicalAssessmentList from "./components/technical_assessment/TechnicalAssessmentList.jsx";
+import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueList.jsx";
+import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
 
 function App() {
   return (
@@ -55,8 +58,10 @@ function App() {
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
             <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
-            <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm/>} />
-            <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm/>} />
+            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
+            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
+            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
+            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
 
             {/* --- Vật tư --- */}
             <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
@@ -67,10 +72,10 @@ function App() {
             <Route path="/ccdc/muon-tra" element={<PlaceholderPage title="Mượn / Trả CCDC" />} />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm/>} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage/>} />
-            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
+            <Route path="/lubrication/checklist" element={<LubricationChecklistPage/>} />
+            <Route path="/lubrication/plant/add" element={<LubricationPlanForm/>} />
+            <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
           {/* 404 */}
