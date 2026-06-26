@@ -16,6 +16,10 @@ import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import RepairRequest from './pages/RepairRequest.jsx';
 import NhanSuForm from './components/nhansu/NhanSuForm';
+import TechnicalAssessmentForm from "./components/technical_assessment/AddComponent.jsx";
+import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
+import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
+import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
 
 function App() {
   return (
@@ -51,7 +55,8 @@ function App() {
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
             <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
-            <Route path="/sua-chua/danh-gia-kt" element={<PlaceholderPage title="Đánh giá Kỹ thuật" />} />
+            <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm/>} />
+            <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm/>} />
 
             {/* --- Vật tư --- */}
             <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
@@ -63,6 +68,8 @@ function App() {
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
+            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm/>} />
+            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage/>} />
             <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
