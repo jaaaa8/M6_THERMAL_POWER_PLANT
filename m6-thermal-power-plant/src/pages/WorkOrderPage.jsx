@@ -78,7 +78,7 @@ export default function WorkOrderPage() {
   const [addWorkerId, setAddWorkerId] = useState('');
 
   const currentUser = authService.getCurrentUser();
-  const isTruongCa = currentUser?.role === 'TRUONG_CA' || currentUser?.role === 'ADMIN';
+  const isTruongCa = currentUser?.role === 'SHIFT_LEADER' || currentUser?.role === 'ADMIN';
 
   const loadWorkOrder = useCallback(async () => {
     try {
@@ -98,7 +98,7 @@ export default function WorkOrderPage() {
     loadWorkOrder();
   }, [loadWorkOrder]);
 
-  const trangThai = workOrder?.trangThai;
+  const status = workOrder?.status;
   const sessions = useMemo(() => workOrder?.phienLamViec || [], [workOrder]);
   const activeSession = useMemo(
     () => sessions.find((s) => s.gioDong === null) || null,
@@ -108,7 +108,7 @@ export default function WorkOrderPage() {
     () => sessions.filter((s) => s.gioDong !== null),
     [sessions]
   );
-  const canEditMembers = isTruongCa && trangThai === WORK_ORDER_STATUS.DANG_MO;
+  const canEditMembers = isTruongCa && status === WORK_ORDER_STATUS.DANG_MO;
 
   // Tổng hợp giờ công theo từng nhân viên (phục vụ tính lương)
   const payroll = useMemo(() => {
@@ -213,7 +213,7 @@ export default function WorkOrderPage() {
         <PageHeader title="Phiếu Công tác" icon={<BsClipboard2Check />} />
         <div className="wo-error surface-card">
           <p className="text-danger">{error || 'Không tìm thấy dữ liệu'}</p>
-          <Button variant="outline-primary" size="sm" onClick={() => navigate('/sua-chua/phieu-cong-tac')}>
+          <Button variant="outline-primary" size="sm" onClick={() => navigate('/repair/work-orders')}>
             <BsArrowLeft className="me-1" /> Quay lại danh sách
           </Button>
         </div>
@@ -235,28 +235,28 @@ export default function WorkOrderPage() {
         subtitle="Quản lý phiên làm việc theo ngày & chấm giờ nhân viên"
         icon={<BsClipboard2Check />}
         actions={
-          <Button variant="outline-secondary" size="sm" onClick={() => navigate('/sua-chua/phieu-cong-tac')}>
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate('/repair/work-orders')}>
             <BsArrowLeft className="me-1" /> Quay lại
           </Button>
         }
       />
 
       {/* Status Banner */}
-      <div className={`wo-status-banner wo-status-${WO_STATUS_VARIANT[trangThai]}`}>
+      <div className={`wo-status-banner wo-status-${WO_STATUS_VARIANT[status]}`}>
         <div className="wo-status-banner-left">
           <StatusBadge
-            status={WO_STATUS_VARIANT[trangThai]}
-            label={WO_STATUS_LABEL[trangThai]}
-            pulse={trangThai === WORK_ORDER_STATUS.DANG_MO}
+            status={WO_STATUS_VARIANT[status]}
+            label={WO_STATUS_LABEL[status]}
+            pulse={status === WORK_ORDER_STATUS.DANG_MO}
           />
-          <span className="wo-status-banner-text">{bannerText[trangThai]}</span>
+          <span className="wo-status-banner-text">{bannerText[status]}</span>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="wo-actions">
         {/* Mở phiếu: CHUA_MO hoặc TAM_DONG, chỉ Trưởng ca */}
-        {(trangThai === WORK_ORDER_STATUS.CHUA_MO || trangThai === WORK_ORDER_STATUS.TAM_DONG) && (
+        {(status === WORK_ORDER_STATUS.CHUA_MO || status === WORK_ORDER_STATUS.TAM_DONG) && (
           <Button
             variant="primary"
             className="wo-action-btn"
@@ -275,7 +275,7 @@ export default function WorkOrderPage() {
         )}
 
         {/* Đóng phiếu: DANG_MO, chỉ Trưởng ca */}
-        {trangThai === WORK_ORDER_STATUS.DANG_MO && (
+        {status === WORK_ORDER_STATUS.DANG_MO && (
           <Button
             variant="warning"
             className="wo-action-btn"
@@ -293,7 +293,7 @@ export default function WorkOrderPage() {
         )}
 
         {/* Khóa phiếu: TAM_DONG, chỉ Trưởng ca (Task 38) */}
-        {trangThai === WORK_ORDER_STATUS.TAM_DONG && (
+        {status === WORK_ORDER_STATUS.TAM_DONG && (
           <Button
             variant="success"
             className="wo-action-btn"
@@ -324,11 +324,11 @@ export default function WorkOrderPage() {
               <div className="wo-info-grid">
                 <div className="wo-info-item">
                   <span className="wo-info-label">Mã KKS</span>
-                  <code className="code-tag">{workOrder.maKKS}</code>
+                  <code className="code-tag">{workOrder.kksCode}</code>
                 </div>
                 <div className="wo-info-item">
                   <span className="wo-info-label">Tên thiết bị</span>
-                  <span className="wo-info-value">{workOrder.tenThietBi}</span>
+                  <span className="wo-info-value">{workOrder.equipmentName}</span>
                 </div>
                 <div className="wo-info-item wo-info-full">
                   <span className="wo-info-label">Mô tả công việc</span>

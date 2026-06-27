@@ -1,113 +1,50 @@
-# Dependencies
+# Dependencies & Locks (Heavy Token Usage)
 node_modules/
-.npm/
-.pnpm-store/
-
-# Build outputs
-dist/
-build/
-.next/
-out/
-target/
-
-# Package manager locks (too large, not useful for AI)
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+.npm/
+.pnpm-store/
 
-# IDE & OS files
-.idea/
-.vscode/
-*.swp
-*.swo
-Thumbs.db
-.DS_Store
+# Build Outputs (Generated code, Heavy Token Usage)
+dist/
+build/
+target/
+.next/
+out/
+.gradle/
+bin/
 
-# Environment secrets
-.env
-.env.local
-.env.production
-
-# Test coverage & reports
+# Test coverage & Logs (Heavy Token Usage)
 coverage/
 .nyc_output/
-
-# Logs
 *.log
-npm-debug.log*
 
-# Python (temp scripts)
-__pycache__/
-*.pyc
-.venv/
-venv/
-
-# Large binary files
-*.zip
-*.tar.gz
-*.mp4
-*.mov
-*.psd
-
-# Extra skills directory
-skills/
-skills-lock.json
-
-# Gemini internal data
-.gemini/
-
-# Java / Spring Boot
+# Binaries, Media & Documents (Unreadable or massive token usage)
 *.jar
 *.class
 *.war
-.gradle/
-
-# Gradle wrapper (AI không cần đọc)
-gradle/
-gradlew
-gradlew.bat
-HELP.md
-
-# STS / Eclipse files
-.classpath
-.project
-.settings/
-.factorypath
-.springBeans
-.sts4-cache
-bin/
-
-# Docker
-docker-compose.override.yml
-Dockerfile.dev
-
-# Database files
-*.sqlite3
-*.db
-*.mwb
-
-# Media assets (binary — AI không cần đọc)
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.ico
-*.woff
-*.woff2
-*.ttf
-*.eot
-*.svg
-
-# Project-specific binary documents (AI không đọc được)
+*.zip
+*.tar.gz
 *.pdf
 *.xlsx
 *.xls
 *.doc
 *.docx
+*.sqlite3
+*.db
+*.mwb
+*.mp4
+*.mov
+*.png
+*.jpg
+*.jpeg
+*.svg
 
-# Project uploads
-uploads/
-
-# Git metadata
+# Environments & Git Data (Many files or heavy)
 .git/
-.gitattributes
+.gemini/
+skills/
+__pycache__/
+.venv/
+venv/

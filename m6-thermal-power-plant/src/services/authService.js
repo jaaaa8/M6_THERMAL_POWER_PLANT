@@ -1,129 +1,95 @@
-import axios from 'axios';
+import apiClient, { TOKEN_KEYS, tokenStore } from './apiClient';
 
-const API_URL = '/api/auth';
+const AUTH_URL = '/api/v1/auth';
+const ACCOUNT_URL = '/api/v1/accounts';
 
 /**
- * Mock users — mỗi Role một tài khoản demo.
- * Mã Role thống nhất theo roleService.SYSTEM_ROLES.
- * Sẽ thay bằng API thực khi có Backend.
+ * Bridge giai đoạn chuyển đổi: BE hiện trả role VN, FE đã dùng EN.
+ * Sau khi BE cập nhật seed sang EN (xem docs/ROLE_CODES.md), xoá map này.
  */
-const MOCK_USERS = [
-  {
-    id: 1,
-    username: 'admin',
-    password: 'admin123',
-    role: 'ADMIN',
-    hoTen: 'Nguyễn Văn Admin',
-    email: 'admin@scms.vn',
-  },
-  {
-    id: 2,
-    username: 'nhansu',
-    password: 'nhansu123',
-    role: 'NHAN_SU',
-    hoTen: 'Lê Thị Nhân Sự',
-    email: 'nhansu@scms.vn',
-  },
-  {
-    id: 3,
-    username: 'thukhovt',
-    password: 'thukhovt123',
-    role: 'THU_KHO_VT',
-    hoTen: 'Phạm Văn Thủ Kho VT',
-    email: 'thukhovt@scms.vn',
-  },
-  {
-    id: 4,
-    username: 'thukhoccdc',
-    password: 'thukhoccdc123',
-    role: 'THU_KHO_CCDC',
-    hoTen: 'Đỗ Thị Thủ Kho CCDC',
-    email: 'thukhoccdc@scms.vn',
-  },
-  {
-    id: 5,
-    username: 'quandoc',
-    password: 'quandoc123',
-    role: 'QUAN_DOC',
-    hoTen: 'Lê Văn Quản Đốc',
-    email: 'quandoc@scms.vn',
-  },
-  {
-    id: 6,
-    username: 'truongca',
-    password: 'truongca123',
-    role: 'TRUONG_CA',
-    hoTen: 'Trần Minh Trưởng Ca',
-    email: 'truongca@scms.vn',
-  },
-  {
-    id: 7,
-    username: 'totruong',
-    password: 'totruong123',
-    role: 'TO_TRUONG',
-    hoTen: 'Nguyễn Văn Tổ Trưởng',
-    email: 'totruong@scms.vn',
-  },
-];
+const LEGACY_ROLE_MAP = {
+  TRUONG_CA: 'SHIFT_LEADER',
+  // Các role cũ khác (NHAN_VIEN, KY_THUAT_VIEN, GIAM_SAT, TRUONG_PHONG, GIAM_DOC)
+  // không còn tồn tại trong bộ 9 role mới — xem docs/ROLE_CODES.md.
+  // 'ADMIN' giữ nguyên.
+};
 
-const STORAGE_KEY = 'scms_current_user';
+function normalizeRoles(roles = []) {
+  return roles.map((r) => LEGACY_ROLE_MAP[r] || r);
+}
+
+/**
+ * Chuẩn hoá user từ BE.
+ */
+function normalizeUser(beUser) {
+  if (!beUser) return null;
+  const roles = normalizeRoles(beUser.roles || []);
+  return {
+    accountId: beUser.accountId,
+    username: beUser.username,
+    fullName: beUser.fullName || beUser.username,
+    roles,
+    role: roles[0] || null, // tiện cho check role chính
+    employeeCode: beUser.employeeCode,
+    departmentName: beUser.departmentName,
+    position: beUser.position,
+    avatarUrl: beUser.avatarUrl,
+  };
+}
+
+function persistUser(user) {
+  localStorage.setItem(TOKEN_KEYS.user, JSON.stringify(user));
+}
 
 export const authService = {
-  /**
-   * Đăng nhập — Mock: so sánh username/password với MOCK_USERS
-   * @param {string} username
-   * @param {string} password
-   * @returns {Promise<{data: object}>} User object (không chứa password)
-   */
-  login: (username, password) => {
-    // TODO: Thay bằng axios.post(API_URL + '/login', { username, password })
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const user = MOCK_USERS.find(
-          (u) => u.username === username && u.password === password
-        );
-        if (user) {
-          const { password: _, ...safeUser } = user;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
-          resolve({ data: safeUser });
-        } else {
-          reject({
-            response: {
-              status: 401,
-              data: { message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
-            },
-          });
-        }
-      }, 800);
-    });
+  login: async (username, password) => {
+    const res = await apiClient.post(`${AUTH_URL}/login`, { username, password });
+    const payload = res.data?.data;
+    if (!payload?.accessToken) {
+      throw new Error('Login response không hợp lệ');
+    }
+    tokenStore.setTokens(payload.accessToken, payload.refreshToken);
+    const user = normalizeUser(payload.user);
+    persistUser(user);
+    return { data: user };
   },
 
-  /**
-   * Đăng xuất — xoá user khỏi localStorage
-   */
-  logout: () => {
-    localStorage.removeItem(STORAGE_KEY);
-    // TODO: axios.post(API_URL + '/logout')
+  logout: async () => {
+    try {
+      if (tokenStore.getAccess()) {
+        await apiClient.post(`${AUTH_URL}/logout`);
+      }
+    } catch {
+      // ignore — vẫn clear local
+    } finally {
+      tokenStore.clear();
+    }
   },
 
-  /**
-   * Lấy user đang đăng nhập (từ localStorage)
-   * @returns {object|null}
-   */
+  fetchMe: async () => {
+    const res = await apiClient.get(`${AUTH_URL}/me`);
+    const user = normalizeUser(res.data?.data);
+    if (user) persistUser(user);
+    return user;
+  },
+
   getCurrentUser: () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(TOKEN_KEYS.user);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   },
 
-  /**
-   * Kiểm tra đã đăng nhập chưa
-   * @returns {boolean}
-   */
-  isAuthenticated: () => {
-    return authService.getCurrentUser() !== null;
+  isAuthenticated: () => !!tokenStore.getAccess(),
+
+  createAccount: async ({ username, password, roleNames }) => {
+    const res = await apiClient.post(`${ACCOUNT_URL}/create`, {
+      username,
+      password,
+      roleNames,
+    });
+    return res.data;
   },
 };

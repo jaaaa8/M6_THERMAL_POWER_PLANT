@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const API_URL = '/api/nhan-su';
+const API_URL = '/api/employees';
 
-export const nhanSuService = {
+export const employeeService = {
   /**
    * Lấy danh sách tất cả nhân sự
    */
@@ -40,5 +40,5 @@ export const nhanSuService = {
   /**
    * Lấy danh sách phòng ban (dropdown)
    */
-  getPhongBanList: () => axios.get('/api/phong-ban'),
+  getDepartmentList: () => axios.get('/api/departments'),
 };

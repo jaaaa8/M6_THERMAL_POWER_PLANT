@@ -58,14 +58,14 @@ let mockWorkOrders = [
     id: 1,
     maPhieu: 'PCT-2026-001',
     yeuCauId: 1,
-    maKKS: 'MAA10',
-    tenThietBi: 'Lò hơi #1',
+    kksCode: 'MAA10',
+    equipmentName: 'Lò hơi #1',
     moTaCongViec: 'Sửa chữa rò rỉ đường ống hơi chính tại mặt bích tầng 3',
     nguoiChiHuy: 'Lê Văn Quản Đốc',
     nguoiGiamSat: 'Phạm Thị An Toàn',
     toTruong: 'Nguyễn Văn Tổ Trưởng',
-    trangThai: 'CHUA_MO',
-    ngayTao: '2026-06-20T09:00:00',
+    status: 'CHUA_MO',
+    createdAt: '2026-06-20T09:00:00',
     phienLamViec: [],
     nhatKy: [
       {
@@ -81,14 +81,14 @@ let mockWorkOrders = [
     id: 2,
     maPhieu: 'PCT-2026-002',
     yeuCauId: 8,
-    maKKS: 'PAB20',
-    tenThietBi: 'Bơm nước cấp #2',
+    kksCode: 'PAB20',
+    equipmentName: 'Bơm nước cấp #2',
     moTaCongViec: 'Kiểm tra và thay thế bánh răng hộp số bơm nước cấp #2',
     nguoiChiHuy: 'Lê Văn Quản Đốc',
     nguoiGiamSat: 'Phạm Thị An Toàn',
     toTruong: 'Nguyễn Văn Tổ Trưởng',
-    trangThai: 'DANG_MO',
-    ngayTao: '2026-06-19T14:00:00',
+    status: 'DANG_MO',
+    createdAt: '2026-06-19T14:00:00',
     phienLamViec: [
       {
         id: 1,
@@ -126,14 +126,14 @@ let mockWorkOrders = [
     id: 3,
     maPhieu: 'PCT-2026-003',
     yeuCauId: 4,
-    maKKS: 'HLA10',
-    tenThietBi: 'Quạt gió #1',
+    kksCode: 'HLA10',
+    equipmentName: 'Quạt gió #1',
     moTaCongViec: 'Thay thế cánh quạt bị nứt và cân bằng động',
     nguoiChiHuy: 'Lê Văn Quản Đốc',
     nguoiGiamSat: 'Phạm Thị An Toàn',
     toTruong: 'Nguyễn Văn Tổ Trưởng',
-    trangThai: 'TAM_DONG',
-    ngayTao: '2026-06-15T10:00:00',
+    status: 'TAM_DONG',
+    createdAt: '2026-06-15T10:00:00',
     phienLamViec: [
       {
         id: 1,
@@ -162,7 +162,7 @@ let nextMemberId = 1000;
 
 /* --- Helpers --- */
 const clone = (obj) => JSON.parse(JSON.stringify(obj));
-const currentUserName = () => authService.getCurrentUser()?.hoTen || 'Người dùng hiện tại';
+const currentUserName = () => authService.getCurrentUser()?.fullName || 'Người dùng hiện tại';
 const pad = (n) => String(n).padStart(2, '0');
 // Thời gian local dạng 'YYYY-MM-DDTHH:mm:ss' (không Z) để tránh lệch múi giờ
 const nowLocalISO = () => {
@@ -213,7 +213,7 @@ export const workOrderService = {
   openSession: (id) => {
     const wo = findWO(id);
     if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
-    if (wo.trangThai === WORK_ORDER_STATUS.DA_KHOA)
+    if (wo.status === WORK_ORDER_STATUS.DA_KHOA)
       return reject(400, 'Phiếu đã khóa, không thể mở lại');
     if (activeSession(wo))
       return reject(400, 'Phiếu đang mở, hãy đóng phiên hiện tại trước');
@@ -240,7 +240,7 @@ export const workOrderService = {
       nguoiDong: null,
       thanhVien: carriedMembers,
     });
-    wo.trangThai = WORK_ORDER_STATUS.DANG_MO;
+    wo.status = WORK_ORDER_STATUS.DANG_MO;
     pushLog(wo, `Mở phiếu (ngày ${ddmm(ngay)})`, 'Bắt đầu ca làm việc');
     return resolve(wo, 450);
   },
@@ -260,7 +260,7 @@ export const workOrderService = {
     session.thanhVien.forEach((m) => {
       if (!m.gioRa) m.gioRa = now;
     });
-    wo.trangThai = WORK_ORDER_STATUS.TAM_DONG;
+    wo.status = WORK_ORDER_STATUS.TAM_DONG;
     pushLog(wo, `Đóng phiếu (ngày ${ddmm(session.ngay)})`, 'Kết thúc ca làm việc');
     return resolve(wo, 450);
   },
@@ -320,10 +320,10 @@ export const workOrderService = {
   lock: (id, ghiChu = '') => {
     const wo = findWO(id);
     if (!wo) return reject(404, 'Không tìm thấy phiếu công tác');
-    if (wo.trangThai !== WORK_ORDER_STATUS.TAM_DONG)
+    if (wo.status !== WORK_ORDER_STATUS.TAM_DONG)
       return reject(400, 'Chỉ khóa được khi phiếu đang ở trạng thái "Tạm đóng"');
 
-    wo.trangThai = WORK_ORDER_STATUS.DA_KHOA;
+    wo.status = WORK_ORDER_STATUS.DA_KHOA;
     pushLog(wo, 'Khóa phiếu / Nghiệm thu', ghiChu || 'Đơn vị sửa chữa đã hoàn thành công việc');
     return resolve(wo, 450);
   },
@@ -333,7 +333,7 @@ export const workOrderService = {
    * Trạng thái khởi tạo: CHUA_MO. Đội thực hiện dự kiến được lưu vào
    * `thanhVienDuKien` để khi Trưởng ca mở phiên đầu tiên có thể tham khảo.
    *
-   * @param {object} request - Đối tượng yêu cầu sửa chữa nguồn (cần id, maKKS, tenThietBi).
+   * @param {object} request - Đối tượng yêu cầu sửa chữa nguồn (cần id, kksCode, equipmentName).
    * @param {object} dto - Dữ liệu form:
    *   { maPhieu, noiDung, diaDiem, thoiGianBatDau, thoiGianKetThuc,
    *     toTruong, nguoiChiHuy, nguoiGiamSat, thanhVienDuKien: [{hoTen, chucVu}] }
@@ -349,8 +349,8 @@ export const workOrderService = {
       id: newId,
       maPhieu: dto.maPhieu,
       yeuCauId: request.id,
-      maKKS: request.maKKS,
-      tenThietBi: request.tenThietBi,
+      kksCode: request.kksCode,
+      equipmentName: request.equipmentName,
       moTaCongViec: dto.noiDung,
       diaDiem: dto.diaDiem || '',
       thoiGianBatDauDuKien: dto.thoiGianBatDau || null,
@@ -359,8 +359,8 @@ export const workOrderService = {
       nguoiGiamSat: dto.nguoiGiamSat,
       toTruong: dto.toTruong,
       thanhVienDuKien: Array.isArray(dto.thanhVienDuKien) ? dto.thanhVienDuKien : [],
-      trangThai: WORK_ORDER_STATUS.CHUA_MO,
-      ngayTao: now,
+      status: WORK_ORDER_STATUS.CHUA_MO,
+      createdAt: now,
       phienLamViec: [],
       nhatKy: [
         {

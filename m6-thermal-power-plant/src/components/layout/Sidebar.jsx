@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge,
+  BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge, BsPersonPlus,
   BsGearWideConnected, BsListUl, BsCpu,
   BsWrenchAdjustable, BsExclamationTriangle, BsFileEarmarkText, BsClipboard2Check,
   BsBoxSeam, BsTags, BsArrowLeftRight,
@@ -23,7 +23,7 @@ const menuSections = [
   {
     heading: 'Tổng quan',
     items: [
-      { path: '/', icon: <BsGrid1X2 />, label: 'Dashboard' },
+      { path: '/', icon: <BsGrid1X2 />, label: 'Bảng điều khiển' },
     ],
   },
   {
@@ -32,9 +32,9 @@ const menuSections = [
       {
         icon: <BsPeople />, label: 'Quản lý Nhân sự',
         children: [
-          { path: '/nhan-su/phong-ban', icon: <BsBuilding />, label: 'Phòng ban', func: 'PHONG_BAN' },
-          { path: '/nhan-su/nhan-vien', icon: <BsPersonBadge />, label: 'Nhân viên', func: 'NHAN_SU' },
-          { path: '/nhan-su/tai-khoan', icon: <BsShieldLock />, label: 'Tài khoản & Quyền', func: 'TAI_KHOAN' },
+          { path: '/hr/departments', icon: <BsBuilding />, label: 'Phòng ban', func: 'DEPARTMENT' },
+          { path: '/hr/employees', icon: <BsPersonBadge />, label: 'Nhân viên', func: 'EMPLOYEE' },
+          { path: '/hr/accounts', icon: <BsShieldLock />, label: 'Tài khoản & Quyền', func: 'ACCOUNT' },
         ],
       },
     ],
@@ -45,8 +45,8 @@ const menuSections = [
       {
         icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị',
         children: [
-          { path: '/thiet-bi/he-thong', icon: <BsListUl />, label: 'Hệ thống', func: 'HE_THONG' },
-          { path: '/thiet-bi/danh-sach', icon: <BsCpu />, label: 'Thiết bị', func: 'THIET_BI' },
+          { path: '/equipment/systems', icon: <BsListUl />, label: 'Hệ thống', func: 'EQUIPMENT_SYSTEM' },
+          { path: '/equipment', icon: <BsCpu />, label: 'Thiết bị', func: 'EQUIPMENT' },
         ],
       },
     ],
@@ -57,9 +57,9 @@ const menuSections = [
       {
         icon: <BsWrenchAdjustable />, label: 'Sửa chữa',
         children: [
-          { path: '/sua-chua/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa', func: 'YEU_CAU_SC' },
-          { path: '/sua-chua/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', func: 'PHIEU_CT' },
-          { path: '/sua-chua/danh-gia-kt', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', func: 'DANH_GIA_KT' },
+          { path: '/repair/requests', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa', func: 'REPAIR_REQUEST' },
+          { path: '/repair/work-orders', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', func: 'WORK_ORDER' },
+          { path: '/repair/assessments', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', func: 'TECHNICAL_ASSESSMENT' },
         ],
       },
     ],
@@ -70,15 +70,15 @@ const menuSections = [
       {
         icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
-          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư', func: 'VAT_TU' },
-          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho', func: 'VAT_TU' },
+          { path: '/materials', icon: <BsTags />, label: 'Danh mục Vật tư', func: 'MATERIAL' },
+          { path: '/materials/transactions', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho', func: 'MATERIAL' },
         ],
       },
       {
         icon: <BsTools />, label: 'Công cụ Dụng cụ',
         children: [
-          { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC', func: 'CCDC' },
-          { path: '/ccdc/muon-tra', icon: <BsArrowLeftRight />, label: 'Mượn / Trả', func: 'CCDC' },
+          { path: '/tools', icon: <BsJournalBookmark />, label: 'Danh sách CCDC', func: 'TOOL' },
+          { path: '/tools/borrowings', icon: <BsArrowLeftRight />, label: 'Mượn / Trả', func: 'TOOL' },
         ],
       },
     ],
@@ -89,8 +89,8 @@ const menuSections = [
       {
         icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ',
         children: [
-          { path: '/bao-duong/ke-hoach', icon: <BsCalendar3 />, label: 'Kế hoạch', func: 'BAO_DUONG' },
-          { path: '/bao-duong/lich-su', icon: <BsClockHistory />, label: 'Lịch sử', func: 'BAO_DUONG' },
+          { path: '/maintenance/plans', icon: <BsCalendar3 />, label: 'Kế hoạch', func: 'MAINTENANCE' },
+          { path: '/maintenance/history', icon: <BsClockHistory />, label: 'Lịch sử', func: 'MAINTENANCE' },
         ],
       },
     ],
@@ -98,7 +98,8 @@ const menuSections = [
   {
     heading: 'Quản trị',
     items: [
-      { path: '/admin/phan-quyen', icon: <BsShieldLock />, label: 'Phân quyền', roles: ['ADMIN'] },
+      { path: '/admin/roles', icon: <BsShieldLock />, label: 'Phân quyền', roles: ['ADMIN'] },
+      { path: '/admin/accounts/create', icon: <BsPersonPlus />, label: 'Tạo tài khoản', roles: ['ADMIN'] },
     ],
   },
 ];
@@ -113,12 +114,23 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
   // Lấy user/role thật từ authService
   const currentUser = authService.getCurrentUser();
   const userRole = currentUser?.role;
-  const roleLabel = SYSTEM_ROLES.find((r) => r.maVaiTro === userRole)?.tenVaiTro || 'Người dùng';
-  const userName = currentUser?.hoTen || 'Người dùng';
+  const roleLabel = SYSTEM_ROLES.find((r) => r.roleCode === userRole)?.roleName || 'Người dùng';
+  const userName = currentUser?.fullName || 'Người dùng';
   const userInitials = userName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Khi click vào child item (NavLink) → đóng tất cả dropdown khác, chỉ giữ dropdown chứa item đó
+  const closeOtherMenus = (currentMenuKey) => {
+    setOpenMenus((prev) => {
+      const next = {};
+      Object.keys(prev).forEach((k) => {
+        next[k] = k === currentMenuKey ? prev[k] : false;
+      });
+      return next;
+    });
   };
 
   const isSubmenuActive = (children) => {
@@ -217,7 +229,10 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
                             className={({ isActive: navActive }) =>
                               `sidebar-link ${navActive ? 'active' : ''}`
                             }
-                            onClick={onCloseMobile}
+                            onClick={() => {
+                              closeOtherMenus(menuKey);
+                              onCloseMobile?.();
+                            }}
                           >
                             <span className="sidebar-link-icon">{child.icon}</span>
                             <span className="sidebar-link-text">{child.label}</span>

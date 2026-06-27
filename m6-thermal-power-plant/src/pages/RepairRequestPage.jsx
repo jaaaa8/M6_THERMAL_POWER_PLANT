@@ -36,14 +36,14 @@ const FILTER_PILLS = [
   { key: REQUEST_STATUS.HOAN_THANH, label: 'Hoàn thành' },
 ];
 
-// Vai trò được duyệt/từ chối yêu cầu
-const APPROVER_ROLES = ['ADMIN', 'QUAN_DOC'];
+// Vai trò được duyệt/từ chối yêu cầu sửa chữa
+const APPROVER_ROLES = ['ADMIN', 'REPAIR_MANAGER'];
 // Vai trò được tạo PCT từ yêu cầu đã duyệt
-const PCT_CREATOR_ROLES = ['ADMIN', 'QUAN_DOC', 'TO_TRUONG'];
+const PCT_CREATOR_ROLES = ['ADMIN', 'REPAIR_MANAGER', 'TEAM_LEADER'];
 
 export default function RepairRequestPage() {
   const currentUser = authService.getCurrentUser();
-  const currentUserName = currentUser?.hoTen || '';
+  const currentUserName = currentUser?.fullName || '';
   const currentUserRole = currentUser?.role || '';
 
   const canApprove = APPROVER_ROLES.includes(currentUserRole);
@@ -93,7 +93,7 @@ export default function RepairRequestPage() {
   // Danh sách trong phạm vi (theo bộ lọc "của tôi") — dùng để đếm & lọc tiếp
   const scopedRequests = useMemo(() => {
     if (onlyMine && currentUserName) {
-      return requests.filter((r) => r.nguoiTao === currentUserName);
+      return requests.filter((r) => r.createdBy === currentUserName);
     }
     return requests;
   }, [requests, onlyMine, currentUserName]);
@@ -103,7 +103,7 @@ export default function RepairRequestPage() {
     const counts = { ALL: scopedRequests.length };
     FILTER_PILLS.forEach((p) => {
       if (p.key !== 'ALL') {
-        counts[p.key] = scopedRequests.filter((r) => r.trangThai === p.key).length;
+        counts[p.key] = scopedRequests.filter((r) => r.status === p.key).length;
       }
     });
     return counts;
@@ -111,7 +111,7 @@ export default function RepairRequestPage() {
 
   // Thống kê hiển thị 4 thẻ tóm tắt
   const stats = useMemo(() => {
-    const choDuyet = scopedRequests.filter((r) => r.trangThai === REQUEST_STATUS.CHO_DUYET);
+    const choDuyet = scopedRequests.filter((r) => r.status === REQUEST_STATUS.CHO_DUYET);
     return [
       {
         key: 'total',
@@ -130,14 +130,14 @@ export default function RepairRequestPage() {
       {
         key: 'approved',
         label: 'Đã duyệt',
-        value: scopedRequests.filter((r) => r.trangThai === REQUEST_STATUS.DA_DUYET).length,
+        value: scopedRequests.filter((r) => r.status === REQUEST_STATUS.DA_DUYET).length,
         icon: <BsFileEarmarkCheck />,
         color: 'var(--color-status-info)',
       },
       {
         key: 'urgent',
         label: 'Khẩn cấp (chờ duyệt)',
-        value: choDuyet.filter((r) => r.mucDoUuTien === PRIORITY.KHAN_CAP).length,
+        value: choDuyet.filter((r) => r.priority === PRIORITY.KHAN_CAP).length,
         icon: <BsLightningChargeFill />,
         color: 'var(--color-status-danger)',
       },
@@ -150,7 +150,7 @@ export default function RepairRequestPage() {
 
     // Filter theo trạng thái
     if (filterStatus !== 'ALL') {
-      result = result.filter((r) => r.trangThai === filterStatus);
+      result = result.filter((r) => r.status === filterStatus);
     }
 
     // Search theo mã KKS
@@ -158,8 +158,8 @@ export default function RepairRequestPage() {
       const q = searchKKS.toLowerCase();
       result = result.filter(
         (r) =>
-          r.maKKS.toLowerCase().includes(q) ||
-          r.tenThietBi.toLowerCase().includes(q)
+          r.kksCode.toLowerCase().includes(q) ||
+          r.equipmentName.toLowerCase().includes(q)
       );
     }
 
@@ -188,7 +188,7 @@ export default function RepairRequestPage() {
     try {
       setApproving(true);
       await repairRequestService.approve(approveTarget.id);
-      toast.success(`Đã duyệt yêu cầu [${approveTarget.maKKS}]`);
+      toast.success(`Đã duyệt yêu cầu [${approveTarget.kksCode}]`);
       setApproveTarget(null);
       loadRequests();
     } catch (err) {
@@ -204,7 +204,7 @@ export default function RepairRequestPage() {
     try {
       setRejecting(true);
       await repairRequestService.reject(rejectTarget.id);
-      toast.success(`Đã từ chối yêu cầu [${rejectTarget.maKKS}]`);
+      toast.success(`Đã từ chối yêu cầu [${rejectTarget.kksCode}]`);
       setRejectTarget(null);
       loadRequests();
     } catch (err) {
@@ -356,30 +356,30 @@ export default function RepairRequestPage() {
                   <tr key={req.id}>
                     <td className="text-muted">{idx + 1}</td>
                     <td>
-                      <code className="code-tag">{req.maKKS}</code>
+                      <code className="code-tag">{req.kksCode}</code>
                     </td>
-                    <td className="rr-cell-truncate" title={req.tenThietBi}>
-                      {req.tenThietBi}
+                    <td className="rr-cell-truncate" title={req.equipmentName}>
+                      {req.equipmentName}
                     </td>
                     <td>
                       <span
                         className="rr-priority-badge"
                         style={{
-                          '--priority-color': PRIORITY_COLOR[req.mucDoUuTien],
+                          '--priority-color': PRIORITY_COLOR[req.priority],
                         }}
                       >
-                        {PRIORITY_LABEL[req.mucDoUuTien]}
+                        {PRIORITY_LABEL[req.priority]}
                       </span>
                     </td>
                     <td>
                       <StatusBadge
-                        status={REQUEST_STATUS_VARIANT[req.trangThai]}
-                        label={REQUEST_STATUS_LABEL[req.trangThai]}
-                        pulse={req.mucDoUuTien === 'KHAN_CAP' && req.trangThai !== 'HOAN_THANH'}
+                        status={REQUEST_STATUS_VARIANT[req.status]}
+                        label={REQUEST_STATUS_LABEL[req.status]}
+                        pulse={req.priority === 'KHAN_CAP' && req.status !== 'HOAN_THANH'}
                       />
                     </td>
                     <td className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
-                      {formatDate(req.ngayTao)}
+                      {formatDate(req.createdAt)}
                     </td>
                     <td>
                       <div className="data-table-actions">
@@ -391,7 +391,7 @@ export default function RepairRequestPage() {
                           <BsEye />
                         </button>
                         {/* Sửa: chỉ khi CHO_DUYET và là người tạo */}
-                        {req.trangThai === REQUEST_STATUS.CHO_DUYET && req.nguoiTao === currentUserName && (
+                        {req.status === REQUEST_STATUS.CHO_DUYET && req.createdBy === currentUserName && (
                           <button
                             className="btn btn-sm btn-outline-warning"
                             onClick={() => setEditTarget(req)}
@@ -401,7 +401,7 @@ export default function RepairRequestPage() {
                           </button>
                         )}
                         {/* Duyệt / Từ chối: chỉ khi CHO_DUYET và user có quyền */}
-                        {req.trangThai === REQUEST_STATUS.CHO_DUYET && canApprove && (
+                        {req.status === REQUEST_STATUS.CHO_DUYET && canApprove && (
                           <>
                             <button
                               className="btn btn-sm btn-outline-success"
@@ -420,7 +420,7 @@ export default function RepairRequestPage() {
                           </>
                         )}
                         {/* Tạo PCT: chỉ khi DA_DUYET và user có quyền */}
-                        {req.trangThai === REQUEST_STATUS.DA_DUYET && canCreatePCT && (
+                        {req.status === REQUEST_STATUS.DA_DUYET && canCreatePCT && (
                           <button
                             className="btn btn-sm btn-outline-info"
                             onClick={() => setPctTarget(req)}
@@ -430,7 +430,7 @@ export default function RepairRequestPage() {
                           </button>
                         )}
                         {/* Xóa: chỉ khi CHO_DUYET */}
-                        {req.trangThai === REQUEST_STATUS.CHO_DUYET && (
+                        {req.status === REQUEST_STATUS.CHO_DUYET && (
                           <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => setDeleteTarget(req)}
@@ -471,7 +471,7 @@ export default function RepairRequestPage() {
         title="Duyệt yêu cầu sửa chữa"
         message={
           approveTarget
-            ? `Duyệt yêu cầu cho thiết bị "${approveTarget.tenThietBi}" (${approveTarget.maKKS})? Sau khi duyệt, yêu cầu sẽ chuyển sang trạng thái "Đã duyệt" và có thể tạo Phiếu công tác.`
+            ? `Duyệt yêu cầu cho thiết bị "${approveTarget.equipmentName}" (${approveTarget.kksCode})? Sau khi duyệt, yêu cầu sẽ chuyển sang trạng thái "Đã duyệt" và có thể tạo Phiếu công tác.`
             : ''
         }
         confirmText="Duyệt"
@@ -487,7 +487,7 @@ export default function RepairRequestPage() {
         title="Từ chối yêu cầu sửa chữa"
         message={
           rejectTarget
-            ? `Từ chối yêu cầu cho thiết bị "${rejectTarget.tenThietBi}" (${rejectTarget.maKKS})? Hành động này không thể hoàn tác.`
+            ? `Từ chối yêu cầu cho thiết bị "${rejectTarget.equipmentName}" (${rejectTarget.kksCode})? Hành động này không thể hoàn tác.`
             : ''
         }
         confirmText="Từ chối"
@@ -502,7 +502,7 @@ export default function RepairRequestPage() {
         title="Xoá yêu cầu sửa chữa"
         message={
           deleteTarget
-            ? `Bạn có chắc chắn muốn xoá yêu cầu cho thiết bị "${deleteTarget.tenThietBi}" (${deleteTarget.maKKS})? Hành động này không thể hoàn tác.`
+            ? `Bạn có chắc chắn muốn xoá yêu cầu cho thiết bị "${deleteTarget.equipmentName}" (${deleteTarget.kksCode})? Hành động này không thể hoàn tác.`
             : ''
         }
         confirmText="Xoá"

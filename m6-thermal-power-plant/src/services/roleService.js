@@ -1,75 +1,79 @@
-import axios from 'axios';
+import apiClient from './apiClient';
 
-const API_URL = '/api/vai-tro';
+const API_URL = '/api/v1/roles';
 
 /**
- * Danh sách vai trò trong hệ thống
+ * Danh sách vai trò trong hệ thống (mã EN, label VN).
+ * Đồng bộ với docs/ROLE_CODES.md — BE phải seed cùng bộ này.
  */
 export const SYSTEM_ROLES = [
-  { id: 1, maVaiTro: 'ADMIN', tenVaiTro: 'Quản trị viên' },
-  { id: 2, maVaiTro: 'NHAN_SU', tenVaiTro: 'Nhân sự' },
-  { id: 3, maVaiTro: 'THU_KHO_VT', tenVaiTro: 'Thủ kho Vật tư' },
-  { id: 4, maVaiTro: 'THU_KHO_CCDC', tenVaiTro: 'Thủ kho CCDC' },
-  { id: 5, maVaiTro: 'QUAN_DOC', tenVaiTro: 'Quản đốc' },
-  { id: 6, maVaiTro: 'TRUONG_CA', tenVaiTro: 'Trưởng ca / Trưởng kíp' },
-  { id: 7, maVaiTro: 'TO_TRUONG', tenVaiTro: 'Tổ trưởng' },
+  { id: 1, roleCode: 'ADMIN', roleName: 'Quản trị viên' },
+  { id: 2, roleCode: 'HR_STAFF', roleName: 'Nhân sự' },
+  { id: 3, roleCode: 'MATERIAL_KEEPER', roleName: 'Thủ kho Vật tư' },
+  { id: 4, roleCode: 'TOOL_KEEPER', roleName: 'Thủ kho CCDC' },
+  { id: 5, roleCode: 'OPERATIONS_MANAGER', roleName: 'Quản đốc PX Vận hành' },
+  { id: 6, roleCode: 'SHIFT_LEADER', roleName: 'Trưởng ca' },
+  { id: 7, roleCode: 'WATCH_LEADER', roleName: 'Trưởng kíp' },
+  { id: 8, roleCode: 'REPAIR_MANAGER', roleName: 'Quản đốc sửa chữa' },
+  { id: 9, roleCode: 'TEAM_LEADER', roleName: 'Tổ trưởng' },
 ];
 
 /**
- * Danh sách chức năng trong hệ thống
+ * Danh sách chức năng (featureCode EN, name VN).
  */
 export const SYSTEM_FUNCTIONS = [
-  { id: 1, maChucNang: 'NHAN_SU', tenChucNang: 'Quản lý Nhân sự', nhom: 'Nhân sự' },
-  { id: 2, maChucNang: 'PHONG_BAN', tenChucNang: 'Quản lý Phòng ban', nhom: 'Nhân sự' },
-  { id: 3, maChucNang: 'TAI_KHOAN', tenChucNang: 'Quản lý Tài khoản', nhom: 'Nhân sự' },
-  { id: 4, maChucNang: 'HE_THONG', tenChucNang: 'Quản lý Hệ thống', nhom: 'Thiết bị' },
-  { id: 5, maChucNang: 'THIET_BI', tenChucNang: 'Quản lý Thiết bị', nhom: 'Thiết bị' },
-  { id: 6, maChucNang: 'YEU_CAU_SC', tenChucNang: 'Yêu cầu Sửa chữa', nhom: 'Sửa chữa' },
-  { id: 7, maChucNang: 'PHIEU_CT', tenChucNang: 'Phiếu Công tác', nhom: 'Sửa chữa' },
-  { id: 8, maChucNang: 'DANH_GIA_KT', tenChucNang: 'Đánh giá Kỹ thuật', nhom: 'Sửa chữa' },
-  { id: 9, maChucNang: 'VAT_TU', tenChucNang: 'Quản lý Vật tư', nhom: 'Kho' },
-  { id: 10, maChucNang: 'CCDC', tenChucNang: 'Công cụ Dụng cụ', nhom: 'Kho' },
-  { id: 11, maChucNang: 'BAO_DUONG', tenChucNang: 'Bảo dưỡng Định kỳ', nhom: 'Bảo dưỡng' },
+  { id: 1, featureCode: 'EMPLOYEE', featureName: 'Quản lý Nhân sự', groupName: 'Nhân sự' },
+  { id: 2, featureCode: 'DEPARTMENT', featureName: 'Quản lý Phòng ban', groupName: 'Nhân sự' },
+  { id: 3, featureCode: 'ACCOUNT', featureName: 'Quản lý Tài khoản', groupName: 'Nhân sự' },
+  { id: 4, featureCode: 'EQUIPMENT_SYSTEM', featureName: 'Quản lý Hệ thống', groupName: 'Thiết bị' },
+  { id: 5, featureCode: 'EQUIPMENT', featureName: 'Quản lý Thiết bị', groupName: 'Thiết bị' },
+  { id: 6, featureCode: 'REPAIR_REQUEST', featureName: 'Yêu cầu Sửa chữa', groupName: 'Sửa chữa' },
+  { id: 7, featureCode: 'WORK_ORDER', featureName: 'Phiếu Công tác', groupName: 'Sửa chữa' },
+  { id: 8, featureCode: 'TECHNICAL_ASSESSMENT', featureName: 'Đánh giá Kỹ thuật', groupName: 'Sửa chữa' },
+  { id: 9, featureCode: 'MATERIAL', featureName: 'Quản lý Vật tư', groupName: 'Kho' },
+  { id: 10, featureCode: 'TOOL', featureName: 'Công cụ Dụng cụ', groupName: 'Kho' },
+  { id: 11, featureCode: 'MAINTENANCE', featureName: 'Bảo dưỡng Định kỳ', groupName: 'Bảo dưỡng' },
 ];
 
-/**
- * Các quyền (actions)
- */
-export const PERMISSION_ACTIONS = ['XEM', 'THEM', 'SUA', 'XOA'];
+export const PERMISSION_ACTIONS = ['VIEW', 'CREATE', 'UPDATE', 'DELETE'];
 
 export const PERMISSION_LABELS = {
-  XEM: 'Xem',
-  THEM: 'Thêm',
-  SUA: 'Sửa',
-  XOA: 'Xóa',
+  VIEW: 'Xem',
+  CREATE: 'Thêm',
+  UPDATE: 'Sửa',
+  DELETE: 'Xoá',
 };
 
 /**
- * Mock data: Ma trận phân quyền
- * Key format: `${maVaiTro}_${maChucNang}_${action}` → boolean
+ * Ma trận phân quyền — mock. Key: `${roleCode}_${featureCode}_${action}`.
  */
 let mockPermissions = {};
 
-// Init: ADMIN full quyền, các role khác có quyền cơ bản
 function initPermissions() {
+  const rules = {
+    HR_STAFF: ['EMPLOYEE', 'DEPARTMENT', 'ACCOUNT'],
+    MATERIAL_KEEPER: ['MATERIAL'],
+    TOOL_KEEPER: ['TOOL'],
+    OPERATIONS_MANAGER: ['EQUIPMENT_SYSTEM', 'EQUIPMENT', 'REPAIR_REQUEST'],
+    SHIFT_LEADER: ['REPAIR_REQUEST', 'WORK_ORDER'],
+    WATCH_LEADER: ['REPAIR_REQUEST'],
+    REPAIR_MANAGER: ['REPAIR_REQUEST', 'WORK_ORDER', 'TECHNICAL_ASSESSMENT', 'MATERIAL', 'TOOL'],
+    TEAM_LEADER: ['WORK_ORDER', 'TECHNICAL_ASSESSMENT', 'MAINTENANCE'],
+  };
+
+  // Một số role chỉ có quyền VIEW + CREATE (không UPDATE/DELETE).
+  const readCreateOnly = new Set(['SHIFT_LEADER', 'WATCH_LEADER']);
+
   SYSTEM_ROLES.forEach((role) => {
     SYSTEM_FUNCTIONS.forEach((func) => {
       PERMISSION_ACTIONS.forEach((action) => {
-        const key = `${role.maVaiTro}_${func.maChucNang}_${action}`;
-        if (role.maVaiTro === 'ADMIN') {
+        const key = `${role.roleCode}_${func.featureCode}_${action}`;
+        if (role.roleCode === 'ADMIN') {
           mockPermissions[key] = true;
-        } else if (role.maVaiTro === 'NHAN_SU' && ['NHAN_SU', 'PHONG_BAN', 'TAI_KHOAN'].includes(func.maChucNang)) {
-          mockPermissions[key] = true;
-        } else if (role.maVaiTro === 'THU_KHO_VT' && func.maChucNang === 'VAT_TU') {
-          mockPermissions[key] = true;
-        } else if (role.maVaiTro === 'THU_KHO_CCDC' && func.maChucNang === 'CCDC') {
-          mockPermissions[key] = true;
-        } else if (role.maVaiTro === 'QUAN_DOC' && ['HE_THONG', 'THIET_BI', 'PHIEU_CT'].includes(func.maChucNang)) {
-          mockPermissions[key] = true;
-        } else if (role.maVaiTro === 'TRUONG_CA' && ['YEU_CAU_SC', 'PHIEU_CT'].includes(func.maChucNang)) {
-          mockPermissions[key] = action === 'XEM' || action === 'THEM';
-        } else if (role.maVaiTro === 'TO_TRUONG' && ['PHIEU_CT', 'DANH_GIA_KT', 'BAO_DUONG'].includes(func.maChucNang)) {
-          mockPermissions[key] = true;
+        } else if (rules[role.roleCode]?.includes(func.featureCode)) {
+          mockPermissions[key] = readCreateOnly.has(role.roleCode)
+            ? action === 'VIEW' || action === 'CREATE'
+            : true;
         } else {
           mockPermissions[key] = false;
         }
@@ -81,36 +85,25 @@ function initPermissions() {
 initPermissions();
 
 /**
- * Kiểm tra một Role có quyền XEM một chức năng hay không (đồng bộ).
- * Dùng cho gating route & lọc menu Sidebar.
- * @param {string} role - mã vai trò (vd: 'TRUONG_CA')
- * @param {string} maChucNang - mã chức năng (vd: 'YEU_CAU_SC')
- * @returns {boolean}
+ * Kiểm tra một Role có quyền XEM một chức năng hay không.
  */
-export function canAccess(role, maChucNang) {
-  if (!role || !maChucNang) return false;
-  return !!mockPermissions[`${role}_${maChucNang}_XEM`];
+export function canAccess(role, featureCode) {
+  if (!role || !featureCode) return false;
+  if (role === 'ADMIN') return true;
+  return !!mockPermissions[`${role}_${featureCode}_VIEW`];
 }
 
-/**
- * Lấy danh sách mã chức năng mà Role được XEM (đồng bộ).
- * @param {string} role
- * @returns {string[]}
- */
 export function getAccessibleFunctions(role) {
   if (!role) return [];
+  if (role === 'ADMIN') return SYSTEM_FUNCTIONS.map((f) => f.featureCode);
   return SYSTEM_FUNCTIONS
-    .filter((f) => mockPermissions[`${role}_${f.maChucNang}_XEM`])
-    .map((f) => f.maChucNang);
+    .filter((f) => mockPermissions[`${role}_${f.featureCode}_VIEW`])
+    .map((f) => f.featureCode);
 }
 
 export const roleService = {
-  /**
-   * Lấy toàn bộ ma trận phân quyền
-   * @returns {{ roles, functions, actions, permissions }}
-   */
   getRolePermissions: () => {
-    // TODO: return axios.get(`${API_URL}/permissions`);
+    // TODO: return apiClient.get(`${API_URL}/permissions`);
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -121,21 +114,17 @@ export const roleService = {
             permissions: { ...mockPermissions },
           },
         });
-      }, 500);
+      }, 300);
     });
   },
 
-  /**
-   * Cập nhật ma trận phân quyền
-   * @param {object} updatedPermissions - Object key-value giống mockPermissions
-   */
   updatePermissions: (updatedPermissions) => {
-    // TODO: return axios.put(`${API_URL}/permissions`, updatedPermissions);
+    // TODO: return apiClient.put(`${API_URL}/permissions`, updatedPermissions);
     return new Promise((resolve) => {
       mockPermissions = { ...updatedPermissions };
       setTimeout(() => {
         resolve({ data: { message: 'Cập nhật phân quyền thành công' } });
-      }, 600);
+      }, 400);
     });
   },
 };

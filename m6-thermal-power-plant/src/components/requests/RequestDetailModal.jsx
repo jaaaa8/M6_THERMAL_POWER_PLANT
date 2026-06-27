@@ -51,31 +51,31 @@ export default function RequestDetailModal({ request, onClose }) {
             <div className="rdm-grid">
               <div className="rdm-item">
                 <span className="rdm-label">Mã KKS</span>
-                <code className="code-tag">{request.maKKS}</code>
+                <code className="code-tag">{request.kksCode}</code>
               </div>
               <div className="rdm-item">
                 <span className="rdm-label">Thiết bị</span>
-                <span className="rdm-value">{request.tenThietBi}</span>
+                <span className="rdm-value">{request.equipmentName}</span>
               </div>
               <div className="rdm-item">
                 <span className="rdm-label">Mức độ ưu tiên</span>
                 <span
                   className="rdm-priority"
-                  style={{ '--priority-color': PRIORITY_COLOR[request.mucDoUuTien] }}
+                  style={{ '--priority-color': PRIORITY_COLOR[request.priority] }}
                 >
-                  {PRIORITY_LABEL[request.mucDoUuTien]}
+                  {PRIORITY_LABEL[request.priority]}
                 </span>
               </div>
               <div className="rdm-item">
                 <span className="rdm-label">Trạng thái</span>
                 <StatusBadge
-                  status={REQUEST_STATUS_VARIANT[request.trangThai]}
-                  label={REQUEST_STATUS_LABEL[request.trangThai]}
+                  status={REQUEST_STATUS_VARIANT[request.status]}
+                  label={REQUEST_STATUS_LABEL[request.status]}
                 />
               </div>
               <div className="rdm-item rdm-item-full">
                 <span className="rdm-label">Mô tả sự cố</span>
-                <p className="rdm-description">{request.moTaSuCo}</p>
+                <p className="rdm-description">{request.issueDescription}</p>
               </div>
             </div>
           </section>
@@ -89,13 +89,13 @@ export default function RequestDetailModal({ request, onClose }) {
             <div className="rdm-grid">
               <div className="rdm-item">
                 <span className="rdm-label">Người tạo</span>
-                <span className="rdm-value">{request.nguoiTao}</span>
+                <span className="rdm-value">{request.createdBy}</span>
               </div>
               <div className="rdm-item">
                 <span className="rdm-label">
                   <BsCalendar3 className="me-1" /> Ngày tạo
                 </span>
-                <span className="rdm-value">{formatDateTime(request.ngayTao)}</span>
+                <span className="rdm-value">{formatDateTime(request.createdAt)}</span>
               </div>
             </div>
           </section>

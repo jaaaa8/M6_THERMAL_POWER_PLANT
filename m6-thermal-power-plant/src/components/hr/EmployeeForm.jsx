@@ -12,8 +12,8 @@ import {
   BsXCircle,
   BsArrowClockwise,
 } from 'react-icons/bs';
-import { nhanSuService } from '../../services/nhanSuService';
-import './NhanSuForm.css';
+import { employeeService } from '../../services/employeeService';
+import './EmployeeForm.css';
 
 /* ============================================================
    VALIDATION SCHEMA — Formik + Yup
@@ -21,7 +21,7 @@ import './NhanSuForm.css';
 const PHONE_REGEX = /^(0|\+84)[0-9]{9,10}$/;
 
 const validationSchema = Yup.object({
-  hoVaTen: Yup.string()
+  fullName: Yup.string()
     .required('Họ và tên không được để trống')
     .min(2, 'Họ tên tối thiểu 2 ký tự')
     .max(100, 'Họ tên không quá 100 ký tự'),
@@ -31,22 +31,22 @@ const validationSchema = Yup.object({
     .email('Email không đúng định dạng')
     .max(150, 'Email không quá 150 ký tự'),
 
-  soDienThoai: Yup.string()
+  phoneNumber: Yup.string()
     .required('Số điện thoại không được để trống')
     .matches(PHONE_REGEX, 'Số điện thoại không hợp lệ (VD: 0912345678)'),
 
-  maPhongBan: Yup.string()
+  departmentId: Yup.string()
     .required('Vui lòng chọn phòng ban'),
 
-  chucVu: Yup.string()
+  position: Yup.string()
     .required('Chức vụ không được để trống')
     .max(100, 'Chức vụ không quá 100 ký tự'),
 
-  chuyenMon: Yup.string()
+  specialization: Yup.string()
     .required('Chuyên môn không được để trống')
     .max(200, 'Chuyên môn không quá 200 ký tự'),
 
-  trangThai: Yup.string()
+  status: Yup.string()
     .required('Vui lòng chọn trạng thái')
     .oneOf(['DANG_LAM_VIEC', 'NGHI_VIEC', 'NGHI_PHEP'], 'Trạng thái không hợp lệ'),
 });
@@ -64,35 +64,35 @@ const AVATAR_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 const AVATAR_ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
 const INITIAL_VALUES = {
-  hoVaTen: '',
+  fullName: '',
   email: '',
-  soDienThoai: '',
-  maPhongBan: '',
-  chucVu: '',
-  chuyenMon: '',
-  trangThai: 'DANG_LAM_VIEC',
+  phoneNumber: '',
+  departmentId: '',
+  position: '',
+  specialization: '',
+  status: 'DANG_LAM_VIEC',
 };
 
 /* ============================================================
-   COMPONENT: NhanSuForm
+   COMPONENT: EmployeeForm
    ============================================================ */
 
 /**
- * NhanSuForm — Form thêm mới nhân sự với avatar upload.
+ * EmployeeForm — Form thêm mới nhân sự với avatar upload.
  *
  * @param {Function} [props.onSuccess] - Callback sau khi thêm thành công
  * @param {Function} [props.onCancel] - Callback khi bấm Huỷ
  * @param {object} [props.initialData] - Dữ liệu ban đầu (dùng cho chế độ sửa)
  * @param {boolean} [props.isEdit] - Chế độ sửa
  */
-export default function NhanSuForm({
+export default function EmployeeForm({
   onSuccess,
   onCancel,
   initialData = null,
   isEdit = false,
 }) {
-  const [phongBanList, setPhongBanList] = useState([]);
-  const [loadingPhongBan, setLoadingPhongBan] = useState(true);
+  const [departmentList, setDepartmentList] = useState([]);
+  const [loadingDepartment, setLoadingDepartment] = useState(true);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarError, setAvatarError] = useState('');
@@ -100,16 +100,16 @@ export default function NhanSuForm({
 
   /* --- Load danh sách phòng ban --- */
   useEffect(() => {
-    nhanSuService
-      .getPhongBanList()
+    employeeService
+      .getDepartmentList()
       .then((res) => {
         const list = res.data?.data || res.data || [];
-        setPhongBanList(Array.isArray(list) ? list : []);
+        setDepartmentList(Array.isArray(list) ? list : []);
       })
       .catch(() => {
         toast.error('Không thể tải danh sách phòng ban');
       })
-      .finally(() => setLoadingPhongBan(false));
+      .finally(() => setLoadingDepartment(false));
   }, []);
 
   /* --- Cleanup avatar preview URL khi unmount --- */
@@ -164,10 +164,10 @@ export default function NhanSuForm({
       }
 
       if (isEdit && initialData?.id) {
-        await nhanSuService.update(initialData.id, formData);
+        await employeeService.update(initialData.id, formData);
         toast.success('Cập nhật nhân sự thành công!');
       } else {
-        await nhanSuService.create(formData);
+        await employeeService.create(formData);
         toast.success('Thêm mới nhân sự thành công!');
       }
 
@@ -190,13 +190,13 @@ export default function NhanSuForm({
   /* --- Merge initial values (edit mode) --- */
   const mergedInitialValues = initialData
     ? {
-        hoVaTen: initialData.hoVaTen || '',
+        fullName: initialData.fullName || '',
         email: initialData.email || '',
-        soDienThoai: initialData.soDienThoai || '',
-        maPhongBan: initialData.maPhongBan?.toString() || '',
-        chucVu: initialData.chucVu || '',
-        chuyenMon: initialData.chuyenMon || '',
-        trangThai: initialData.trangThai || 'DANG_LAM_VIEC',
+        phoneNumber: initialData.phoneNumber || '',
+        departmentId: initialData.departmentId?.toString() || '',
+        position: initialData.position || '',
+        specialization: initialData.specialization || '',
+        status: initialData.status || 'DANG_LAM_VIEC',
       }
     : INITIAL_VALUES;
 
@@ -208,13 +208,13 @@ export default function NhanSuForm({
   }, [initialData]);
 
   return (
-    <div className="nhansu-form-card">
+    <div className="employee-form-card">
       {/* ===== HEADER ===== */}
-      <div className="nhansu-form-header">
-        <div className="nhansu-form-header-icon">
+      <div className="employee-form-header">
+        <div className="employee-form-header-icon">
           <BsPersonPlusFill />
         </div>
-        <div className="nhansu-form-header-text">
+        <div className="employee-form-header-text">
           <h2>{isEdit ? 'Cập nhật Nhân sự' : 'Thêm mới Nhân sự'}</h2>
           <p>
             {isEdit
@@ -233,7 +233,7 @@ export default function NhanSuForm({
       >
         {({ isSubmitting, touched, errors, values, setFieldValue, resetForm }) => (
           <Form noValidate>
-            <div className="nhansu-form-body">
+            <div className="employee-form-body">
               {/* --- Avatar Upload --- */}
               <div
                 className="avatar-upload-zone"
@@ -285,31 +285,31 @@ export default function NhanSuForm({
 
               <Row className="mb-3">
                 <Col md={6}>
-                  <label htmlFor="nhansu-hoVaTen" className="form-label">
+                  <label htmlFor="employee-fullName" className="form-label">
                     Họ và tên <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-hoVaTen"
-                    name="hoVaTen"
+                    id="employee-fullName"
+                    name="fullName"
                     type="text"
                     placeholder="Nguyễn Văn A"
                     className={`form-control ${
-                      touched.hoVaTen && errors.hoVaTen ? 'is-invalid' : ''
+                      touched.fullName && errors.fullName ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="hoVaTen"
+                    name="fullName"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
 
                 <Col md={6}>
-                  <label htmlFor="nhansu-email" className="form-label">
+                  <label htmlFor="employee-email" className="form-label">
                     Email <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-email"
+                    id="employee-email"
                     name="email"
                     type="email"
                     placeholder="nguyenvana@email.com"
@@ -327,49 +327,49 @@ export default function NhanSuForm({
 
               <Row className="mb-3">
                 <Col md={6}>
-                  <label htmlFor="nhansu-soDienThoai" className="form-label">
+                  <label htmlFor="employee-phoneNumber" className="form-label">
                     Số điện thoại <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-soDienThoai"
-                    name="soDienThoai"
+                    id="employee-phoneNumber"
+                    name="phoneNumber"
                     type="tel"
                     placeholder="0912345678"
                     className={`form-control ${
-                      touched.soDienThoai && errors.soDienThoai ? 'is-invalid' : ''
+                      touched.phoneNumber && errors.phoneNumber ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="soDienThoai"
+                    name="phoneNumber"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
 
                 <Col md={6}>
-                  <label htmlFor="nhansu-maPhongBan" className="form-label">
+                  <label htmlFor="employee-departmentId" className="form-label">
                     Phòng ban <span className="required-asterisk">*</span>
                   </label>
                   <Field
                     as="select"
-                    id="nhansu-maPhongBan"
-                    name="maPhongBan"
+                    id="employee-departmentId"
+                    name="departmentId"
                     className={`form-select ${
-                      touched.maPhongBan && errors.maPhongBan ? 'is-invalid' : ''
+                      touched.departmentId && errors.departmentId ? 'is-invalid' : ''
                     }`}
-                    disabled={loadingPhongBan}
+                    disabled={loadingDepartment}
                   >
                     <option value="">
-                      {loadingPhongBan ? 'Đang tải...' : '— Chọn phòng ban —'}
+                      {loadingDepartment ? 'Đang tải...' : '— Chọn phòng ban —'}
                     </option>
-                    {phongBanList.map((pb) => (
+                    {departmentList.map((pb) => (
                       <option key={pb.id} value={pb.id}>
-                        {pb.tenPhongBan}
+                        {pb.departmentName}
                       </option>
                     ))}
                   </Field>
                   <ErrorMessage
-                    name="maPhongBan"
+                    name="departmentId"
                     component="div"
                     className="invalid-feedback"
                   />
@@ -384,40 +384,40 @@ export default function NhanSuForm({
 
               <Row className="mb-3">
                 <Col md={6}>
-                  <label htmlFor="nhansu-chucVu" className="form-label">
+                  <label htmlFor="employee-position" className="form-label">
                     Chức vụ <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-chucVu"
-                    name="chucVu"
+                    id="employee-position"
+                    name="position"
                     type="text"
                     placeholder="Trưởng ca, Tổ trưởng, Nhân viên..."
                     className={`form-control ${
-                      touched.chucVu && errors.chucVu ? 'is-invalid' : ''
+                      touched.position && errors.position ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="chucVu"
+                    name="position"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
 
                 <Col md={6}>
-                  <label htmlFor="nhansu-chuyenMon" className="form-label">
+                  <label htmlFor="employee-specialization" className="form-label">
                     Chuyên môn <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-chuyenMon"
-                    name="chuyenMon"
+                    id="employee-specialization"
+                    name="specialization"
                     type="text"
                     placeholder="Kỹ sư điện, Kỹ thuật cơ khí..."
                     className={`form-control ${
-                      touched.chuyenMon && errors.chuyenMon ? 'is-invalid' : ''
+                      touched.specialization && errors.specialization ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="chuyenMon"
+                    name="specialization"
                     component="div"
                     className="invalid-feedback"
                   />
@@ -434,27 +434,27 @@ export default function NhanSuForm({
                     <div key={opt.value} className="status-radio-pill">
                       <input
                         type="radio"
-                        id={`trangThai-${opt.value}`}
-                        name="trangThai"
+                        id={`status-${opt.value}`}
+                        name="status"
                         value={opt.value}
-                        checked={values.trangThai === opt.value}
-                        onChange={() => setFieldValue('trangThai', opt.value)}
+                        checked={values.status === opt.value}
+                        onChange={() => setFieldValue('status', opt.value)}
                       />
-                      <label htmlFor={`trangThai-${opt.value}`}>
+                      <label htmlFor={`status-${opt.value}`}>
                         <span className={`status-dot ${opt.dotClass}`} />
                         {opt.label}
                       </label>
                     </div>
                   ))}
                 </div>
-                {touched.trangThai && errors.trangThai && (
-                  <div className="invalid-feedback d-block">{errors.trangThai}</div>
+                {touched.status && errors.status && (
+                  <div className="invalid-feedback d-block">{errors.status}</div>
                 )}
               </div>
             </div>
 
             {/* ===== FOOTER / ACTIONS ===== */}
-            <div className="nhansu-form-footer">
+            <div className="employee-form-footer">
               {onCancel && (
                 <Button
                   variant="outline-secondary"

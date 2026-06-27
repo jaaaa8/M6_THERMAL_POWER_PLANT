@@ -40,7 +40,7 @@ export default function CreateWorkOrderModal({ show, onClose, request, onCreated
       // Gợi ý mã phiếu theo năm + ID yêu cầu (user vẫn có thể sửa lại)
       maPhieu: `PCT-${new Date().getFullYear()}-${String(request?.id ?? '').padStart(3, '0')}`,
       noiDung: request
-        ? `Sửa chữa, khắc phục sự cố thiết bị ${request.tenThietBi} (${request.maKKS}). ${request.moTaSuCo || ''}`.trim()
+        ? `Sửa chữa, khắc phục sự cố thiết bị ${request.equipmentName} (${request.kksCode}). ${request.issueDescription || ''}`.trim()
         : '',
       diaDiem: '',
       thoiGianBatDau: '',
@@ -131,7 +131,7 @@ export default function CreateWorkOrderModal({ show, onClose, request, onCreated
                   <div>
                     <span className="pct-modal-title-main">Tạo Phiếu Công tác</span>
                     <span className="pct-modal-title-sub">
-                      Từ yêu cầu <strong>{request.maKKS}</strong> — {request.tenThietBi}
+                      Từ yêu cầu <strong>{request.kksCode}</strong> — {request.equipmentName}
                     </span>
                   </div>
                 </Modal.Title>
@@ -146,20 +146,20 @@ export default function CreateWorkOrderModal({ show, onClose, request, onCreated
 
                 <div className="pct-request-card">
                   <div className="pct-info-grid">
-                    <InfoItem label="Mã KKS" value={request.maKKS} mono />
-                    <InfoItem label="Thiết bị" value={request.tenThietBi} />
+                    <InfoItem label="Mã KKS" value={request.kksCode} mono />
+                    <InfoItem label="Thiết bị" value={request.equipmentName} />
                     <div className="pct-info-item">
                       <span className="pct-info-label">Mức ưu tiên</span>
                       <span className="pct-info-value">
                         <span
                           className="pct-priority-tag"
-                          style={{ '--priority-color': PRIORITY_COLOR[request.mucDoUuTien] }}
+                          style={{ '--priority-color': PRIORITY_COLOR[request.priority] }}
                         >
-                          {PRIORITY_LABEL[request.mucDoUuTien]}
+                          {PRIORITY_LABEL[request.priority]}
                         </span>
                       </span>
                     </div>
-                    <InfoItem label="Người tạo" value={request.nguoiTao} />
+                    <InfoItem label="Người tạo" value={request.createdBy} />
                     <InfoItem
                       label="Trạng thái"
                       value={<StatusBadge status="info" label="Đã duyệt" />}
@@ -167,7 +167,7 @@ export default function CreateWorkOrderModal({ show, onClose, request, onCreated
                   </div>
                   <div className="pct-info-item pct-info-full">
                     <span className="pct-info-label">Mô tả sự cố</span>
-                    <span className="pct-info-value">{request.moTaSuCo}</span>
+                    <span className="pct-info-value">{request.issueDescription}</span>
                   </div>
                 </div>
 

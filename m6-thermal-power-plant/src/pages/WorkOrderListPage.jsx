@@ -49,7 +49,7 @@ export default function WorkOrderListPage() {
     let result = workOrders;
 
     if (filterStatus !== 'ALL') {
-      result = result.filter((wo) => wo.trangThai === filterStatus);
+      result = result.filter((wo) => wo.status === filterStatus);
     }
 
     if (searchText.trim()) {
@@ -57,8 +57,8 @@ export default function WorkOrderListPage() {
       result = result.filter(
         (wo) =>
           wo.maPhieu.toLowerCase().includes(q) ||
-          wo.maKKS.toLowerCase().includes(q) ||
-          wo.tenThietBi.toLowerCase().includes(q)
+          wo.kksCode.toLowerCase().includes(q) ||
+          wo.equipmentName.toLowerCase().includes(q)
       );
     }
 
@@ -154,29 +154,29 @@ export default function WorkOrderListPage() {
                       <code className="code-tag">{wo.maPhieu}</code>
                     </td>
                     <td>
-                      <code className="code-tag">{wo.maKKS}</code>
+                      <code className="code-tag">{wo.kksCode}</code>
                     </td>
-                    <td className="wol-cell-truncate" title={wo.tenThietBi}>
-                      {wo.tenThietBi}
+                    <td className="wol-cell-truncate" title={wo.equipmentName}>
+                      {wo.equipmentName}
                     </td>
                     <td className="wol-cell-truncate" title={wo.nguoiChiHuy}>
                       {wo.nguoiChiHuy}
                     </td>
                     <td>
                       <StatusBadge
-                        status={WO_STATUS_VARIANT[wo.trangThai]}
-                        label={WO_STATUS_LABEL[wo.trangThai]}
-                        pulse={wo.trangThai === 'DANG_MO'}
+                        status={WO_STATUS_VARIANT[wo.status]}
+                        label={WO_STATUS_LABEL[wo.status]}
+                        pulse={wo.status === 'DANG_MO'}
                       />
                     </td>
                     <td className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
-                      {formatDate(wo.ngayTao)}
+                      {formatDate(wo.createdAt)}
                     </td>
                     <td>
                       <div className="data-table-actions">
                         <button
                           className="btn btn-sm btn-outline-primary"
-                          onClick={() => navigate(`/sua-chua/phieu-cong-tac/${wo.id}`)}
+                          onClick={() => navigate(`/repair/work-orders/${wo.id}`)}
                           title="Xem chi tiết"
                         >
                           <BsEye />

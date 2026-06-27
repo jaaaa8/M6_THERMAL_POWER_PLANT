@@ -1,21 +1,21 @@
 import axios from 'axios';
 
-const API_URL = '/api/thiet-bi';
+const API_URL = '/api/v1/equipment';
 
 /**
  * Mock danh sách thiết bị — dùng cho dropdown tạo yêu cầu sửa chữa
  */
 const MOCK_EQUIPMENT = [
-  { id: 1, maKKS: 'MAA10', tenThietBi: 'Lò hơi #1', heThong: 'Hệ thống Lò hơi' },
-  { id: 2, maKKS: 'MAA20', tenThietBi: 'Lò hơi #2', heThong: 'Hệ thống Lò hơi' },
-  { id: 3, maKKS: 'MAG10', tenThietBi: 'Tua-bin hơi #1', heThong: 'Hệ thống Tua-bin' },
-  { id: 4, maKKS: 'MAG20', tenThietBi: 'Tua-bin hơi #2', heThong: 'Hệ thống Tua-bin' },
-  { id: 5, maKKS: 'MKA10', tenThietBi: 'Máy phát điện #1', heThong: 'Hệ thống Phát điện' },
-  { id: 6, maKKS: 'MKA20', tenThietBi: 'Máy phát điện #2', heThong: 'Hệ thống Phát điện' },
-  { id: 7, maKKS: 'PAB10', tenThietBi: 'Bơm nước cấp #1', heThong: 'Hệ thống Nước' },
-  { id: 8, maKKS: 'PAB20', tenThietBi: 'Bơm nước cấp #2', heThong: 'Hệ thống Nước' },
-  { id: 9, maKKS: 'HLA10', tenThietBi: 'Quạt gió #1', heThong: 'Hệ thống Khí' },
-  { id: 10, maKKS: 'HNA10', tenThietBi: 'Bộ khử bụi tĩnh điện', heThong: 'Hệ thống Xử lý khí thải' },
+  { id: 1, kksCode: 'MAA10', equipmentName: 'Lò hơi #1', systemName: 'Hệ thống Lò hơi' },
+  { id: 2, kksCode: 'MAA20', equipmentName: 'Lò hơi #2', systemName: 'Hệ thống Lò hơi' },
+  { id: 3, kksCode: 'MAG10', equipmentName: 'Tua-bin hơi #1', systemName: 'Hệ thống Tua-bin' },
+  { id: 4, kksCode: 'MAG20', equipmentName: 'Tua-bin hơi #2', systemName: 'Hệ thống Tua-bin' },
+  { id: 5, kksCode: 'MKA10', equipmentName: 'Máy phát điện #1', systemName: 'Hệ thống Phát điện' },
+  { id: 6, kksCode: 'MKA20', equipmentName: 'Máy phát điện #2', systemName: 'Hệ thống Phát điện' },
+  { id: 7, kksCode: 'PAB10', equipmentName: 'Bơm nước cấp #1', systemName: 'Hệ thống Nước' },
+  { id: 8, kksCode: 'PAB20', equipmentName: 'Bơm nước cấp #2', systemName: 'Hệ thống Nước' },
+  { id: 9, kksCode: 'HLA10', equipmentName: 'Quạt gió #1', systemName: 'Hệ thống Khí' },
+  { id: 10, kksCode: 'HNA10', equipmentName: 'Bộ khử bụi tĩnh điện', systemName: 'Hệ thống Xử lý khí thải' },
 ];
 
 export const equipmentService = {

@@ -2,27 +2,28 @@ import { Link, useLocation } from 'react-router-dom';
 import { BsHouseDoor, BsChevronRight } from 'react-icons/bs';
 import './AppBreadcrumb.css';
 
-/* Route label mapping */
+/* Route slug → Vietnamese label hiển thị */
 const routeLabels = {
-  'nhan-su': 'Nhân sự',
-  'phong-ban': 'Phòng ban',
-  'nhan-vien': 'Nhân viên',
-  'tai-khoan': 'Tài khoản & Quyền',
-  'thiet-bi': 'Thiết bị',
-  'he-thong': 'Hệ thống',
-  'danh-sach': 'Danh sách',
-  'sua-chua': 'Sửa chữa',
-  'yeu-cau': 'Yêu cầu Sửa chữa',
-  'phieu-cong-tac': 'Phiếu Công tác',
-  'danh-gia-kt': 'Đánh giá Kỹ thuật',
-  'vat-tu': 'Vật tư',
-  'danh-muc': 'Danh mục',
-  'nhap-xuat': 'Nhập / Xuất kho',
-  'ccdc': 'Công cụ Dụng cụ',
-  'muon-tra': 'Mượn / Trả',
-  'bao-duong': 'Bảo dưỡng',
-  'ke-hoach': 'Kế hoạch',
-  'lich-su': 'Lịch sử',
+  admin: 'Quản trị',
+  roles: 'Phân quyền',
+  hr: 'Nhân sự',
+  departments: 'Phòng ban',
+  employees: 'Nhân viên',
+  new: 'Thêm mới',
+  accounts: 'Tài khoản & Quyền',
+  equipment: 'Thiết bị',
+  systems: 'Hệ thống',
+  repair: 'Sửa chữa',
+  requests: 'Yêu cầu Sửa chữa',
+  'work-orders': 'Phiếu Công tác',
+  assessments: 'Đánh giá Kỹ thuật',
+  materials: 'Vật tư',
+  transactions: 'Nhập / Xuất kho',
+  tools: 'Công cụ Dụng cụ',
+  borrowings: 'Mượn / Trả',
+  maintenance: 'Bảo dưỡng',
+  plans: 'Kế hoạch',
+  history: 'Lịch sử',
 };
 
 export default function AppBreadcrumb() {

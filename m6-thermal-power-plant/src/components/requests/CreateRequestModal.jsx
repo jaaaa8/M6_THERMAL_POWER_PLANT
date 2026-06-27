@@ -12,14 +12,14 @@ import './CreateRequestModal.css';
  * Yup validation schema cho form tạo yêu cầu sửa chữa
  */
 const createRequestSchema = Yup.object({
-  thietBiId: Yup.number()
+  equipmentId: Yup.number()
     .required('Vui lòng chọn thiết bị')
     .positive('Vui lòng chọn thiết bị'),
-  moTaSuCo: Yup.string()
+  issueDescription: Yup.string()
     .required('Mô tả sự cố không được để trống')
     .min(10, 'Mô tả tối thiểu 10 ký tự')
     .max(1000, 'Mô tả không quá 1000 ký tự'),
-  mucDoUuTien: Yup.string()
+  priority: Yup.string()
     .required('Vui lòng chọn mức độ ưu tiên')
     .oneOf(Object.values(PRIORITY), 'Mức độ ưu tiên không hợp lệ'),
 });
@@ -58,18 +58,18 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
     }
   }, [show]);
 
-  const heThongOptions = [...new Set(equipments.map((eq) => eq.heThong))];
+  const systemNameOptions = [...new Set(equipments.map((eq) => eq.systemName))];
 
   const filteredEquipments = selectedHeThong
-    ? equipments.filter((eq) => eq.heThong === selectedHeThong)
+    ? equipments.filter((eq) => eq.systemName === selectedHeThong)
     : equipments;
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
       if (isEditMode) {
         await repairRequestService.update(editRequest.id, {
-          moTaSuCo: values.moTaSuCo,
-          mucDoUuTien: values.mucDoUuTien,
+          issueDescription: values.issueDescription,
+          priority: values.priority,
         });
         toast.success('Cập nhật yêu cầu thành công!');
       } else {
@@ -107,9 +107,9 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
       <Formik
         enableReinitialize
         initialValues={{
-          thietBiId: editRequest?.thietBiId || '',
-          moTaSuCo: editRequest?.moTaSuCo || '',
-          mucDoUuTien: editRequest?.mucDoUuTien || '',
+          equipmentId: editRequest?.equipmentId || '',
+          issueDescription: editRequest?.issueDescription || '',
+          priority: editRequest?.priority || '',
         }}
         validationSchema={createRequestSchema}
         onSubmit={handleSubmit}
@@ -135,11 +135,11 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                   onChange={(e) => {
                     setSelectedHeThong(e.target.value);
                     // Đổi hệ thống → reset thiết bị đã chọn (tránh thiết bị không thuộc hệ thống mới)
-                    setFieldValue('thietBiId', '');
+                    setFieldValue('equipmentId', '');
                   }}
                 >
                   <option value="">— Tất cả hệ thống —</option>
-                  {heThongOptions.map((ht) => (
+                  {systemNameOptions.map((ht) => (
                     <option key={ht} value={ht}>{ht}</option>
                   ))}
                 </Form.Select>
@@ -151,11 +151,11 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                   Thiết bị <span className="text-danger">*</span>
                 </Form.Label>
                 <Form.Select
-                  name="thietBiId"
-                  value={values.thietBiId}
+                  name="equipmentId"
+                  value={values.equipmentId}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  isInvalid={touched.thietBiId && !!errors.thietBiId}
+                  isInvalid={touched.equipmentId && !!errors.equipmentId}
                   disabled={loadingEquipments || isEditMode}
                 >
                   <option value="">
@@ -163,12 +163,12 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                   </option>
                   {filteredEquipments.map((eq) => (
                     <option key={eq.id} value={eq.id}>
-                      [{eq.maKKS}] {eq.tenThietBi} — {eq.heThong}
+                      [{eq.kksCode}] {eq.equipmentName} — {eq.systemName}
                     </option>
                   ))}
                 </Form.Select>
                 <Form.Control.Feedback type="invalid">
-                  {errors.thietBiId}
+                  {errors.equipmentId}
                 </Form.Control.Feedback>
               </Form.Group>
 
@@ -180,20 +180,20 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                 <Form.Control
                   as="textarea"
                   rows={4}
-                  name="moTaSuCo"
+                  name="issueDescription"
                   placeholder="Mô tả chi tiết hiện tượng sự cố, vị trí, mức độ ảnh hưởng..."
-                  value={values.moTaSuCo}
+                  value={values.issueDescription}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  isInvalid={touched.moTaSuCo && !!errors.moTaSuCo}
+                  isInvalid={touched.issueDescription && !!errors.issueDescription}
                   style={{ resize: 'vertical', minHeight: '100px' }}
                 />
                 <div className="d-flex justify-content-between mt-1">
                   <Form.Control.Feedback type="invalid" className="d-block">
-                    {errors.moTaSuCo}
+                    {errors.issueDescription}
                   </Form.Control.Feedback>
                   <small className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
-                    {values.moTaSuCo.length}/1000
+                    {values.issueDescription.length}/1000
                   </small>
                 </div>
               </Form.Group>
@@ -208,24 +208,24 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                     <label
                       key={opt.value}
                       className={`crm-priority-pill ${opt.colorClass} ${
-                        values.mucDoUuTien === opt.value ? 'active' : ''
+                        values.priority === opt.value ? 'active' : ''
                       }`}
                     >
                       <input
                         type="radio"
-                        name="mucDoUuTien"
+                        name="priority"
                         value={opt.value}
-                        checked={values.mucDoUuTien === opt.value}
-                        onChange={() => setFieldValue('mucDoUuTien', opt.value)}
+                        checked={values.priority === opt.value}
+                        onChange={() => setFieldValue('priority', opt.value)}
                       />
                       <span className="crm-priority-dot" />
                       {opt.label}
                     </label>
                   ))}
                 </div>
-                {touched.mucDoUuTien && errors.mucDoUuTien && (
+                {touched.priority && errors.priority && (
                   <div className="text-danger" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)' }}>
-                    {errors.mucDoUuTien}
+                    {errors.priority}
                   </div>
                 )}
               </Form.Group>

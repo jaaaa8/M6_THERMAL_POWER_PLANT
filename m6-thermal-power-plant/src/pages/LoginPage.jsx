@@ -20,17 +20,19 @@ const loginSchema = Yup.object({
 });
 
 /**
- * Chuyển hướng dựa theo Role — màn hình chủ của từng vai trò.
- * Mã Role thống nhất theo roleService.SYSTEM_ROLES.
+ * Chuyển hướng dựa theo Role backend — màn hình chủ của từng vai trò.
+ * Áp dụng cho role đầu tiên trong mảng `roles[]` trả về từ BE.
  */
 const ROLE_REDIRECT = {
-  ADMIN: '/admin/phan-quyen',
-  NHAN_SU: '/nhan-su/nhan-vien',
-  THU_KHO_VT: '/vat-tu/danh-muc',
-  THU_KHO_CCDC: '/ccdc/danh-sach',
-  QUAN_DOC: '/thiet-bi/danh-sach',
-  TRUONG_CA: '/sua-chua/yeu-cau',
-  TO_TRUONG: '/sua-chua/phieu-cong-tac',
+  ADMIN: '/',
+  HR_STAFF: '/hr/employees',
+  MATERIAL_KEEPER: '/materials',
+  TOOL_KEEPER: '/tools',
+  OPERATIONS_MANAGER: '/equipment',
+  SHIFT_LEADER: '/repair/requests',
+  WATCH_LEADER: '/repair/requests',
+  REPAIR_MANAGER: '/repair/work-orders',
+  TEAM_LEADER: '/repair/work-orders',
 };
 
 export default function LoginPage() {
@@ -42,13 +44,15 @@ export default function LoginPage() {
       const res = await authService.login(values.username, values.password);
       const user = res.data;
 
-      toast.success(`Xin chào, ${user.hoTen}!`);
+      toast.success(`Xin chào, ${user.fullName || user.username}!`);
 
-      // Chuyển hướng theo Role
-      const redirectPath = ROLE_REDIRECT[user.role] || '/';
+      // Chuyển hướng theo role backend (lấy role đầu tiên).
+      const primaryRole = user.roles?.[0];
+      const redirectPath = ROLE_REDIRECT[primaryRole] || '/';
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      const message = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const apiMessage = err.response?.data?.message;
+      const message = apiMessage || 'Đăng nhập thất bại. Vui lòng thử lại.';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -136,31 +140,6 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
-
-            {/* Hint cho dev/demo */}
-            <div style={{
-              marginTop: 'var(--space-5)',
-              padding: 'var(--space-3)',
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}>
-              <p style={{
-                fontSize: 'var(--text-xs)',
-                color: 'rgba(255,255,255,0.35)',
-                margin: 0,
-                lineHeight: 1.7,
-              }}>
-                <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Demo accounts</strong> (mật khẩu = tên đăng nhập + "123"):<br />
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>admin</code> → Quản trị viên ·{' '}
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>nhansu</code> → Nhân sự<br />
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>thukhovt</code> → Thủ kho VT ·{' '}
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>thukhoccdc</code> → Thủ kho CCDC<br />
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>quandoc</code> → Quản đốc ·{' '}
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>truongca</code> → Trưởng ca<br />
-                <code style={{ color: 'var(--color-accent)', fontSize: 'var(--text-xs)' }}>totruong</code> → Tổ trưởng
-              </p>
-            </div>
           </Form>
         )}
       </Formik>

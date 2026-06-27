@@ -1,5 +1,117 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-06-27] — Chốt lại bộ 9 role thực tế của nhà máy
+
+### Bối cảnh
+Bản refactor trước tôi tự suy ra 12 role (thêm DIRECTOR, DEPARTMENT_HEAD, SUPERVISOR, TECHNICIAN, MANAGER, STAFF). User đính chính: hệ thống thực tế **chỉ có 9 role**, có phân biệt rõ "Quản đốc PX vận hành" vs "Quản đốc sửa chữa", và "Trưởng ca" vs "Trưởng kíp" (trước đó gộp).
+
+### Bộ role chính thức (xem docs/ROLE_CODES.md)
+`ADMIN`, `HR_STAFF`, `MATERIAL_KEEPER`, `TOOL_KEEPER`, `OPERATIONS_MANAGER`, `SHIFT_LEADER`, `WATCH_LEADER`, `REPAIR_MANAGER`, `TEAM_LEADER`.
+
+### Các file đã sửa
+| File | Mô tả |
+|---|---|
+| `docs/ROLE_CODES.md` | Viết lại với 9 role + ma trận quyền tương ứng |
+| `src/services/roleService.js` | `SYSTEM_ROLES` rút từ 12 → 9; `initPermissions.rules` viết lại theo 9 role; `readCreateOnly` set chung cho SHIFT_LEADER + WATCH_LEADER |
+| `src/services/authService.js` | `LEGACY_ROLE_MAP` chỉ còn `TRUONG_CA → SHIFT_LEADER`; các role BE cũ khác không map (cần BE seed lại) |
+| `src/pages/LoginPage.jsx` | `ROLE_REDIRECT` rút từ 12 → 9 entry |
+| `src/pages/RepairRequestPage.jsx` | `APPROVER_ROLES` `['ADMIN','MANAGER']` → `['ADMIN','REPAIR_MANAGER']`; `PCT_CREATOR_ROLES` cập nhật tương tự |
+
+### Lưu ý
+- BE cần seed lại 9 role này; các role cũ (NHAN_VIEN, KY_THUAT_VIEN, GIAM_SAT, TRUONG_PHONG, GIAM_DOC) cần migrate/xoá.
+- Memory `feedback-code-language.md` đã cập nhật bộ 9 role để các phiên sau dùng đúng.
+
+---
+
+## [2026-06-27] — Chuẩn hoá code sang tiếng Anh (route, role, biến)
+
+### Bối cảnh
+User yêu cầu "code clean" — chỉ giữ tiếng Việt cho text hiển thị, còn lại (route, biến, mã role, mã chức năng, file) đều EN. User sẽ tự cập nhật BE để khớp bộ role mới. Rule đã lưu vào auto-memory để các phiên sau tuân thủ.
+
+### Routes đổi (slug VN → EN)
+| Cũ | Mới |
+|---|---|
+| `/admin/phan-quyen` | `/admin/roles` |
+| `/nhan-su/phong-ban` | `/hr/departments` |
+| `/nhan-su/nhan-vien` | `/hr/employees` |
+| `/nhan-su/them-moi` | `/hr/employees/new` |
+| `/nhan-su/tai-khoan` | `/hr/accounts` |
+| `/thiet-bi/he-thong` | `/equipment/systems` |
+| `/thiet-bi/danh-sach` | `/equipment` |
+| `/sua-chua/yeu-cau` | `/repair/requests` |
+| `/sua-chua/phieu-cong-tac[/:id]` | `/repair/work-orders[/:id]` |
+| `/sua-chua/danh-gia-kt` | `/repair/assessments` |
+| `/vat-tu/danh-muc` | `/materials` |
+| `/vat-tu/nhap-xuat` | `/materials/transactions` |
+| `/ccdc/danh-sach` | `/tools` |
+| `/ccdc/muon-tra` | `/tools/borrowings` |
+| `/bao-duong/ke-hoach` | `/maintenance/plans` |
+| `/bao-duong/lich-su` | `/maintenance/history` |
+
+### Bộ mã role thống nhất (EN — BE cần seed lại)
+Chi tiết đầy đủ: [`docs/ROLE_CODES.md`](./ROLE_CODES.md). Tóm tắt mapping cũ → mới:
+`TRUONG_CA → SHIFT_LEADER`, `NHAN_VIEN → STAFF`, `KY_THUAT_VIEN → TECHNICIAN`, `GIAM_SAT → SUPERVISOR`, `TRUONG_PHONG → DEPARTMENT_HEAD`, `GIAM_DOC → DIRECTOR`. Thêm role mới: `HR_STAFF`, `MATERIAL_KEEPER`, `TOOL_KEEPER`, `MANAGER`, `TEAM_LEADER`, `DIRECTOR`. `authService.normalizeUser()` có `LEGACY_ROLE_MAP` bridge code cũ BE → code mới — xoá khi BE đã update.
+
+### Bộ mã featureCode đổi (Vietnamese → English)
+`PHONG_BAN→DEPARTMENT`, `NHAN_SU→EMPLOYEE`, `TAI_KHOAN→ACCOUNT`, `HE_THONG→EQUIPMENT_SYSTEM`, `THIET_BI→EQUIPMENT`, `YEU_CAU_SC→REPAIR_REQUEST`, `PHIEU_CT→WORK_ORDER`, `DANH_GIA_KT→TECHNICAL_ASSESSMENT`, `VAT_TU→MATERIAL`, `CCDC→TOOL`, `BAO_DUONG→MAINTENANCE`. Action codes thống nhất EN: `VIEW/CREATE/UPDATE/DELETE` (sửa luôn bug VIEW/XEM mismatch trong `canAccess()` — giờ matrix khớp).
+
+### Biến đổi tên
+- User object: `hoTen` → `fullName` ở 6 file (Header, Sidebar, RepairRequestPage, workOrderService, repairRequestService, authService normalize).
+- Removed các field backward-compat (`id`, `roleBackend`, `hoTen`) khỏi `normalizeUser()`.
+
+### Các file đã sửa
+| File | Mô tả |
+|---|---|
+| `docs/ROLE_CODES.md` (mới) | Bộ role chính thức + mapping cũ → mới cho BE team |
+| `src/services/roleService.js` | Rewrite `SYSTEM_ROLES` (12 role EN), `SYSTEM_FUNCTIONS` (featureCode EN), `initPermissions` dùng map gọn, fix action `VIEW` |
+| `src/services/authService.js` | `LEGACY_ROLE_MAP` thay cho `BE_TO_UI_ROLE`; `normalizeUser` trả shape sạch (chỉ field BE chính tắc + `role` đơn) |
+| `src/services/equipmentService.js` | API_URL `/api/thiet-bi` → `/api/v1/equipment` |
+| `src/App.jsx` | 17 route + 17 `requireFunction` đổi sang EN |
+| `src/components/layout/Sidebar.jsx` | Toàn bộ `path` + `func` đổi sang EN; `hoTen → fullName` |
+| `src/components/layout/Header.jsx` | `hoTen → fullName` |
+| `src/components/layout/AppBreadcrumb.jsx` | `routeLabels` viết lại theo slug EN mới |
+| `src/pages/LoginPage.jsx` | `ROLE_REDIRECT` 12 entry theo role EN mới |
+| `src/pages/Dashboard.jsx` | 2 `navigate()` cập nhật path EN |
+| `src/pages/WorkOrderListPage.jsx` | navigate path |
+| `src/pages/WorkOrderPage.jsx` | 2 navigate path |
+| `src/pages/RepairRequestPage.jsx` | `currentUser.hoTen → fullName` |
+
+### Kết quả kiểm thử (Playwright)
+- ✅ Login `admin/admin123` → redirect `/` (Bảng điều khiển), `scms_current_user` lưu shape mới (`fullName, roles[]`, không còn `hoTen/id/roleBackend`), không có console error.
+- ✅ Navigate `/repair/work-orders` → trang load đúng.
+
+### Không thay đổi (giữ scope)
+- **Field name trong mock domain objects** (`hoTen`, `chucVu`, `gioVao`, `gioRa`, `thanhVien`, `maPhieu`, `phieuCongTac`…) ở `workOrderService.js` / `repairRequestService.js` / `WorkOrderPage` / `CreateWorkOrderModal`: chưa đổi vì là field schema của entity nghiệp vụ, cần đồng bộ với contract BE — tách thành task riêng "domain model rename" khi BE chốt API contract cho work orders.
+- Tên file/component (đã sẵn EN ngoại trừ `EmployeeForm` đã đổi từ trước).
+
+---
+
+## [2026-06-27] — Tích hợp Auth API thật (BE Spring Boot) thay cho mock
+
+### Bối cảnh
+BE đã triển khai 5 endpoint trong `docs/API_AUTH.md` (`M6_THERMAL_POWER_PLANT_API`): `POST /api/v1/auth/login`, `GET /me`, `POST /refresh`, `POST /logout`, `POST /api/v1/accounts/create`. Trước đó FE đang dùng `MOCK_USERS` cục bộ trong `authService.js`. Mục tiêu: gọi API thật, hỗ trợ JWT + refresh rotation, mà không phá luồng UI hiện có (Header/Sidebar/ProtectedRoute đang đọc `currentUser.hoTen` & `currentUser.role`).
+
+### Thay đổi
+- **`src/services/apiClient.js`** (mới): axios instance dùng chung; request interceptor gắn `Authorization: Bearer <accessToken>`; response interceptor tự gọi `/refresh` khi gặp 401 (rotation token cũ → mới), khoá race bằng `refreshPromise`, nếu refresh fail → clear token và đẩy về `/login`. Export `tokenStore` (get/set/clear) + `API_BASE_URL` (đọc từ `VITE_API_BASE_URL`, mặc định rỗng → đi qua Vite dev proxy).
+- **`src/services/authService.js`**: viết lại hoàn toàn — bỏ `MOCK_USERS`. Hàm `login/logout/fetchMe/createAccount` gọi BE thật. Hàm `normalizeUser()` map response BE về shape vừa có field mới (`accountId`, `fullName`, `roles[]`) vừa có field cũ (`id`, `hoTen`, `role`) để Header/Sidebar/ProtectedRoute không phải sửa. Map BE→UI role chỉ cho 3 cặp rõ ràng (ADMIN→ADMIN, TRUONG_CA→SHIFT_LEADER, TRUONG_PHONG→HR); role khác giữ nguyên mã BE.
+- **`src/pages/LoginPage.jsx`**: dùng `user.fullName`/`user.roles[0]` thay vì `user.hoTen`/`user.role`. `ROLE_REDIRECT` viết theo role BE thay vì role mock cũ. Sửa hint demo về 2 tài khoản test thật (`admin/admin123`, `user_test_01/user12345`).
+- **`src/components/common/ProtectedRoute.jsx`**: thêm bootstrap flow — nếu có `accessToken` nhưng không có user trong storage (F5 reload), tự gọi `/auth/me` để khôi phục. Trong lúc chờ render `null` để tránh nhấp nháy về `/login`.
+- **`src/components/layout/Header.jsx`**: `handleLogout` chuyển sang `async` để await `authService.logout()` (gọi `/logout` revoke refresh token).
+- **`vite.config.js`**: thêm `server.proxy` `/api → http://localhost:8080` (override bằng env `VITE_API_BASE_URL`). Tránh CORS khi dev FE 5173/5174 gọi BE 8080. **Lý do phải sửa file config** (vi phạm RULE.MD §3 ở mức tối thiểu): không có proxy thì preflight CORS chặn toàn bộ request, integration không chạy được.
+- **`src/App.jsx`**: sửa import path `./components/nhansu/NhanSuForm` → `./components/hr/EmployeeForm` (lỗi pre-existing, folder đã đổi tên nhưng import chưa cập nhật — chặn cả build).
+
+### Kết quả kiểm thử (Playwright)
+- ✅ `POST /api/v1/auth/login` `admin/admin123` → 200, lưu `scms_access_token` + `scms_refresh_token` + `scms_current_user`, redirect `/admin/phan-quyen`.
+- ✅ `GET /api/v1/auth/me` với access token → 200, trả đúng `accountId=1, username=admin, roles=[ADMIN]`.
+- ✅ `POST /api/v1/auth/login` `admin/wrong_pw` → 401 `INVALID_CREDENTIALS`, message "Tên đăng nhập hoặc mật khẩu không đúng" hiển thị qua toast.
+
+### Lưu ý cho phiên sau
+- Các component cũ check role bằng `currentUser.role` vẫn chạy được do `normalizeUser()` map BE role đầu tiên sang code UI. Với role BE chưa có mapping (NHAN_VIEN, KY_THUAT_VIEN, GIAM_SAT, GIAM_DOC) thì matrix `roleService` trả `false` ⇒ menu rỗng — cần định nghĩa quyền sau khi BE chốt danh sách role chính thức.
+- `roleService.js` vẫn dùng mock permissions cho ma trận phân quyền — chưa đụng tới ở task này.
+- Khi build production: set `VITE_API_BASE_URL=https://<be-domain>` trước `npm run build`; lúc đó axios sẽ gọi tuyệt đối, không qua Vite proxy.
+
+---
+
 ## [2026-06-26] — Bỏ cột "Mô tả sự cố" + sửa lại width cột WorkOrderListPage
 
 ### Thay đổi

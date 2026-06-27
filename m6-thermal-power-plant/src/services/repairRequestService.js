@@ -60,91 +60,91 @@ export const PRIORITY_COLOR = {
 let mockRequests = [
   {
     id: 1,
-    maKKS: 'MAA10',
-    tenThietBi: 'Lò hơi #1',
-    moTaSuCo: 'Rò rỉ đường ống hơi chính tại mặt bích tầng 3, áp lực giảm 0.2 MPa',
-    mucDoUuTien: 'KHAN_CAP',
-    trangThai: 'DANG_XU_LY',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-20T08:30:00',
-    thietBiId: 1,
+    kksCode: 'MAA10',
+    equipmentName: 'Lò hơi #1',
+    issueDescription: 'Rò rỉ đường ống hơi chính tại mặt bích tầng 3, áp lực giảm 0.2 MPa',
+    priority: 'KHAN_CAP',
+    status: 'DANG_XU_LY',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-20T08:30:00',
+    equipmentId: 1,
   },
   {
     id: 2,
-    maKKS: 'MAG10',
-    tenThietBi: 'Tua-bin hơi #1',
-    moTaSuCo: 'Rung động bất thường tại ổ trục số 3, biên độ vượt ngưỡng cảnh báo',
-    mucDoUuTien: 'CAO',
-    trangThai: 'DA_DUYET',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-21T10:15:00',
-    thietBiId: 3,
+    kksCode: 'MAG10',
+    equipmentName: 'Tua-bin hơi #1',
+    issueDescription: 'Rung động bất thường tại ổ trục số 3, biên độ vượt ngưỡng cảnh báo',
+    priority: 'CAO',
+    status: 'DA_DUYET',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-21T10:15:00',
+    equipmentId: 3,
   },
   {
     id: 3,
-    maKKS: 'PAB10',
-    tenThietBi: 'Bơm nước cấp #1',
-    moTaSuCo: 'Phớt bơm bị mòn, nước rò rỉ ra ngoài khoảng 5 lít/phút',
-    mucDoUuTien: 'TRUNG_BINH',
-    trangThai: 'CHO_DUYET',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-22T14:00:00',
-    thietBiId: 7,
+    kksCode: 'PAB10',
+    equipmentName: 'Bơm nước cấp #1',
+    issueDescription: 'Phớt bơm bị mòn, nước rò rỉ ra ngoài khoảng 5 lít/phút',
+    priority: 'TRUNG_BINH',
+    status: 'CHO_DUYET',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-22T14:00:00',
+    equipmentId: 7,
   },
   {
     id: 4,
-    maKKS: 'HLA10',
-    tenThietBi: 'Quạt gió #1',
-    moTaSuCo: 'Cánh quạt bị nứt, cần thay thế trong lần bảo dưỡng tới',
-    mucDoUuTien: 'THAP',
-    trangThai: 'HOAN_THANH',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-15T09:00:00',
-    thietBiId: 9,
+    kksCode: 'HLA10',
+    equipmentName: 'Quạt gió #1',
+    issueDescription: 'Cánh quạt bị nứt, cần thay thế trong lần bảo dưỡng tới',
+    priority: 'THAP',
+    status: 'HOAN_THANH',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-15T09:00:00',
+    equipmentId: 9,
   },
   {
     id: 5,
-    maKKS: 'MKA10',
-    tenThietBi: 'Máy phát điện #1',
-    moTaSuCo: 'Nhiệt độ cuộn dây stator tăng cao bất thường, cần kiểm tra hệ thống làm mát',
-    mucDoUuTien: 'CAO',
-    trangThai: 'CHO_DUYET',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-23T07:45:00',
-    thietBiId: 5,
+    kksCode: 'MKA10',
+    equipmentName: 'Máy phát điện #1',
+    issueDescription: 'Nhiệt độ cuộn dây stator tăng cao bất thường, cần kiểm tra hệ thống làm mát',
+    priority: 'CAO',
+    status: 'CHO_DUYET',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-23T07:45:00',
+    equipmentId: 5,
   },
   {
     id: 6,
-    maKKS: 'MAA20',
-    tenThietBi: 'Lò hơi #2',
-    moTaSuCo: 'Van an toàn hoạt động không chính xác, cần hiệu chuẩn lại',
-    mucDoUuTien: 'KHAN_CAP',
-    trangThai: 'DA_DUYET',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-22T16:30:00',
-    thietBiId: 2,
+    kksCode: 'MAA20',
+    equipmentName: 'Lò hơi #2',
+    issueDescription: 'Van an toàn hoạt động không chính xác, cần hiệu chuẩn lại',
+    priority: 'KHAN_CAP',
+    status: 'DA_DUYET',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-22T16:30:00',
+    equipmentId: 2,
   },
   {
     id: 7,
-    maKKS: 'HNA10',
-    tenThietBi: 'Bộ khử bụi tĩnh điện',
-    moTaSuCo: 'Hiệu suất lọc bụi giảm xuống dưới 95%, cần vệ sinh tấm cực',
-    mucDoUuTien: 'TRUNG_BINH',
-    trangThai: 'CHO_DUYET',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-23T11:00:00',
-    thietBiId: 10,
+    kksCode: 'HNA10',
+    equipmentName: 'Bộ khử bụi tĩnh điện',
+    issueDescription: 'Hiệu suất lọc bụi giảm xuống dưới 95%, cần vệ sinh tấm cực',
+    priority: 'TRUNG_BINH',
+    status: 'CHO_DUYET',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-23T11:00:00',
+    equipmentId: 10,
   },
   {
     id: 8,
-    maKKS: 'PAB20',
-    tenThietBi: 'Bơm nước cấp #2',
-    moTaSuCo: 'Tiếng ồn lạ phát ra từ hộp số, nghi ngờ hư hỏng bánh răng',
-    mucDoUuTien: 'CAO',
-    trangThai: 'DANG_XU_LY',
-    nguoiTao: 'Trần Minh Trưởng Ca',
-    ngayTao: '2026-06-19T13:20:00',
-    thietBiId: 8,
+    kksCode: 'PAB20',
+    equipmentName: 'Bơm nước cấp #2',
+    issueDescription: 'Tiếng ồn lạ phát ra từ hộp số, nghi ngờ hư hỏng bánh răng',
+    priority: 'CAO',
+    status: 'DANG_XU_LY',
+    createdBy: 'Trần Minh Trưởng Ca',
+    createdAt: '2026-06-19T13:20:00',
+    equipmentId: 8,
   },
 ];
 
@@ -178,35 +178,35 @@ export const repairRequestService = {
 
   /**
    * Tạo yêu cầu sửa chữa mới
-   * @param {{ thietBiId: number, moTaSuCo: string, mucDoUuTien: string }} dto
+   * @param {{ equipmentId: number, issueDescription: string, priority: string }} dto
    */
   create: (dto) => {
     // TODO: return axios.post(API_URL, dto);
     return new Promise((resolve) => {
       const equipment = [
-        { id: 1, maKKS: 'MAA10', ten: 'Lò hơi #1' },
-        { id: 2, maKKS: 'MAA20', ten: 'Lò hơi #2' },
-        { id: 3, maKKS: 'MAG10', ten: 'Tua-bin hơi #1' },
-        { id: 4, maKKS: 'MAG20', ten: 'Tua-bin hơi #2' },
-        { id: 5, maKKS: 'MKA10', ten: 'Máy phát điện #1' },
-        { id: 6, maKKS: 'MKA20', ten: 'Máy phát điện #2' },
-        { id: 7, maKKS: 'PAB10', ten: 'Bơm nước cấp #1' },
-        { id: 8, maKKS: 'PAB20', ten: 'Bơm nước cấp #2' },
-        { id: 9, maKKS: 'HLA10', ten: 'Quạt gió #1' },
-        { id: 10, maKKS: 'HNA10', ten: 'Bộ khử bụi tĩnh điện' },
+        { id: 1, kksCode: 'MAA10', ten: 'Lò hơi #1' },
+        { id: 2, kksCode: 'MAA20', ten: 'Lò hơi #2' },
+        { id: 3, kksCode: 'MAG10', ten: 'Tua-bin hơi #1' },
+        { id: 4, kksCode: 'MAG20', ten: 'Tua-bin hơi #2' },
+        { id: 5, kksCode: 'MKA10', ten: 'Máy phát điện #1' },
+        { id: 6, kksCode: 'MKA20', ten: 'Máy phát điện #2' },
+        { id: 7, kksCode: 'PAB10', ten: 'Bơm nước cấp #1' },
+        { id: 8, kksCode: 'PAB20', ten: 'Bơm nước cấp #2' },
+        { id: 9, kksCode: 'HLA10', ten: 'Quạt gió #1' },
+        { id: 10, kksCode: 'HNA10', ten: 'Bộ khử bụi tĩnh điện' },
       ];
-      const eq = equipment.find((e) => e.id === Number(dto.thietBiId));
+      const eq = equipment.find((e) => e.id === Number(dto.equipmentId));
 
       const newRequest = {
         id: nextId++,
-        maKKS: eq?.maKKS || 'N/A',
-        tenThietBi: eq?.ten || 'Không xác định',
-        moTaSuCo: dto.moTaSuCo,
-        mucDoUuTien: dto.mucDoUuTien,
-        trangThai: REQUEST_STATUS.CHO_DUYET,
-        nguoiTao: authService.getCurrentUser()?.hoTen || 'Trần Minh Trưởng Ca',
-        ngayTao: new Date().toISOString(),
-        thietBiId: Number(dto.thietBiId),
+        kksCode: eq?.kksCode || 'N/A',
+        equipmentName: eq?.ten || 'Không xác định',
+        issueDescription: dto.issueDescription,
+        priority: dto.priority,
+        status: REQUEST_STATUS.CHO_DUYET,
+        createdBy: authService.getCurrentUser()?.fullName || 'Trần Minh Trưởng Ca',
+        createdAt: new Date().toISOString(),
+        equipmentId: Number(dto.equipmentId),
       };
       mockRequests = [newRequest, ...mockRequests];
       setTimeout(() => resolve({ data: newRequest }), 500);
@@ -216,7 +216,7 @@ export const repairRequestService = {
   /**
    * Cập nhật yêu cầu (chỉ khi CHO_DUYET, bởi người tạo)
    * @param {number} id
-   * @param {{ moTaSuCo?: string, mucDoUuTien?: string }} dto
+   * @param {{ issueDescription?: string, priority?: string }} dto
    */
   update: (id, dto) => {
     return new Promise((resolve, reject) => {
@@ -226,7 +226,7 @@ export const repairRequestService = {
           reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
           return;
         }
-        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+        if (mockRequests[idx].status !== REQUEST_STATUS.CHO_DUYET) {
           reject({ response: { status: 400, data: { message: 'Chỉ sửa được yêu cầu đang chờ duyệt' } } });
           return;
         }
@@ -247,11 +247,11 @@ export const repairRequestService = {
           reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
           return;
         }
-        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+        if (mockRequests[idx].status !== REQUEST_STATUS.CHO_DUYET) {
           reject({ response: { status: 400, data: { message: 'Chỉ duyệt được yêu cầu đang chờ duyệt' } } });
           return;
         }
-        mockRequests[idx].trangThai = REQUEST_STATUS.DA_DUYET;
+        mockRequests[idx].status = REQUEST_STATUS.DA_DUYET;
         resolve({ data: { ...mockRequests[idx] } });
       }, 400);
     });
@@ -268,11 +268,11 @@ export const repairRequestService = {
           reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
           return;
         }
-        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+        if (mockRequests[idx].status !== REQUEST_STATUS.CHO_DUYET) {
           reject({ response: { status: 400, data: { message: 'Chỉ từ chối được yêu cầu đang chờ duyệt' } } });
           return;
         }
-        mockRequests[idx].trangThai = REQUEST_STATUS.TU_CHOI;
+        mockRequests[idx].status = REQUEST_STATUS.TU_CHOI;
         resolve({ data: { ...mockRequests[idx] } });
       }, 400);
     });
@@ -290,11 +290,11 @@ export const repairRequestService = {
           reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
           return;
         }
-        if (mockRequests[idx].trangThai !== REQUEST_STATUS.DA_DUYET) {
+        if (mockRequests[idx].status !== REQUEST_STATUS.DA_DUYET) {
           reject({ response: { status: 400, data: { message: 'Chỉ chuyển trạng thái cho yêu cầu đã duyệt' } } });
           return;
         }
-        mockRequests[idx].trangThai = REQUEST_STATUS.DANG_XU_LY;
+        mockRequests[idx].status = REQUEST_STATUS.DANG_XU_LY;
         resolve({ data: { ...mockRequests[idx] } });
       }, 300);
     });
@@ -312,7 +312,7 @@ export const repairRequestService = {
           reject({ response: { status: 404, data: { message: 'Không tìm thấy yêu cầu' } } });
           return;
         }
-        if (mockRequests[idx].trangThai !== REQUEST_STATUS.CHO_DUYET) {
+        if (mockRequests[idx].status !== REQUEST_STATUS.CHO_DUYET) {
           reject({ response: { status: 400, data: { message: 'Chỉ được xoá yêu cầu đang chờ duyệt' } } });
           return;
         }

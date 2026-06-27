@@ -19,12 +19,12 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
 
   // User hiện tại
   const currentUser = authService.getCurrentUser();
-  const userName = currentUser?.hoTen || 'Người dùng';
-  const roleLabel = SYSTEM_ROLES.find((r) => r.maVaiTro === currentUser?.role)?.tenVaiTro || 'Người dùng';
+  const userName = currentUser?.fullName || 'Người dùng';
+  const roleLabel = SYSTEM_ROLES.find((r) => r.roleCode === currentUser?.role)?.roleName || 'Người dùng';
   const userInitials = userName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     toast.success('Đã đăng xuất');
     navigate('/login', { replace: true });
   };

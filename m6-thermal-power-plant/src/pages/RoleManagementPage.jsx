@@ -18,11 +18,6 @@ export default function RoleManagementPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load dữ liệu phân quyền
-  useEffect(() => {
-    loadPermissions();
-  }, []);
-
   const loadPermissions = async () => {
     try {
       setLoading(true);
@@ -41,6 +36,11 @@ export default function RoleManagementPage() {
       setLoading(false);
     }
   };
+
+  // Load dữ liệu phân quyền
+  useEffect(() => {
+    loadPermissions();
+  }, []);
 
   // Toggle checkbox
   const handleToggle = (roleCode, funcCode, action) => {
@@ -98,8 +98,8 @@ export default function RoleManagementPage() {
 
   // Nhóm chức năng theo nhóm
   const groupedFunctions = functions.reduce((acc, func) => {
-    if (!acc[func.nhom]) acc[func.nhom] = [];
-    acc[func.nhom].push(func);
+    if (!acc[func.groupName]) acc[func.groupName] = [];
+    acc[func.groupName].push(func);
     return acc;
   }, {});
 
@@ -183,7 +183,7 @@ export default function RoleManagementPage() {
                     className="role-matrix-role-header"
                     colSpan={actions.length}
                   >
-                    {role.tenVaiTro}
+                    {role.roleName}
                   </th>
                 ))}
               </tr>
@@ -208,11 +208,11 @@ export default function RoleManagementPage() {
                   {funcs.map((func) => (
                     <tr key={func.id} className="role-matrix-data-row">
                       <td className="role-matrix-func-cell">
-                        {func.tenChucNang}
+                        {func.featureName}
                       </td>
                       {roles.map((role) =>
                         actions.map((action) => {
-                          const key = `${role.maVaiTro}_${func.maChucNang}_${action}`;
+                          const key = `${role.roleCode}_${func.featureCode}_${action}`;
                           const isChecked = !!permissions[key];
                           const isChanged = permissions[key] !== originalPermissions[key];
                           return (
@@ -224,7 +224,7 @@ export default function RoleManagementPage() {
                                 type="checkbox"
                                 id={key}
                                 checked={isChecked}
-                                onChange={() => handleToggle(role.maVaiTro, func.maChucNang, action)}
+                                onChange={() => handleToggle(role.roleCode, func.featureCode, action)}
                                 className="role-checkbox"
                               />
                             </td>

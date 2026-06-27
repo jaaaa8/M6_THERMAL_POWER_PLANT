@@ -14,8 +14,9 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import NhanSuForm from './components/nhansu/NhanSuForm';
+import NhanSuForm from './components/hr/EmployeeForm';
 import RoleManagementPage from './pages/RoleManagementPage';
+import CreateAccountPage from './pages/CreateAccountPage';
 import RepairRequestPage from './pages/RepairRequestPage';
 import WorkOrderPage from './pages/WorkOrderPage';
 import WorkOrderListPage from './pages/WorkOrderListPage';
@@ -42,70 +43,75 @@ function App() {
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* --- Admin --- */}
-            <Route path="/admin/phan-quyen" element={
+            <Route path="/admin/roles" element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <RoleManagementPage />
               </ProtectedRoute>
             } />
-
-            {/* --- Nhân sự --- */}
-            <Route path="/nhan-su/phong-ban" element={
-              <ProtectedRoute requireFunction="PHONG_BAN"><PlaceholderPage title="Quản lý Phòng ban" /></ProtectedRoute>
-            } />
-            <Route path="/nhan-su/nhan-vien" element={
-              <ProtectedRoute requireFunction="NHAN_SU"><PlaceholderPage title="Quản lý Nhân viên" /></ProtectedRoute>
-            } />
-            <Route path="/nhan-su/them-moi" element={
-              <ProtectedRoute requireFunction="NHAN_SU"><NhanSuForm onCancel={() => window.history.back()} /></ProtectedRoute>
-            } />
-            <Route path="/nhan-su/tai-khoan" element={
-              <ProtectedRoute requireFunction="TAI_KHOAN"><PlaceholderPage title="Tài khoản & Phân quyền" /></ProtectedRoute>
+            <Route path="/admin/accounts/create" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <CreateAccountPage />
+              </ProtectedRoute>
             } />
 
-            {/* --- Thiết bị --- */}
-            <Route path="/thiet-bi/he-thong" element={
-              <ProtectedRoute requireFunction="HE_THONG"><PlaceholderPage title="Danh sách Hệ thống" /></ProtectedRoute>
+            {/* --- HR --- */}
+            <Route path="/hr/departments" element={
+              <ProtectedRoute requireFunction="DEPARTMENT"><PlaceholderPage title="Quản lý Phòng ban" /></ProtectedRoute>
             } />
-            <Route path="/thiet-bi/danh-sach" element={
-              <ProtectedRoute requireFunction="THIET_BI"><PlaceholderPage title="Danh sách Thiết bị" /></ProtectedRoute>
+            <Route path="/hr/employees" element={
+              <ProtectedRoute requireFunction="EMPLOYEE"><PlaceholderPage title="Quản lý Nhân viên" /></ProtectedRoute>
             } />
-
-            {/* --- Sửa chữa --- */}
-            <Route path="/sua-chua/yeu-cau" element={
-              <ProtectedRoute requireFunction="YEU_CAU_SC"><RepairRequestPage /></ProtectedRoute>
+            <Route path="/hr/employees/new" element={
+              <ProtectedRoute requireFunction="EMPLOYEE"><NhanSuForm onCancel={() => window.history.back()} /></ProtectedRoute>
             } />
-            <Route path="/sua-chua/phieu-cong-tac" element={
-              <ProtectedRoute requireFunction="PHIEU_CT"><WorkOrderListPage /></ProtectedRoute>
-            } />
-            <Route path="/sua-chua/phieu-cong-tac/:id" element={
-              <ProtectedRoute requireFunction="PHIEU_CT"><WorkOrderPage /></ProtectedRoute>
-            } />
-            <Route path="/sua-chua/danh-gia-kt" element={
-              <ProtectedRoute requireFunction="DANH_GIA_KT"><PlaceholderPage title="Đánh giá Kỹ thuật" /></ProtectedRoute>
+            <Route path="/hr/accounts" element={
+              <ProtectedRoute requireFunction="ACCOUNT"><PlaceholderPage title="Tài khoản & Phân quyền" /></ProtectedRoute>
             } />
 
-            {/* --- Vật tư --- */}
-            <Route path="/vat-tu/danh-muc" element={
-              <ProtectedRoute requireFunction="VAT_TU"><PlaceholderPage title="Danh mục Vật tư" /></ProtectedRoute>
+            {/* --- Equipment --- */}
+            <Route path="/equipment/systems" element={
+              <ProtectedRoute requireFunction="EQUIPMENT_SYSTEM"><PlaceholderPage title="Danh sách Hệ thống" /></ProtectedRoute>
             } />
-            <Route path="/vat-tu/nhap-xuat" element={
-              <ProtectedRoute requireFunction="VAT_TU"><PlaceholderPage title="Nhập / Xuất kho" /></ProtectedRoute>
-            } />
-
-            {/* --- CCDC --- */}
-            <Route path="/ccdc/danh-sach" element={
-              <ProtectedRoute requireFunction="CCDC"><PlaceholderPage title="Danh sách CCDC" /></ProtectedRoute>
-            } />
-            <Route path="/ccdc/muon-tra" element={
-              <ProtectedRoute requireFunction="CCDC"><PlaceholderPage title="Mượn / Trả CCDC" /></ProtectedRoute>
+            <Route path="/equipment" element={
+              <ProtectedRoute requireFunction="EQUIPMENT"><PlaceholderPage title="Danh sách Thiết bị" /></ProtectedRoute>
             } />
 
-            {/* --- Bảo dưỡng --- */}
-            <Route path="/bao-duong/ke-hoach" element={
-              <ProtectedRoute requireFunction="BAO_DUONG"><PlaceholderPage title="Kế hoạch Bảo dưỡng" /></ProtectedRoute>
+            {/* --- Repair --- */}
+            <Route path="/repair/requests" element={
+              <ProtectedRoute requireFunction="REPAIR_REQUEST"><RepairRequestPage /></ProtectedRoute>
             } />
-            <Route path="/bao-duong/lich-su" element={
-              <ProtectedRoute requireFunction="BAO_DUONG"><PlaceholderPage title="Lịch sử Bảo dưỡng" /></ProtectedRoute>
+            <Route path="/repair/work-orders" element={
+              <ProtectedRoute requireFunction="WORK_ORDER"><WorkOrderListPage /></ProtectedRoute>
+            } />
+            <Route path="/repair/work-orders/:id" element={
+              <ProtectedRoute requireFunction="WORK_ORDER"><WorkOrderPage /></ProtectedRoute>
+            } />
+            <Route path="/repair/assessments" element={
+              <ProtectedRoute requireFunction="TECHNICAL_ASSESSMENT"><PlaceholderPage title="Đánh giá Kỹ thuật" /></ProtectedRoute>
+            } />
+
+            {/* --- Materials --- */}
+            <Route path="/materials" element={
+              <ProtectedRoute requireFunction="MATERIAL"><PlaceholderPage title="Danh mục Vật tư" /></ProtectedRoute>
+            } />
+            <Route path="/materials/transactions" element={
+              <ProtectedRoute requireFunction="MATERIAL"><PlaceholderPage title="Nhập / Xuất kho" /></ProtectedRoute>
+            } />
+
+            {/* --- Tools (CCDC) --- */}
+            <Route path="/tools" element={
+              <ProtectedRoute requireFunction="TOOL"><PlaceholderPage title="Danh sách CCDC" /></ProtectedRoute>
+            } />
+            <Route path="/tools/borrowings" element={
+              <ProtectedRoute requireFunction="TOOL"><PlaceholderPage title="Mượn / Trả CCDC" /></ProtectedRoute>
+            } />
+
+            {/* --- Maintenance --- */}
+            <Route path="/maintenance/plans" element={
+              <ProtectedRoute requireFunction="MAINTENANCE"><PlaceholderPage title="Kế hoạch Bảo dưỡng" /></ProtectedRoute>
+            } />
+            <Route path="/maintenance/history" element={
+              <ProtectedRoute requireFunction="MAINTENANCE"><PlaceholderPage title="Lịch sử Bảo dưỡng" /></ProtectedRoute>
             } />
           </Route>
 
