@@ -20,6 +20,7 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
 import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import MaterialCatalogPage from './pages/MaterialCatalogPage';
 
 function App() {
   return (
@@ -59,8 +60,9 @@ function App() {
             <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm/>} />
 
             {/* --- Vật tư --- */}
-            <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
+            <Route path="/material/catalog" element={<MaterialCatalogPage />} />
             <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
+
 
             {/* --- CCDC --- */}
             <Route path="/ccdc/danh-sach" element={<PlaceholderPage title="Danh sách CCDC" />} />

@@ -65,7 +65,7 @@ const menuSections = [
       {
         icon: <BsBoxSeam />, label: 'Kho Vật tư', roles: ['ADMIN', 'THU_KHO_VT'],
         children: [
-          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư' },
+          { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
           { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
         ],
       },
