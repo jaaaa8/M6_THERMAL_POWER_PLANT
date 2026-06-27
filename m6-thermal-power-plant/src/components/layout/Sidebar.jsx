@@ -40,8 +40,8 @@ const menuSections = [
       {
         icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['ADMIN', 'QUAN_DOC_VH', 'KY_THUAT_VIEN'],
         children: [
-          { path: '/thiet-bi/he-thong', icon: <BsListUl />, label: 'Hệ thống' },
-          { path: '/thiet-bi/danh-sach', icon: <BsCpu />, label: 'Thiết bị' },
+          { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
+          { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
         ],
       },
     ],

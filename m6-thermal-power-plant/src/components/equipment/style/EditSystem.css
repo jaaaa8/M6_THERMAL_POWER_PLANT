@@ -1,0 +1,24 @@
+.edit-system-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.system-form-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  transition: all var(--transition-base);
+}
+
+.system-form-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.required::after {
+  content: ' *';
+  color: var(--color-status-danger);
+  font-weight: bold;
+}
