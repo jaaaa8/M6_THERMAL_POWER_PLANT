@@ -5,23 +5,26 @@ import * as Yup from 'yup';
 import { Form, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { BsArrowLeft, BsSave, BsShieldLock } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import { taiKhoanService } from '../../../services/taiKhoanService';
+import { accountService } from '../../../services/hr/accountService';
+import { employeeService } from '../../../services/hr/employeeService';
 import PageHeader from '../../common/PageHeader';
 import './style/AddAccount.css';
 
 const AccountSchema = Yup.object().shape({
-  tenDangNhap: Yup.string()
+  username: Yup.string()
     .required('Vui lòng nhập tên đăng nhập')
     .min(3, 'Tên đăng nhập ít nhất 3 ký tự'),
-  email: Yup.string()
-    .email('Email không hợp lệ')
-    .required('Vui lòng nhập email'),
-  hoVaTen: Yup.string()
-    .required('Vui lòng nhập họ và tên'),
-  vaiTro: Yup.string()
+  roleIds: Yup.string()
     .required('Vui lòng chọn vai trò'),
-  trangThai: Yup.string()
-    .required('Vui lòng chọn trạng thái')
+  accountType: Yup.string(),
+  employeeId: Yup.string().when('accountType', {
+    is: 'INTERNAL',
+    then: () => Yup.string().required('Vui lòng chọn nhân viên')
+  }),
+  email: Yup.string().when('accountType', {
+    is: 'EXTERNAL',
+    then: () => Yup.string().email('Email không hợp lệ').required('Vui lòng nhập email')
+  })
 });
 
 export default function AddAccount({ onCancel }) {
@@ -32,37 +35,48 @@ export default function AddAccount({ onCancel }) {
   const isEditMode = Boolean(idParam);
   
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [employees, setEmployees] = useState([]);
+
   const [initialValues, setInitialValues] = useState({
-    tenDangNhap: '',
+    username: '',
+    accountType: 'INTERNAL',
+    employeeId: '',
     email: '',
-    hoVaTen: '',
-    vaiTro: 'NHAN_VIEN',
-    trangThai: 'HOAT_DONG'
+    roleIds: ''
   });
 
   useEffect(() => {
+    Promise.all([
+        accountService.getRoles(),
+        employeeService.getAll()
+    ]).then(([rolesRes, empRes]) => {
+        setRoles(rolesRes.data?.data || rolesRes.data || []);
+        setEmployees(empRes.data?.data || empRes.data || []);
+    });
+
     if (isEditMode) {
       if (location.state?.initialData) {
         const data = location.state.initialData;
         setInitialValues({
-          tenDangNhap: data.tenDangNhap || '',
+          username: data.username || '',
+          accountType: data.employee ? 'INTERNAL' : 'EXTERNAL',
+          employeeId: data.employee?.id || '',
           email: data.email || '',
-          hoVaTen: data.hoVaTen || '',
-          vaiTro: data.vaiTro || 'NHAN_VIEN',
-          trangThai: data.trangThai || 'HOAT_DONG'
+          roleIds: data.roles?.[0]?.id || ''
         });
       } else {
         setLoading(true);
-        taiKhoanService.getById(idParam)
+        accountService.getById(idParam)
           .then((res) => {
             const data = res.data?.data || res.data;
             if (data) {
               setInitialValues({
-                tenDangNhap: data.tenDangNhap || '',
+                username: data.username || '',
+                accountType: data.employee ? 'INTERNAL' : 'EXTERNAL',
+                employeeId: data.employee?.id || '',
                 email: data.email || '',
-                hoVaTen: data.hoVaTen || '',
-                vaiTro: data.vaiTro || 'NHAN_VIEN',
-                trangThai: data.trangThai || 'HOAT_DONG'
+                roleIds: data.roles?.[0]?.id || ''
               });
             }
           })
@@ -74,11 +88,22 @@ export default function AddAccount({ onCancel }) {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
+      const payload = {
+        username: values.username,
+        roleIds: parseInt(values.roleIds)
+      };
+
+      if (values.accountType === 'INTERNAL') {
+          payload.employeeId = parseInt(values.employeeId);
+      } else {
+          payload.email = values.email;
+      }
+
       if (isEditMode) {
-        await taiKhoanService.update(idParam, values);
+        await accountService.update(idParam, payload);
         toast.success('Cập nhật tài khoản thành công');
       } else {
-        await taiKhoanService.create(values);
+        await accountService.create(payload);
         toast.success('Thêm tài khoản mới thành công');
       }
       
@@ -88,8 +113,7 @@ export default function AddAccount({ onCancel }) {
         navigate('/nhan-su/tai-khoan');
       }
     } catch (error) {
-      console.error(error);
-      toast.error('Có lỗi xảy ra, vui lòng thử lại');
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       setSubmitting(false);
     }
@@ -124,7 +148,7 @@ export default function AddAccount({ onCancel }) {
         </Button>
         <PageHeader 
           title={isEditMode ? 'Cập nhật Tài khoản' : 'Thêm Tài khoản mới'} 
-          subtitle={isEditMode ? 'Chỉnh sửa quyền và thông tin đăng nhập' : 'Tạo mới tài khoản cho nhân sự'}
+          subtitle={isEditMode ? 'Chỉnh sửa quyền và thông tin đăng nhập' : 'Tạo mới tài khoản cho nhân sự hoặc đối tác'}
           className="mb-0"
         />
       </div>
@@ -148,116 +172,133 @@ export default function AddAccount({ onCancel }) {
             handleChange,
             handleBlur,
             handleSubmit,
+            setFieldValue,
             isSubmitting,
           }) => (
             <FormikForm onSubmit={handleSubmit} className="account-form">
+              <Row className="mb-4">
+                <Col md={12}>
+                    <Form.Group>
+                        <Form.Label className="required">Loại tài khoản</Form.Label>
+                        <div>
+                            <Form.Check 
+                                inline
+                                type="radio"
+                                label="Tài khoản nội bộ (Chọn nhân sự)"
+                                name="accountType"
+                                value="INTERNAL"
+                                checked={values.accountType === 'INTERNAL'}
+                                onChange={handleChange}
+                                disabled={isEditMode}
+                            />
+                            <Form.Check 
+                                inline
+                                type="radio"
+                                label="Tài khoản ngoài (Nhập Email)"
+                                name="accountType"
+                                value="EXTERNAL"
+                                checked={values.accountType === 'EXTERNAL'}
+                                onChange={handleChange}
+                                disabled={isEditMode}
+                            />
+                        </div>
+                    </Form.Group>
+                </Col>
+              </Row>
+
               <Row className="g-4">
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label htmlFor="tenDangNhap" className="required">
+                    <Form.Label htmlFor="username" className="required">
                       Tên đăng nhập
                     </Form.Label>
                     <Form.Control
-                      id="tenDangNhap"
-                      name="tenDangNhap"
+                      id="username"
+                      name="username"
                       type="text"
                       placeholder="VD: an.nguyen"
-                      value={values.tenDangNhap}
+                      value={values.username}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      isInvalid={touched.tenDangNhap && errors.tenDangNhap}
+                      isInvalid={touched.username && errors.username}
                       disabled={isEditMode}
                     />
                     <Form.Control.Feedback type="invalid">
-                      {errors.tenDangNhap}
+                      {errors.username}
                     </Form.Control.Feedback>
                     {isEditMode && <Form.Text className="text-muted">Không thể thay đổi tên đăng nhập sau khi tạo.</Form.Text>}
                   </Form.Group>
                 </Col>
 
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="hoVaTen" className="required">
-                      Họ và tên
-                    </Form.Label>
-                    <Form.Control
-                      id="hoVaTen"
-                      name="hoVaTen"
-                      type="text"
-                      placeholder="Nhập họ và tên..."
-                      value={values.hoVaTen}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      isInvalid={touched.hoVaTen && errors.hoVaTen}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.hoVaTen}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
+                {values.accountType === 'INTERNAL' && (
+                    <Col md={6}>
+                    <Form.Group>
+                        <Form.Label htmlFor="employeeId" className="required">
+                        Nhân viên
+                        </Form.Label>
+                        <Form.Select
+                        id="employeeId"
+                        name="employeeId"
+                        value={values.employeeId}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        isInvalid={touched.employeeId && errors.employeeId}
+                        >
+                        <option value="">— Chọn nhân viên —</option>
+                        {employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>{emp.fullName}</option>
+                        ))}
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                        {errors.employeeId}
+                        </Form.Control.Feedback>
+                    </Form.Group>
+                    </Col>
+                )}
+
+                {values.accountType === 'EXTERNAL' && (
+                    <Col md={6}>
+                    <Form.Group>
+                        <Form.Label htmlFor="email" className="required">
+                        Email
+                        </Form.Label>
+                        <Form.Control
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="VD: email@example.com"
+                        value={values.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        isInvalid={touched.email && errors.email}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                        {errors.email}
+                        </Form.Control.Feedback>
+                    </Form.Group>
+                    </Col>
+                )}
 
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label htmlFor="email" className="required">
-                      Email liên hệ
-                    </Form.Label>
-                    <Form.Control
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="VD: email@powerplant.vn"
-                      value={values.email}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      isInvalid={touched.email && errors.email}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.email}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="vaiTro" className="required">
+                    <Form.Label htmlFor="roleIds" className="required">
                       Vai trò
                     </Form.Label>
                     <Form.Select
-                      id="vaiTro"
-                      name="vaiTro"
-                      value={values.vaiTro}
+                      id="roleIds"
+                      name="roleIds"
+                      value={values.roleIds}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      isInvalid={touched.vaiTro && errors.vaiTro}
+                      isInvalid={touched.roleIds && errors.roleIds}
                     >
-                      <option value="NHAN_VIEN">Nhân viên</option>
-                      <option value="QUAN_LY_NS">Quản lý Nhân sự</option>
-                      <option value="QUAN_TRI">Quản trị viên hệ thống</option>
+                        <option value="">— Chọn vai trò —</option>
+                        {roles.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
                     </Form.Select>
                     <Form.Control.Feedback type="invalid">
-                      {errors.vaiTro}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="trangThai" className="required">
-                      Trạng thái tài khoản
-                    </Form.Label>
-                    <Form.Select
-                      id="trangThai"
-                      name="trangThai"
-                      value={values.trangThai}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      isInvalid={touched.trangThai && errors.trangThai}
-                    >
-                      <option value="HOAT_DONG">Đang hoạt động</option>
-                      <option value="KHOA">Khóa tài khoản</option>
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.trangThai}
+                      {errors.roleIds}
                     </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
