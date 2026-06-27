@@ -1,0 +1,26 @@
+.add-account-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.account-form .form-label.required::after {
+  content: " *";
+  color: var(--danger-color);
+}
+
+.form-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.btn-icon-only {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}

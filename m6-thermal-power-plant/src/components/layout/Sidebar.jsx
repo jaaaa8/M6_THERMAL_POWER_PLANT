@@ -40,8 +40,8 @@ const menuSections = [
       {
         icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['ADMIN', 'QUAN_DOC_VH', 'KY_THUAT_VIEN'],
         children: [
-          { path: '/thiet-bi/he-thong', icon: <BsListUl />, label: 'Hệ thống' },
-          { path: '/thiet-bi/danh-sach', icon: <BsCpu />, label: 'Thiết bị' },
+          { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
+          { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
         ],
       },
     ],
@@ -52,9 +52,10 @@ const menuSections = [
       {
         icon: <BsWrenchAdjustable />, label: 'Sửa chữa', roles: ['ADMIN', 'TRUONG_CA', 'TRUONG_KIP', 'QUAN_DOC_SC', 'TO_TRUONG'],
         children: [
-          { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
-          { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
+          { path: '/sua-chua/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
+          { path: '/sua-chua/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
           { path: '/repair/danh-gia-kt', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
+          { path: '/sua-chua/phieu-xuat-vtthaythe', icon: <BsClipboard2Check />, label: 'Phiếu xuất vật tư thay thế' },
         ],
       },
     ],

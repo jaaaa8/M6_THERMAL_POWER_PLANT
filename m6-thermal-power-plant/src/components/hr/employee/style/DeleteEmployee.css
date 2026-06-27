@@ -1,0 +1,26 @@
+.delete-employee-modal .modal-content {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.delete-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--danger-color);
+  border-radius: 50%;
+  font-size: 2rem;
+}
+
+.delete-employee-modal h4 {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.delete-employee-modal p {
+  font-size: 0.95rem;
+}
