@@ -28,6 +28,7 @@ import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanFor
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
+import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 
 function App() {
   return (
@@ -72,7 +73,7 @@ function App() {
             <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm />} />
 
             {/* --- Vật tư --- */}
-            <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
+            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
             <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
 
             {/* --- CCDC --- */}
