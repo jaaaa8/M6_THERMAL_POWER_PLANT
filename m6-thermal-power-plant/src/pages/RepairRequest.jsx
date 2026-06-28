@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import {
   BsExclamationTriangle, BsEye, BsFileEarmarkPlus, BsArrowClockwise,
@@ -9,153 +9,116 @@ import PageHeader from '../components/common/PageHeader';
 import DataTable from '../components/common/DataTable';
 import StatusBadge from '../components/common/StatusBadge';
 import ModalCreateWorkOrder from '../components/repair/ModalCreateWorkOrder.jsx';
+import { workOrderService } from '../services/workOrderService';
 import './RepairRequest.css';
 
 /* ============================================================
-   MAPS — Mức độ & Trạng thái
+   MAPS — Priority (RepairPriority enum) & Status (RepairRequestStatus enum)
+   Values match the Java enums returned by RepairRequestDTO.
    ============================================================ */
-const MUC_DO_MAP = {
-  danger: { label: 'Khẩn cấp', status: 'danger', pulse: true },
-  warning: { label: 'Ưu tiên cao', status: 'warning' },
-  normal: { label: 'Bình thường', status: 'normal' },
+const PRIORITY_MAP = {
+  EMERGENCY: { label: 'Khẩn cấp', status: 'danger', pulse: true },
+  HIGH:      { label: 'Ưu tiên cao', status: 'warning' },
+  NORMAL:    { label: 'Bình thường', status: 'normal' },
+  LOW:       { label: 'Bình thường', status: 'normal' },
 };
 
-const TRANG_THAI_MAP = {
-  CHO_XU_LY: { label: 'Chờ xử lý', status: 'warning' },
-  DA_LAP_PCT: { label: 'Đã lập PCT', status: 'info' },
-  HOAN_THANH: { label: 'Hoàn thành', status: 'normal' },
-  TU_CHOI: { label: 'Từ chối', status: 'inactive' },
+const STATUS_MAP = {
+  PENDING:     { label: 'Chờ xử lý', status: 'warning' },
+  IN_PROGRESS: { label: 'Đang thực hiện', status: 'info' },
+  COMPLETED:   { label: 'Hoàn thành', status: 'normal' },
+  REJECTED:    { label: 'Từ chối', status: 'inactive' },
 };
 
 /* ============================================================
-   SAMPLE DATA — Dữ liệu mẫu (chỉ phục vụ hiển thị UI)
-   ============================================================ */
-const SAMPLE_NHAN_VIEN = [
-  { id: 'NV001', hoTen: 'Trần Phước Trí', chucVu: 'Quản đốc sửa chữa' },
-  { id: 'NV002', hoTen: 'Lê Văn Hải', chucVu: 'Tổ trưởng cơ khí' },
-  { id: 'NV003', hoTen: 'Phạm Minh Châu', chucVu: 'KTV an toàn' },
-  { id: 'NV004', hoTen: 'Nguyễn Quốc Huy', chucVu: 'Thợ cơ khí bậc 5' },
-  { id: 'NV005', hoTen: 'Võ Thành Đạt', chucVu: 'Thợ điện bậc 4' },
-  { id: 'NV006', hoTen: 'Đặng Thị Lan', chucVu: 'KTV đo lường' },
-  { id: 'NV007', hoTen: 'Bùi Văn Khoa', chucVu: 'Thợ hàn bậc 6' },
-  { id: 'NV008', hoTen: 'Hoàng Minh Tuấn', chucVu: 'Thợ cơ khí bậc 4' },
-];
-
-const SAMPLE_REQUESTS = [
-  {
-    id: 1, maRequest: 'YC-2026-0048', thietBi: 'Bơm cấp nước thô', maKKS: 'ABC002M1',
-    heThong: 'Hệ thống xử lý nước thô',
-    moTa: 'Bơm phát ra tiếng ồn bất thường, rò rỉ nước tại phớt cơ khí, độ rung vượt ngưỡng cho phép.',
-    mucDo: 'danger', nguoiYeuCau: 'Nguyễn Văn Trưởng (Trưởng ca A)',
-    ngayYeuCau: '24/06/2026 06:15', trangThai: 'CHO_XU_LY',
-  },
-  {
-    id: 2, maRequest: 'YC-2026-0047', thietBi: 'Động cơ bơm nước thải', maKKS: 'DEF005E2',
-    heThong: 'Hệ thống xử lý nước thải',
-    moTa: 'Động cơ nóng bất thường, dòng điện tăng cao khi vận hành tải định mức.',
-    mucDo: 'warning', nguoiYeuCau: 'Lê Hoàng Kíp (Trưởng kíp 2)',
-    ngayYeuCau: '24/06/2026 04:40', trangThai: 'CHO_XU_LY',
-  },
-  {
-    id: 3, maRequest: 'YC-2026-0046', thietBi: 'Van điều khiển áp suất', maKKS: 'GHI010V3',
-    heThong: 'Hệ thống lò hơi phụ',
-    moTa: 'Van đóng/mở không dứt khoát, nghi kẹt cơ cấu chấp hành.',
-    mucDo: 'normal', nguoiYeuCau: 'Trần Đình Ca (Trưởng ca B)',
-    ngayYeuCau: '23/06/2026 22:10', trangThai: 'CHO_XU_LY',
-  },
-  {
-    id: 4, maRequest: 'YC-2026-0045', thietBi: 'Đồng hồ đo áp suất đầu hút', maKKS: 'ABC002I1',
-    heThong: 'Hệ thống xử lý nước thô',
-    moTa: 'Kim đồng hồ không trở về 0, sai số chỉ thị lớn.',
-    mucDo: 'normal', nguoiYeuCau: 'Nguyễn Văn Trưởng (Trưởng ca A)',
-    ngayYeuCau: '23/06/2026 15:25', trangThai: 'DA_LAP_PCT',
-  },
-  {
-    id: 5, maRequest: 'YC-2026-0044', thietBi: 'Máy nén khí chính', maKKS: 'JKL003M5',
-    heThong: 'Hệ thống khí nén',
-    moTa: 'Áp suất khí nén không đạt, rò rỉ khí tại đường ống đầu đẩy.',
-    mucDo: 'danger', nguoiYeuCau: 'Phạm Thanh Kíp (Trưởng kíp 1)',
-    ngayYeuCau: '22/06/2026 09:00', trangThai: 'DA_LAP_PCT',
-  },
-  {
-    id: 6, maRequest: 'YC-2026-0043', thietBi: 'Quạt khói lò hơi', maKKS: 'MNO007F1',
-    heThong: 'Hệ thống lò hơi phụ',
-    moTa: 'Vòng bi quạt khói có dấu hiệu mòn, nhiệt độ gối đỡ tăng.',
-    mucDo: 'warning', nguoiYeuCau: 'Trần Đình Ca (Trưởng ca B)',
-    ngayYeuCau: '21/06/2026 13:30', trangThai: 'HOAN_THANH',
-  },
-  {
-    id: 7, maRequest: 'YC-2026-0042', thietBi: 'Bơm nước làm mát', maKKS: 'PQR009M2',
-    heThong: 'Hệ thống nước làm mát',
-    moTa: 'Yêu cầu kiểm tra định kỳ, không phát hiện hư hỏng nghiêm trọng.',
-    mucDo: 'normal', nguoiYeuCau: 'Lê Hoàng Kíp (Trưởng kíp 2)',
-    ngayYeuCau: '20/06/2026 08:45', trangThai: 'TU_CHOI',
-  },
-];
-
-/* ============================================================
-   FILTER PILLS
+   FILTER PILLS — dùng RepairRequestStatus enum values
    ============================================================ */
 const FILTERS = [
-  { key: 'CHO_XU_LY', label: 'Chờ xử lý' },
-  { key: 'ALL', label: 'Tất cả' },
-  { key: 'DA_LAP_PCT', label: 'Đã lập PCT' },
-  { key: 'HOAN_THANH', label: 'Hoàn thành' },
+  { key: 'PENDING', label: 'Chờ xử lý' },
+  { key: 'ALL',     label: 'Tất cả' },
+  { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
+  { key: 'COMPLETED',   label: 'Hoàn thành' },
 ];
 
 /* ============================================================
    COMPONENT
    ============================================================ */
 export default function RepairRequest() {
-  const [requests, setRequests] = useState(SAMPLE_REQUESTS);
-  const [filter, setFilter] = useState('CHO_XU_LY');
-  const [pctRequest, setPctRequest] = useState(null);   // request đang lập PCT
-  const [detailRequest, setDetailRequest] = useState(null); // request đang xem chi tiết
+  // API data — requests come from GET /api/maintenance/repair-requests/pending
+  // (endpoint only returns PENDING; we keep all fetched items in state so we can
+  //  locally mark them IN_PROGRESS after creating a PCT, matching real status values)
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+
+  const [filter, setFilter]           = useState('PENDING');
+  const [pctRequest, setPctRequest]   = useState(null);
+  const [detailRequest, setDetailRequest] = useState(null);
+
+  /* --- Fetch pending requests from backend --- */
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Backend returns PagedModel: { content: [...], page: { ... } }
+      const res = await workOrderService.getPendingRequests(0, 100);
+      setRequests(res.data.content ?? []);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Không thể tải danh sách yêu cầu');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   /* --- Thống kê --- */
   const stats = useMemo(() => {
-    const choXuLy = requests.filter((r) => r.trangThai === 'CHO_XU_LY');
+    const pending = requests.filter((r) => r.status === 'PENDING');
     return [
-      { key: 'total', label: 'Tổng yêu cầu', value: requests.length, icon: <BsListUl />, color: 'var(--color-primary-500)' },
-      { key: 'pending', label: 'Đang chờ xử lý', value: choXuLy.length, icon: <BsHourglassSplit />, color: 'var(--color-status-warning)' },
-      { key: 'pct', label: 'Đã lập PCT', value: requests.filter((r) => r.trangThai === 'DA_LAP_PCT').length, icon: <BsFileEarmarkCheck />, color: 'var(--color-status-info)' },
-      { key: 'urgent', label: 'Khẩn cấp (chờ)', value: choXuLy.filter((r) => r.mucDo === 'danger').length, icon: <BsLightningChargeFill />, color: 'var(--color-status-danger)' },
+      { key: 'total',   label: 'Tổng yêu cầu',      value: requests.length, icon: <BsListUl />,            color: 'var(--color-primary-500)' },
+      { key: 'pending', label: 'Đang chờ xử lý',     value: pending.length,  icon: <BsHourglassSplit />,    color: 'var(--color-status-warning)' },
+      { key: 'pct',     label: 'Đang thực hiện',      value: requests.filter((r) => r.status === 'IN_PROGRESS').length, icon: <BsFileEarmarkCheck />, color: 'var(--color-status-info)' },
+      { key: 'urgent',  label: 'Khẩn cấp (chờ)',      value: pending.filter((r) => r.priority === 'EMERGENCY').length, icon: <BsLightningChargeFill />, color: 'var(--color-status-danger)' },
     ];
   }, [requests]);
 
   /* --- Lọc theo trạng thái --- */
   const filtered = useMemo(() => {
     if (filter === 'ALL') return requests;
-    return requests.filter((r) => r.trangThai === filter);
+    return requests.filter((r) => r.status === filter);
   }, [requests, filter]);
 
-  /* --- Cột bảng --- */
+  /* --- Cột bảng — dùng field names từ RepairRequestDTO --- */
   const columns = [
-    { key: 'maRequest', label: 'Mã YC', mono: true, width: 130 },
-    { key: 'thietBi', label: 'Thiết bị' },
-    { key: 'maKKS', label: 'Mã KKS', mono: true, width: 110 },
+    { key: 'requestCode',    label: 'Mã YC',         mono: true, width: 130 },
+    { key: 'equipmentName',  label: 'Thiết bị' },
+    { key: 'equipmentKksCode', label: 'Mã KKS',      mono: true, width: 110 },
     {
-      key: 'mucDo', label: 'Mức độ', width: 130,
+      key: 'priority', label: 'Mức độ', width: 130,
       render: (val) => {
-        const m = MUC_DO_MAP[val] || MUC_DO_MAP.normal;
-        return <StatusBadge status={m.status} label={m.label} pulse={m.pulse} />;
+        const p = PRIORITY_MAP[val] || PRIORITY_MAP.NORMAL;
+        return <StatusBadge status={p.status} label={p.label} pulse={p.pulse} />;
       },
     },
-    { key: 'nguoiYeuCau', label: 'Người yêu cầu' },
-    { key: 'ngayYeuCau', label: 'Thời gian', width: 150 },
+    { key: 'requesterName', label: 'Người yêu cầu' },
     {
-      key: 'trangThai', label: 'Trạng thái', width: 130,
+      key: 'createdAt', label: 'Thời gian', width: 150,
+      render: (val) => val ? new Date(val).toLocaleString('vi-VN') : '—',
+    },
+    {
+      key: 'status', label: 'Trạng thái', width: 130,
       render: (val) => {
-        const t = TRANG_THAI_MAP[val] || TRANG_THAI_MAP.CHO_XU_LY;
-        return <StatusBadge status={t.status} label={t.label} />;
+        const s = STATUS_MAP[val] || STATUS_MAP.PENDING;
+        return <StatusBadge status={s.status} label={s.label} />;
       },
     },
   ];
 
-  /* --- Khi tạo PCT thành công: cập nhật trạng thái request (chỉ trên UI) --- */
+  /* --- Khi tạo PCT thành công: đánh dấu request là IN_PROGRESS trên UI --- */
   const handlePCTCreated = (request) => {
     setRequests((prev) =>
-      prev.map((r) => (r.id === request.id ? { ...r, trangThai: 'DA_LAP_PCT' } : r))
+      prev.map((r) => (r.id === request.id ? { ...r, status: 'IN_PROGRESS' } : r))
     );
   };
 
@@ -166,11 +129,18 @@ export default function RepairRequest() {
         subtitle="Tiếp nhận yêu cầu từ Trưởng ca / Trưởng kíp và lập phiếu công tác"
         icon={<BsExclamationTriangle />}
         actions={
-          <Button variant="outline-secondary" size="sm" onClick={() => setRequests(SAMPLE_REQUESTS)}>
+          <Button variant="outline-secondary" size="sm" onClick={fetchRequests} disabled={loading}>
             <BsArrowClockwise className="me-1" /> Làm mới
           </Button>
         }
       />
+
+      {/* ===== ERROR ===== */}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
 
       {/* ===== STATS ===== */}
       <div className="yc-stats">
@@ -190,7 +160,7 @@ export default function RepairRequest() {
         {FILTERS.map((f) => {
           const count = f.key === 'ALL'
             ? requests.length
-            : requests.filter((r) => r.trangThai === f.key).length;
+            : requests.filter((r) => r.status === f.key).length;
           return (
             <button
               key={f.key}
@@ -208,6 +178,7 @@ export default function RepairRequest() {
       <DataTable
         columns={columns}
         data={filtered}
+        loading={loading}
         searchPlaceholder="Tìm theo mã YC, thiết bị, mã KKS..."
         pageSize={8}
         renderActions={(row) => (
@@ -219,7 +190,7 @@ export default function RepairRequest() {
             >
               <BsEye />
             </button>
-            {row.trangThai === 'CHO_XU_LY' ? (
+            {row.status === 'PENDING' ? (
               <button
                 className="btn btn-sm btn-primary yc-btn-pct"
                 onClick={() => setPctRequest(row)}
@@ -235,10 +206,11 @@ export default function RepairRequest() {
       />
 
       {/* ===== MODAL: TẠO PCT ===== */}
+      {/* accountOptions: TODO — wire to GET /api/tai-khoan once that endpoint exists */}
       <ModalCreateWorkOrder
         show={!!pctRequest}
         request={pctRequest}
-        nhanVienOptions={SAMPLE_NHAN_VIEN}
+        accountOptions={[]}
         onClose={() => setPctRequest(null)}
         onCreated={handlePCTCreated}
       />
@@ -250,35 +222,34 @@ export default function RepairRequest() {
 }
 
 /* ============================================================
-   Modal chi tiết yêu cầu (chỉ đọc)
+   Modal chi tiết yêu cầu (chỉ đọc) — dùng RepairRequestDTO field names
    ============================================================ */
 function RequestDetailModal({ request, onClose }) {
   if (!request) return null;
-  const m = MUC_DO_MAP[request.mucDo] || MUC_DO_MAP.normal;
-  const t = TRANG_THAI_MAP[request.trangThai] || TRANG_THAI_MAP.CHO_XU_LY;
+  const p = PRIORITY_MAP[request.priority] || PRIORITY_MAP.NORMAL;
+  const s = STATUS_MAP[request.status]     || STATUS_MAP.PENDING;
 
   return (
     <Modal show={!!request} onHide={onClose} centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
           <BsCpu className="me-2" style={{ color: 'var(--color-primary-500)' }} />
-          Chi tiết yêu cầu {request.maRequest}
+          Chi tiết yêu cầu {request.requestCode}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="yc-detail-grid">
-          <DetailRow label="Mã yêu cầu" value={<span className="font-mono">{request.maRequest}</span>} />
-          <DetailRow label="Trạng thái" value={<StatusBadge status={t.status} label={t.label} />} />
-          <DetailRow label="Thiết bị" value={request.thietBi} />
-          <DetailRow label="Mã KKS" value={<span className="font-mono">{request.maKKS}</span>} />
-          <DetailRow label="Hệ thống" value={request.heThong} />
-          <DetailRow label="Mức độ" value={<StatusBadge status={m.status} label={m.label} pulse={m.pulse} />} />
-          <DetailRow label="Người yêu cầu" value={request.nguoiYeuCau} />
-          <DetailRow label="Thời gian" value={request.ngayYeuCau} />
+          <DetailRow label="Mã yêu cầu"   value={<span className="font-mono">{request.requestCode}</span>} />
+          <DetailRow label="Trạng thái"    value={<StatusBadge status={s.status} label={s.label} />} />
+          <DetailRow label="Thiết bị"      value={request.equipmentName} />
+          <DetailRow label="Mã KKS"        value={<span className="font-mono">{request.equipmentKksCode}</span>} />
+          <DetailRow label="Mức độ"        value={<StatusBadge status={p.status} label={p.label} pulse={p.pulse} />} />
+          <DetailRow label="Người yêu cầu" value={request.requesterName || request.requesterUsername} />
+          <DetailRow label="Thời gian"     value={request.createdAt ? new Date(request.createdAt).toLocaleString('vi-VN') : '—'} />
         </div>
         <div className="yc-detail-desc">
           <span className="yc-detail-label">Mô tả hư hỏng</span>
-          <p>{request.moTa}</p>
+          <p>{request.incidentDescription}</p>
         </div>
       </Modal.Body>
       <Modal.Footer>

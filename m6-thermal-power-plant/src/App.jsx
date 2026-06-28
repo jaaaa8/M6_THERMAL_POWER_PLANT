@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import RepairRequest from './pages/RepairRequest.jsx';
+import WorkOrderList from './pages/WorkOrderList.jsx';
 import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
 import ListEmployee from './components/hr/employee/ListEmployee';
@@ -62,7 +63,7 @@ function App() {
 
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
-            <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
+            <Route path="/sua-chua/phieu-cong-tac" element={<WorkOrderList />} />
             <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm/>} />
             <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm/>} />
 

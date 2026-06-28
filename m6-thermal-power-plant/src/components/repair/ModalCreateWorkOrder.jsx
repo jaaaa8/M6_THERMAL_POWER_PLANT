@@ -4,9 +4,10 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import {
-  BsClipboardData, BsPeopleFill, BsPersonPlus, BsTrash,
+  BsPeopleFill, BsPersonPlus, BsTrash,
   BsSave, BsXCircle, BsCpu, BsFileEarmarkPlus,
 } from 'react-icons/bs';
+import { workOrderService } from '../../services/workOrderService';
 import StatusBadge from '../common/StatusBadge';
 import './ModalCreateWorkOrder.css';
 
@@ -17,107 +18,143 @@ const MUC_DO_MAP = {
   danger: { label: 'Khẩn cấp', status: 'danger', pulse: true },
   warning: { label: 'Ưu tiên cao', status: 'warning' },
   normal: { label: 'Bình thường', status: 'normal' },
+  EMERGENCY: { label: 'Khẩn cấp', status: 'danger', pulse: true },
+  HIGH: { label: 'Ưu tiên cao', status: 'warning' },
+  LOW: { label: 'Bình thường', status: 'normal' },
+  NORMAL: { label: 'Bình thường', status: 'normal' },
 };
 
 /* ============================================================
-   VALIDATION SCHEMA — Formik + Yup
+   VALIDATION — khớp với CreateWorkOrderRequest DTO backend
+   Các trường @NotNull ở backend: leaderId, directSupervisorId,
+   safetySupervisorId, startTime → bắt buộc ở đây.
    ============================================================ */
 const validationSchema = Yup.object({
-  soPhieu: Yup.string().required('Số PCT không được để trống'),
-  noiDung: Yup.string()
-    .required('Nội dung công việc không được để trống')
-    .min(5, 'Nội dung công việc quá ngắn'),
-  diaDiem: Yup.string().required('Vui lòng nhập địa điểm làm việc'),
-  thoiGianBatDau: Yup.string().required('Vui lòng chọn thời gian bắt đầu'),
-  thoiGianKetThuc: Yup.string().required('Vui lòng chọn thời gian dự kiến kết thúc'),
-  nguoiLanhDao: Yup.string().required('Vui lòng chọn người lãnh đạo công việc'),
-  chiHuyTrucTiep: Yup.string().required('Vui lòng chọn chỉ huy trực tiếp'),
-  nguoiGiamSatAT: Yup.string().required('Vui lòng chọn người giám sát an toàn'),
-  nhanVienLamViec: Yup.array().min(1, 'Cần ít nhất 1 nhân viên làm việc'),
+  leaderId: Yup.number()
+    .typeError('Vui lòng chọn người lãnh đạo')
+    .required('Vui lòng chọn người lãnh đạo công việc'),
+  directSupervisorId: Yup.number()
+    .typeError('Vui lòng chọn chỉ huy trực tiếp')
+    .required('Vui lòng chọn chỉ huy trực tiếp'),
+  safetySupervisorId: Yup.number()
+    .typeError('Vui lòng chọn người giám sát an toàn')
+    .required('Vui lòng chọn người giám sát an toàn'),
+  startTime: Yup.string()
+    .required('Vui lòng nhập thời gian bắt đầu'),
+  expectedEndTime: Yup.string().nullable(),
 });
 
 /**
  * ModalCreateWorkOrder — Tạo phiếu công tác (PCT) từ một Request.
  * (User story #40 — Quản đốc sửa chữa / Tổ trưởng)
  *
- * Thông tin thiết bị được lấy từ Request (chỉ đọc); người dùng bổ sung
- * người lãnh đạo công việc, chỉ huy trực tiếp, giám sát an toàn và nhân viên làm việc.
+ * Gửi POST /api/maintenance/work-orders với body khớp CreateWorkOrderRequest DTO.
+ * orderCode được sinh tự động bởi backend — KHÔNG có ô nhập.
+ * Nội dung công việc lấy từ incidentDescription của request — KHÔNG có ô nhập riêng.
  *
  * @param {boolean}  props.show
  * @param {Function} props.onClose
- * @param {object}   props.request - Request nguồn
- * @param {Array}    props.nhanVienOptions - Danh sách nhân viên (mock)
- * @param {Function} props.onCreated - (request, pct) => void
+ * @param {object}   props.request - Request nguồn (dạng RepairRequestDTO từ API)
+ * @param {Array}    props.accountOptions - Danh sách tài khoản [{id, username, employee: {fullName, position: {name}}}]
+ * @param {Function} props.onCreated - (request, createdWorkOrder) => void
  */
 export default function ModalCreateWorkOrder({
   show,
   onClose,
   request,
-  nhanVienOptions = [],
+  accountOptions = [],
   onCreated,
 }) {
-  // Nhân viên đang chọn ở ô "thêm nhân viên làm việc"
-  const [selectedNV, setSelectedNV] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
 
-  const mucDo = MUC_DO_MAP[request?.mucDo] || MUC_DO_MAP.normal;
+  // Chuẩn bị danh sách account để hiển thị trong select
+  const accountList = useMemo(() => {
+    return accountOptions.map((a) => ({
+      id: a.id,
+      label: `${a.employee?.fullName || a.username} · ${a.employee?.position?.name || ''}`,
+    }));
+  }, [accountOptions]);
 
-  const initialValues = useMemo(
-    () => ({
-      soPhieu: `PCT-${new Date().getFullYear()}-${String(
-          // eslint-disable-next-line react-hooks/purity
-        Math.floor(Math.random() * 9000) + 1000
-      )}`,
-      noiDung: request
-        ? `Sửa chữa, khắc phục sự cố thiết bị ${request.thietBi} (${request.maKKS}). ${request.moTa || ''}`.trim()
-        : '',
-      diaDiem: request?.heThong || '',
-      thoiGianBatDau: '',
-      thoiGianKetThuc: '',
-      nguoiLanhDao: '',
-      chiHuyTrucTiep: '',
-      nguoiGiamSatAT: '',
-      nhanVienLamViec: [],
-    }),
-    [request]
-  );
+  // Lấy danh sách member hiện tại để filter option
+  function getAvailableAccounts(excludeIds) {
+    return accountList.filter((a) => !excludeIds.includes(a.id));
+  }
 
   if (!request) return null;
 
+  // priority có thể là HIGH/LOW (từ API) hoặc danger/warning/normal (từ sample data)
+  const mucDoKey = request.priority || request.mucDo;
+  const mucDo = MUC_DO_MAP[mucDoKey] || MUC_DO_MAP.normal;
+
+  const initialValues = {
+    repairRequestId: request.id,
+    leaderId: '',
+    directSupervisorId: '',
+    safetySupervisorId: '',
+    startTime: '',
+    expectedEndTime: '',
+    members: [], // [{ accountId, roleInTask }]
+  };
+
   return (
-    <Modal show={show} onHide={onClose} centered size="lg" scrollable>
+    <Modal show={show} onHide={onClose} centered size="lg" scrollable dialogClassName="pct-modal">
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
         enableReinitialize
-        onSubmit={(values, { setSubmitting }) => {
-          // UI-only: không gọi service, chỉ thông báo & trả dữ liệu lên parent
-          onCreated?.(request, values);
-          toast.success(`Đã tạo phiếu công tác ${values.soPhieu}`);
-          setSubmitting(false);
-          setSelectedNV('');
-          onClose?.();
+        onSubmit={async (values, { setSubmitting }) => {
+          try {
+            const payload = {
+              repairRequestId: values.repairRequestId,
+              leaderId: Number(values.leaderId),
+              directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
+              safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
+              startTime: values.startTime || null,
+              expectedEndTime: values.expectedEndTime || null,
+              members: values.members.map((m) => ({
+                // Backend MemberInput expects `employeeId` (not `accountId`).
+                // We store accountId on the form, but account.employee.id = employeeId.
+                // The accountId IS the Account PK; the backend MemberInput field is
+                // named `employeeId` but the service resolves it from the Account.
+                // Per the DTO: employeeId is Account.id (the account foreign key field).
+                employeeId: m.accountId,
+                roleInTask: m.roleInTask || undefined,
+              })),
+            };
+
+            const res = await workOrderService.create(payload);
+            toast.success(`Đã tạo phiếu công tác ${res.data.orderCode}`);
+            onCreated?.(request, res.data);
+            setSelectedAccountId('');
+            onClose?.();
+          } catch (err) {
+            const msg = err.response?.data?.message || err.message || 'Lỗi không xác định';
+            toast.error(`Không thể tạo PCT: ${msg}`);
+          } finally {
+            setSubmitting(false);
+          }
         }}
       >
         {({ values, touched, errors, isSubmitting, setFieldValue }) => {
-          const addNhanVien = () => {
-            if (!selectedNV) return;
-            if (values.nhanVienLamViec.some((nv) => nv.id === selectedNV)) {
+          const addMember = () => {
+            if (!selectedAccountId) return;
+            const id = Number(selectedAccountId);
+            if (values.members.some((m) => m.accountId === id)) {
               toast.info('Nhân viên đã có trong danh sách');
               return;
             }
-            const nv = nhanVienOptions.find((n) => n.id === selectedNV);
-            if (nv) {
-              setFieldValue('nhanVienLamViec', [...values.nhanVienLamViec, nv]);
-              setSelectedNV('');
-            }
+            const acct = accountOptions.find((a) => a.id === id);
+            const roleInTask = acct?.employee?.position?.name || '';
+            setFieldValue('members', [...values.members, { accountId: id, roleInTask }]);
+            setSelectedAccountId('');
           };
 
-          const removeNhanVien = (id) => {
-            setFieldValue(
-              'nhanVienLamViec',
-              values.nhanVienLamViec.filter((nv) => nv.id !== id)
-            );
+          const removeMember = (accountId) => {
+            setFieldValue('members', values.members.filter((m) => m.accountId !== accountId));
           };
+
+          const excludeIds = values.members.map((m) => m.accountId);
+          const available = getAvailableAccounts(excludeIds);
 
           return (
             <Form noValidate>
@@ -129,14 +166,14 @@ export default function ModalCreateWorkOrder({
                   <div>
                     <span className="pct-modal-title-main">Tạo Phiếu Công tác</span>
                     <span className="pct-modal-title-sub">
-                      Từ yêu cầu <strong>{request.maRequest}</strong>
+                      Từ yêu cầu <strong>{request.requestCode || request.maRequest}</strong>
                     </span>
                   </div>
                 </Modal.Title>
               </Modal.Header>
 
               <Modal.Body>
-                {/* ===== SECTION: THÔNG TIN THIẾT BỊ (từ Request) ===== */}
+                {/* ===== SECTION: THÔNG TIN THIẾT BỊ (từ Request — chỉ đọc) ===== */}
                 <div className="pct-section-title">
                   <BsCpu />
                   Thông tin thiết bị (lấy từ yêu cầu)
@@ -144,11 +181,25 @@ export default function ModalCreateWorkOrder({
 
                 <div className="pct-request-card">
                   <div className="pct-info-grid">
-                    <InfoItem label="Mã yêu cầu" value={request.maRequest} mono />
-                    <InfoItem label="Thiết bị" value={request.thietBi} />
-                    <InfoItem label="Mã KKS" value={request.maKKS} mono />
-                    <InfoItem label="Hệ thống" value={request.heThong} />
-                    <InfoItem label="Người yêu cầu" value={request.nguoiYeuCau} />
+                    <InfoItem
+                      label="Mã yêu cầu"
+                      value={request.requestCode || request.maRequest}
+                      mono
+                    />
+                    <InfoItem
+                      label="Thiết bị"
+                      value={request.equipmentName || request.thietBi}
+                    />
+                    <InfoItem
+                      label="Mã KKS"
+                      value={request.equipmentKksCode || request.maKKS}
+                      mono
+                    />
+                    <InfoItem label="Hệ thống" value={request.heThong || '—'} />
+                    <InfoItem
+                      label="Người yêu cầu"
+                      value={request.requesterName || request.nguoiYeuCau}
+                    />
                     <div className="pct-info-item">
                       <span className="pct-info-label">Mức độ</span>
                       <span className="pct-info-value">
@@ -158,92 +209,47 @@ export default function ModalCreateWorkOrder({
                   </div>
                   <div className="pct-info-item pct-info-full">
                     <span className="pct-info-label">Mô tả hư hỏng</span>
-                    <span className="pct-info-value">{request.moTa}</span>
+                    <span className="pct-info-value">
+                      {request.incidentDescription || request.moTa}
+                    </span>
+                  </div>
+
+                  {/* PCT code is auto-generated — inform the user */}
+                  <div className="pct-auto-code-note">
+                    Mã PCT sẽ được hệ thống tự sinh sau khi tạo.
                   </div>
                 </div>
 
-                {/* ===== SECTION: NỘI DUNG PHIẾU CÔNG TÁC ===== */}
+                {/* ===== SECTION: THỜI GIAN ===== */}
                 <div className="pct-section-title mt-4">
-                  <BsClipboardData />
-                  Nội dung phiếu công tác
+                  <BsSave />
+                  Thời gian thực hiện
                 </div>
-
-                <Row className="mb-3">
-                  <Col md={5}>
-                    <label htmlFor="pct-soPhieu" className="form-label">
-                      Số PCT <span className="required-asterisk">*</span>
-                    </label>
-                    <Field
-                      id="pct-soPhieu"
-                      name="soPhieu"
-                      type="text"
-                      className={`form-control font-mono ${
-                        touched.soPhieu && errors.soPhieu ? 'is-invalid' : ''
-                      }`}
-                    />
-                    <ErrorMessage name="soPhieu" component="div" className="invalid-feedback" />
-                  </Col>
-                  <Col md={7}>
-                    <label htmlFor="pct-diaDiem" className="form-label">
-                      Địa điểm làm việc <span className="required-asterisk">*</span>
-                    </label>
-                    <Field
-                      id="pct-diaDiem"
-                      name="diaDiem"
-                      type="text"
-                      placeholder="VD: Khu vực bơm cấp nước thô — Cao trình 0m"
-                      className={`form-control ${
-                        touched.diaDiem && errors.diaDiem ? 'is-invalid' : ''
-                      }`}
-                    />
-                    <ErrorMessage name="diaDiem" component="div" className="invalid-feedback" />
-                  </Col>
-                </Row>
-
-                <div className="mb-3">
-                  <label htmlFor="pct-noiDung" className="form-label">
-                    Nội dung công việc <span className="required-asterisk">*</span>
-                  </label>
-                  <Field
-                    as="textarea"
-                    id="pct-noiDung"
-                    name="noiDung"
-                    rows={3}
-                    className={`form-control ${
-                      touched.noiDung && errors.noiDung ? 'is-invalid' : ''
-                    }`}
-                  />
-                  <ErrorMessage name="noiDung" component="div" className="invalid-feedback" />
-                </div>
-
                 <Row className="mb-3">
                   <Col md={6}>
-                    <label htmlFor="pct-thoiGianBatDau" className="form-label">
+                    <label htmlFor="pct-startTime" className="form-label">
                       Thời gian bắt đầu <span className="required-asterisk">*</span>
                     </label>
                     <Field
-                      id="pct-thoiGianBatDau"
-                      name="thoiGianBatDau"
+                      id="pct-startTime"
+                      name="startTime"
                       type="datetime-local"
                       className={`form-control ${
-                        touched.thoiGianBatDau && errors.thoiGianBatDau ? 'is-invalid' : ''
+                        touched.startTime && errors.startTime ? 'is-invalid' : ''
                       }`}
                     />
-                    <ErrorMessage name="thoiGianBatDau" component="div" className="invalid-feedback" />
+                    <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
                   </Col>
                   <Col md={6}>
-                    <label htmlFor="pct-thoiGianKetThuc" className="form-label">
-                      Dự kiến kết thúc <span className="required-asterisk">*</span>
+                    <label htmlFor="pct-expectedEndTime" className="form-label">
+                      Dự kiến kết thúc
                     </label>
                     <Field
-                      id="pct-thoiGianKetThuc"
-                      name="thoiGianKetThuc"
+                      id="pct-expectedEndTime"
+                      name="expectedEndTime"
                       type="datetime-local"
-                      className={`form-control ${
-                        touched.thoiGianKetThuc && errors.thoiGianKetThuc ? 'is-invalid' : ''
-                      }`}
+                      className="form-control"
                     />
-                    <ErrorMessage name="thoiGianKetThuc" component="div" className="invalid-feedback" />
                   </Col>
                 </Row>
 
@@ -255,124 +261,123 @@ export default function ModalCreateWorkOrder({
 
                 <Row className="mb-3">
                   <Col md={4}>
-                    <label htmlFor="pct-nguoiLanhDao" className="form-label">
+                    <label htmlFor="pct-leaderId" className="form-label">
                       Người lãnh đạo công việc <span className="required-asterisk">*</span>
                     </label>
                     <Field
                       as="select"
-                      id="pct-nguoiLanhDao"
-                      name="nguoiLanhDao"
+                      id="pct-leaderId"
+                      name="leaderId"
                       className={`form-select ${
-                        touched.nguoiLanhDao && errors.nguoiLanhDao ? 'is-invalid' : ''
+                        touched.leaderId && errors.leaderId ? 'is-invalid' : ''
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {nhanVienOptions.map((nv) => (
-                        <option key={nv.id} value={nv.id}>
-                          {nv.hoTen} · {nv.chucVu}
+                      {accountList.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
                         </option>
                       ))}
                     </Field>
-                    <ErrorMessage name="nguoiLanhDao" component="div" className="invalid-feedback" />
+                    <ErrorMessage name="leaderId" component="div" className="invalid-feedback" />
                   </Col>
                   <Col md={4}>
-                    <label htmlFor="pct-chiHuyTrucTiep" className="form-label">
+                    <label htmlFor="pct-directSupervisorId" className="form-label">
                       Chỉ huy trực tiếp <span className="required-asterisk">*</span>
                     </label>
                     <Field
                       as="select"
-                      id="pct-chiHuyTrucTiep"
-                      name="chiHuyTrucTiep"
+                      id="pct-directSupervisorId"
+                      name="directSupervisorId"
                       className={`form-select ${
-                        touched.chiHuyTrucTiep && errors.chiHuyTrucTiep ? 'is-invalid' : ''
+                        touched.directSupervisorId && errors.directSupervisorId ? 'is-invalid' : ''
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {nhanVienOptions.map((nv) => (
-                        <option key={nv.id} value={nv.id}>
-                          {nv.hoTen} · {nv.chucVu}
+                      {accountList.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
                         </option>
                       ))}
                     </Field>
-                    <ErrorMessage name="chiHuyTrucTiep" component="div" className="invalid-feedback" />
+                    <ErrorMessage name="directSupervisorId" component="div" className="invalid-feedback" />
                   </Col>
                   <Col md={4}>
-                    <label htmlFor="pct-nguoiGiamSatAT" className="form-label">
+                    <label htmlFor="pct-safetySupervisorId" className="form-label">
                       Người giám sát an toàn <span className="required-asterisk">*</span>
                     </label>
                     <Field
                       as="select"
-                      id="pct-nguoiGiamSatAT"
-                      name="nguoiGiamSatAT"
+                      id="pct-safetySupervisorId"
+                      name="safetySupervisorId"
                       className={`form-select ${
-                        touched.nguoiGiamSatAT && errors.nguoiGiamSatAT ? 'is-invalid' : ''
+                        touched.safetySupervisorId && errors.safetySupervisorId ? 'is-invalid' : ''
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {nhanVienOptions.map((nv) => (
-                        <option key={nv.id} value={nv.id}>
-                          {nv.hoTen} · {nv.chucVu}
+                      {accountList.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
                         </option>
                       ))}
                     </Field>
-                    <ErrorMessage name="nguoiGiamSatAT" component="div" className="invalid-feedback" />
+                    <ErrorMessage name="safetySupervisorId" component="div" className="invalid-feedback" />
                   </Col>
                 </Row>
 
                 {/* --- Nhân viên làm việc (nhiều người) --- */}
                 <div className="mb-2">
                   <label className="form-label">
-                    Nhân viên làm việc <span className="required-asterisk">*</span>
+                    Nhân viên làm việc
                   </label>
                   <div className="pct-add-nv">
                     <select
                       className="form-select"
-                      value={selectedNV}
-                      onChange={(e) => setSelectedNV(e.target.value)}
+                      value={selectedAccountId}
+                      onChange={(e) => setSelectedAccountId(e.target.value)}
                       aria-label="Chọn nhân viên làm việc"
                     >
                       <option value="">— Chọn nhân viên để thêm —</option>
-                      {nhanVienOptions
-                        .filter((nv) => !values.nhanVienLamViec.some((s) => s.id === nv.id))
-                        .map((nv) => (
-                          <option key={nv.id} value={nv.id}>
-                            {nv.hoTen} · {nv.chucVu}
-                          </option>
-                        ))}
+                      {available.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
+                        </option>
+                      ))}
                     </select>
                     <Button
                       type="button"
                       variant="outline-primary"
-                      onClick={addNhanVien}
-                      disabled={!selectedNV}
+                      onClick={addMember}
+                      disabled={!selectedAccountId}
                     >
                       <BsPersonPlus /> Thêm
                     </Button>
                   </div>
 
-                  {touched.nhanVienLamViec && errors.nhanVienLamViec && (
-                    <div className="invalid-feedback d-block">{errors.nhanVienLamViec}</div>
-                  )}
-
-                  {values.nhanVienLamViec.length > 0 && (
+                  {values.members.length > 0 && (
                     <div className="pct-nv-list">
-                      {values.nhanVienLamViec.map((nv, idx) => (
-                        <div key={nv.id} className="pct-nv-chip">
-                          <span className="pct-nv-chip-index">{idx + 1}</span>
-                          <span className="pct-nv-chip-info">
-                            <strong>{nv.hoTen}</strong>
-                            <span>{nv.chucVu}</span>
-                          </span>
-                          <button
-                            type="button"
-                            className="pct-nv-chip-remove"
-                            onClick={() => removeNhanVien(nv.id)}
-                            title="Xoá khỏi danh sách"
-                          >
-                            <BsTrash />
-                          </button>
-                        </div>
-                      ))}
+                      {values.members.map((m, idx) => {
+                        const acct = accountOptions.find((a) => a.id === m.accountId);
+                        const name = acct?.employee?.fullName || acct?.username || `ID ${m.accountId}`;
+                        const role = m.roleInTask || acct?.employee?.position?.name || '';
+                        return (
+                          <div key={m.accountId} className="pct-nv-chip">
+                            <span className="pct-nv-chip-index">{idx + 1}</span>
+                            <span className="pct-nv-chip-info">
+                              <strong>{name}</strong>
+                              <span>{role}</span>
+                            </span>
+                            <button
+                              type="button"
+                              className="pct-nv-chip-remove"
+                              onClick={() => removeMember(m.accountId)}
+                              title="Xoá khỏi danh sách"
+                            >
+                              <BsTrash />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
