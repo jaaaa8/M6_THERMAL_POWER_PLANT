@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
     Table,
     Button,
@@ -14,40 +13,35 @@ import {
 import { Link } from "react-router-dom";
 
 import "../common/DataTable.css";
+import { useEffect, useState } from "react";
+import {
+    getAllTechnicalAssessments,
+    uploadPdf,
+} from "../../services/technicalAssessmentService";
 
 export default function TechnicalAssessmentList() {
-    const [data] = useState([
-        {
-            id: 1,
-            technicalCode: "DGKT-2026-001",
-            workOrderCode: "WO-2026-001",
-            assessor: "Nguyễn Văn A",
-            system: "Hệ thống làm mát",
-            equipment: "Bơm nước làm mát",
-            status: "COMPLETED",
-            createdDate: "2026-06-26",
-        },
-        {
-            id: 2,
-            technicalCode: "DGKT-2026-002",
-            workOrderCode: "WO-2026-002",
-            assessor: "Trần Văn B",
-            system: "Hệ thống Turbine",
-            equipment: "Turbine số 1",
-            status: "WAITING_PDF",
-            createdDate: "2026-06-25",
-        },
-        {
-            id: 3,
-            technicalCode: "DGKT-2026-003",
-            workOrderCode: "WO-2026-003",
-            assessor: "Lê Văn C",
-            system: "Hệ thống nghiền than",
-            equipment: "Máy nghiền than",
-            status: "WAITING_PDF",
-            createdDate: "2026-06-24",
-        },
-    ]);
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+
+            const result =
+                await getAllTechnicalAssessments();
+
+            setData(result);
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -74,58 +68,21 @@ export default function TechnicalAssessmentList() {
         }
     };
 
-    const handleUploadPdf = async (technicalAssessmentId, file) => {
+    const handleUploadPdf = async (item, file) => {
         if (!file) return;
 
-        // Kiểm tra định dạng file
-        if (file.type !== "application/pdf") {
-            alert("Chỉ được upload file PDF");
-            return;
-        }
-
-        const formData = new FormData();
-
-        formData.append("file", file);
-        formData.append(
-            "technicalAssessmentId",
-            technicalAssessmentId
-        );
-
         try {
-            const response = await fetch(
-                `/api/technical-assessments/${technicalAssessmentId}/upload-pdf`,
-                {
-                    method: "POST",
-                    body: formData,
-                }
-            );
+            const payload = {
+                id: item.id, // hoặc item.id
+            };
 
-            if (!response.ok) {
-                throw new Error("Upload thất bại");
-            }
-
-            const result = await response.json();
-
-            console.log("Upload thành công", result);
+            await uploadPdf(payload, file);
 
             alert("Upload PDF thành công");
-
-            // cập nhật trạng thái trên table
-            setTechnicalAssessments((prev) =>
-                prev.map((item) =>
-                    item.id === technicalAssessmentId
-                        ? {
-                            ...item,
-                            status: "PDF_UPLOADED",
-                            pdfUrl: result.pdfUrl,
-                        }
-                        : item
-                )
-            );
+            loadData();
         } catch (error) {
             console.error(error);
-
-            alert("Có lỗi xảy ra khi upload PDF");
+            alert(error.message);
         }
     };
 
@@ -158,11 +115,9 @@ export default function TechnicalAssessmentList() {
                         <thead>
                         <tr>
                             <th>Mã phiếu</th>
-                            <th>Lệnh công việc</th>
+                            <th>Tổng quan</th>
                             <th>Người đánh giá</th>
-                            <th>Hệ thống</th>
-                            <th>Thiết bị</th>
-                            <th>Trạng thái</th>
+                            <th>Kết quả</th>
                             <th>Ngày tạo</th>
                             <th width="140">
                                 Thao tác
@@ -171,40 +126,29 @@ export default function TechnicalAssessmentList() {
                         </thead>
 
                         <tbody>
-                        {data.map((item) => (
-                            <tr key={item.id}>
+                        {data.map((item, index) => (
+                            <tr key={`${item.id}-${index}`}>
                                 <td>
                                     <strong>
                                         {item.technicalCode}
                                     </strong>
                                 </td>
 
+                                <td>{item.description}</td>
+
                                 <td>
-                                    {item.workOrderCode}
+                                    {item.assessor?.employee?.fullName ||
+                                        item.assessor?.username ||
+                                        "-"}
                                 </td>
 
                                 <td>
-                                    {item.assessor}
+                                    {item.result}
                                 </td>
 
                                 <td>
-                                    {item.system}
+                                    {new Date(item.createdAt).toLocaleString("vi-VN")}
                                 </td>
-
-                                <td>
-                                    {item.equipment}
-                                </td>
-
-                                <td>
-                                    {getStatusBadge(
-                                        item.status
-                                    )}
-                                </td>
-
-                                <td>
-                                    {item.createdDate}
-                                </td>
-
                                 <td>
                                     <div className="action-buttons">
 
@@ -225,7 +169,7 @@ export default function TechnicalAssessmentList() {
                                                 hidden
                                                 onChange={(e) =>
                                                     handleUploadPdf(
-                                                        item.id,
+                                                        item,
                                                         e.target.files?.[0]
                                                     )
                                                 }

@@ -25,16 +25,13 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
 import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
-<<<<<<< HEAD
 import TechnicalAssessmentList from "./components/technical_assessment/TechnicalAssessmentList.jsx";
 import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueList.jsx";
 import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
-=======
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
->>>>>>> d17c81d55c7abcfb72e746ac28b92e3df8b946e6
 
 function App() {
   return (
@@ -75,15 +72,10 @@ function App() {
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
             <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
-<<<<<<< HEAD
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
             <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
-=======
-            <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm />} />
-            <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm />} />
->>>>>>> d17c81d55c7abcfb72e746ac28b92e3df8b946e6
 
             {/* --- Vật tư --- */}
             <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
@@ -94,17 +86,10 @@ function App() {
             <Route path="/ccdc/muon-tra" element={<PlaceholderPage title="Mượn / Trả CCDC" />} />
 
             {/* --- Bảo dưỡng --- */}
-<<<<<<< HEAD
             <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
             <Route path="/lubrication/checklist" element={<LubricationChecklistPage/>} />
             <Route path="/lubrication/plant/add" element={<LubricationPlanForm/>} />
             <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
-=======
-            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
-            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
->>>>>>> d17c81d55c7abcfb72e746ac28b92e3df8b946e6
           </Route>
 
           {/* 404 */}

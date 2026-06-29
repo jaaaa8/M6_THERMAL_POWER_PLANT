@@ -2,11 +2,10 @@
 import { useState } from "react";
 import { BsFileEarmarkPdf } from "react-icons/bs";
 import {
-    PDFDownloadLink
-} from "@react-pdf/renderer";
-
-import TechnicalAssessmentPDF from "../../pdf/TechnicalAssessmentPDF.jsx";
-
+    createTechnicalAssessment,
+} from "../../services/technicalAssessmentService";
+import { pdf } from "@react-pdf/renderer";
+import TechnicalAssessmentPDF from "../../pdf/TechnicalAssessmentPDF";
 import {
   Row,
   Col,
@@ -18,13 +17,13 @@ import {
   BsClipboard2Check,
   BsFileEarmarkText,
   BsTools,
-  BsFilePdf,
   BsImages,
-  BsSave,
   BsXCircle,
   BsArrowClockwise,
 } from "react-icons/bs";
 import {Link} from "react-router-dom";
+
+
 
 export default function TechnicalAssessmentForm() {
     const [formData, setFormData] = useState({
@@ -151,6 +150,53 @@ export default function TechnicalAssessmentForm() {
     equipments.find(
         e => e.id.toString() === formData.equipmentId
     );
+
+    const generatePdfFile = async () => {
+        const blob = await pdf(
+            <TechnicalAssessmentPDF
+                data={formData}
+                workOrders={workOrders}
+                assessors={assessors}
+                systems={systems}
+                equipments={equipments}
+                images={imageFiles}
+            />
+        ).toBlob();
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${formData.technicalCode}.pdf`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+
+        return blob;
+    };
+
+    const handleSaveAndExport = async () => {
+        try {
+            const payload = {
+                technicalCode: formData.technicalCode,
+                assessor: { id: Number(formData.assessorId) },
+                result: formData.result,
+                description: formData.description,
+                status: formData.status
+            };
+            await createTechnicalAssessment(payload);
+
+            await generatePdfFile();
+
+            alert("Lưu phiếu và xuất PDF thành công");
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi: " + error.message);
+        }
+    };
     return (
         <div className="technical-form-card">
 
@@ -456,26 +502,13 @@ export default function TechnicalAssessmentForm() {
                     </Button>
                 </Link>
 
-                <PDFDownloadLink
-                    document={
-                        <TechnicalAssessmentPDF
-                            data={formData}
-                            workOrders={workOrders}
-                            assessors={assessors}
-                            systems={systems}
-                            equipments={equipments}
-                            images={imageFiles}
-                        />
-                    }
-                    fileName={`${formData.technicalCode}.pdf`}
+                <Button
+                    variant="outline-primary"
+                    onClick={handleSaveAndExport}
                 >
-                    {({ loading }) => (
-                        <Button variant="outline-primary">
-                            <BsFileEarmarkPdf />
-                            {loading ? "Đang tạo PDF..." : "Xuất PDF & Lưu Phiếu"}
-                        </Button>
-                    )}
-                </PDFDownloadLink>
+                    <BsFileEarmarkPdf />
+                    Xuất PDF & Lưu Phiếu
+                </Button>
 
                 {/*<Button variant="primary">*/}
                 {/*    <BsSave />*/}
