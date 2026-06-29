@@ -15,6 +15,8 @@ import {
 } from "react-icons/bs";
 
 import "./LubricationPlanForm.css";
+import {Link} from "react-router-dom";
+
 
 const validationSchema = Yup.object({
     equipmentId: Yup.string()
@@ -187,12 +189,12 @@ export default function LubricationPlanForm({
                 <div className="nhansu-form-header-text">
                     <h2>
                         {isEdit
-                            ? "Cập nhật Kế hoạch dầu mỡ"
-                            : "Thêm mới Kế hoạch dầu mỡ"}
+                            ? "Cập nhật Kế hoạch Bảo Dưỡng"
+                            : "Thêm mới Kế hoạch Bảo Dưỡng"}
                     </h2>
 
                     <p>
-                        Quản lý lịch bảo dưỡng dầu mỡ
+                        Quản lý lịch bảo dưỡng
                         cho thiết bị trong nhà máy.
                     </p>
                 </div>
@@ -445,6 +447,12 @@ export default function LubricationPlanForm({
                                 <BsArrowClockwise />
                                 Đặt lại
                             </Button>
+                            <Link to="/lubrication/plant">
+                                <Button variant="outline-danger">
+                                    <BsXCircle />
+                                    Huỷ bỏ
+                                </Button>
+                            </Link>
 
                             {onCancel && (
                                 <Button
