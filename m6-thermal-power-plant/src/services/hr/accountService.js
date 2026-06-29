@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = '/api/v1/accounts';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_URL = `${BASE_URL}/api/v1/accounts`;
 
 export const accountService = {
   getAll: () => axios.get(API_URL),
@@ -10,5 +11,5 @@ export const accountService = {
   remove: (id) => axios.delete(`${API_URL}/${id}`),
   grantRole: (data) => axios.post(`${API_URL}/grant`, data),
   updateStatus: (data) => axios.patch(`${API_URL}/status`, data),
-  getRoles: () => axios.get('/api/v1/roles')
+  getRoles: () => axios.get(`${BASE_URL}/api/v1/roles`)
 };

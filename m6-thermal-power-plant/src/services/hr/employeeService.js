@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = '/api/v1/employees';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_URL = `${BASE_URL}/api/v1/employees`;
 
 export const employeeService = {
   getAll: () => axios.get(API_URL),
@@ -10,7 +11,7 @@ export const employeeService = {
   update: (id, data) => axios.put(`${API_URL}/${id}`, data),
   remove: (id) => axios.delete(`${API_URL}/${id}`),
   
-  getDepartments: () => axios.get('/api/v1/employees/departments'),
-  getExpertises: () => axios.get('/api/v1/employees/expertises'),
-  getPositions: () => axios.get('/api/v1/employees/positions'),
+  getDepartments: () => axios.get(`${BASE_URL}/api/v1/employees/departments`),
+  getExpertises: () => axios.get(`${BASE_URL}/api/v1/employees/expertises`),
+  getPositions: () => axios.get(`${BASE_URL}/api/v1/employees/positions`),
 };
