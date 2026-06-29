@@ -60,6 +60,7 @@ const menuSections = [
           { path: '/repair/requests', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa', func: 'REPAIR_REQUEST' },
           { path: '/repair/work-orders', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', func: 'WORK_ORDER' },
           { path: '/repair/assessments', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', func: 'TECHNICAL_ASSESSMENT' },
+          { path: '/repair/spare-parts-issue', icon: <BsClipboard2Check />, label: 'Phiếu xuất VT thay thế', func: 'TECHNICAL_ASSESSMENT' },
         ],
       },
     ],

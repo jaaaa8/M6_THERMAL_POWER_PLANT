@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './apiClient';
 import { authService } from './authService';
 
 const API_URL = '/api/phieu-cong-tac';

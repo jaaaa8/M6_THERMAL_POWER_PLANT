@@ -12,8 +12,8 @@ import {
   BsXCircle,
   BsArrowClockwise,
 } from 'react-icons/bs';
-import { employeeService } from '../../services/employeeService';
-import './EmployeeForm.css';
+import { employeeService } from '../../../services/employeeService';
+import './style/AddEmployee.css';
 
 /* ============================================================
    VALIDATION SCHEMA — Formik + Yup
@@ -78,14 +78,14 @@ const INITIAL_VALUES = {
    ============================================================ */
 
 /**
- * EmployeeForm — Form thêm mới nhân sự với avatar upload.
+ * AddEmployee — Form thêm mới nhân sự với avatar upload.
  *
  * @param {Function} [props.onSuccess] - Callback sau khi thêm thành công
  * @param {Function} [props.onCancel] - Callback khi bấm Huỷ
  * @param {object} [props.initialData] - Dữ liệu ban đầu (dùng cho chế độ sửa)
  * @param {boolean} [props.isEdit] - Chế độ sửa
  */
-export default function EmployeeForm({
+export default function AddEmployee({
   onSuccess,
   onCancel,
   initialData = null,

@@ -14,12 +14,28 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import NhanSuForm from './components/hr/EmployeeForm';
+
+// --- Ours (trung-hieu) ---
 import RoleManagementPage from './pages/RoleManagementPage';
 import CreateAccountPage from './pages/CreateAccountPage';
 import RepairRequestPage from './pages/RepairRequestPage';
 import WorkOrderPage from './pages/WorkOrderPage';
 import WorkOrderListPage from './pages/WorkOrderListPage';
+
+// --- Main (team) ---
+import ListDepartment from './components/hr/department/ListDepartment';
+import AddDepartment from './components/hr/department/AddDepartment';
+import ListEmployee from './components/hr/employee/ListEmployee';
+import AddEmployee from './components/hr/employee/AddEmployee';
+import ListAccount from './components/hr/account/ListAccount';
+import AddAccount from './components/hr/account/AddAccount';
+import TechnicalAssessmentForm from "./components/technical_assessment/AddComponent.jsx";
+import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
+import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
+import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import ListSystem from './components/equipment/ListSystem';
+import AddSystem from './components/equipment/AddSystem';
+import EditSystem from './components/equipment/EditSystem';
 
 function App() {
   return (
@@ -54,23 +70,39 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* --- HR --- */}
+            {/* --- HR: Phòng ban --- */}
             <Route path="/hr/departments" element={
-              <ProtectedRoute requireFunction="DEPARTMENT"><PlaceholderPage title="Quản lý Phòng ban" /></ProtectedRoute>
+              <ProtectedRoute requireFunction="DEPARTMENT"><ListDepartment /></ProtectedRoute>
             } />
+            <Route path="/hr/departments/new" element={
+              <ProtectedRoute requireFunction="DEPARTMENT"><AddDepartment /></ProtectedRoute>
+            } />
+
+            {/* --- HR: Nhân viên --- */}
             <Route path="/hr/employees" element={
-              <ProtectedRoute requireFunction="EMPLOYEE"><PlaceholderPage title="Quản lý Nhân viên" /></ProtectedRoute>
+              <ProtectedRoute requireFunction="EMPLOYEE"><ListEmployee /></ProtectedRoute>
             } />
             <Route path="/hr/employees/new" element={
-              <ProtectedRoute requireFunction="EMPLOYEE"><NhanSuForm onCancel={() => window.history.back()} /></ProtectedRoute>
+              <ProtectedRoute requireFunction="EMPLOYEE"><AddEmployee onCancel={() => window.history.back()} /></ProtectedRoute>
             } />
+
+            {/* --- HR: Tài khoản --- */}
             <Route path="/hr/accounts" element={
-              <ProtectedRoute requireFunction="ACCOUNT"><PlaceholderPage title="Tài khoản & Phân quyền" /></ProtectedRoute>
+              <ProtectedRoute requireFunction="ACCOUNT"><ListAccount /></ProtectedRoute>
+            } />
+            <Route path="/hr/accounts/new" element={
+              <ProtectedRoute requireFunction="ACCOUNT"><AddAccount /></ProtectedRoute>
             } />
 
             {/* --- Equipment --- */}
             <Route path="/equipment/systems" element={
-              <ProtectedRoute requireFunction="EQUIPMENT_SYSTEM"><PlaceholderPage title="Danh sách Hệ thống" /></ProtectedRoute>
+              <ProtectedRoute requireFunction="EQUIPMENT_SYSTEM"><ListSystem /></ProtectedRoute>
+            } />
+            <Route path="/equipment/systems/new" element={
+              <ProtectedRoute requireFunction="EQUIPMENT_SYSTEM"><AddSystem /></ProtectedRoute>
+            } />
+            <Route path="/equipment/systems/edit/:id" element={
+              <ProtectedRoute requireFunction="EQUIPMENT_SYSTEM"><EditSystem /></ProtectedRoute>
             } />
             <Route path="/equipment" element={
               <ProtectedRoute requireFunction="EQUIPMENT"><PlaceholderPage title="Danh sách Thiết bị" /></ProtectedRoute>
@@ -87,7 +119,10 @@ function App() {
               <ProtectedRoute requireFunction="WORK_ORDER"><WorkOrderPage /></ProtectedRoute>
             } />
             <Route path="/repair/assessments" element={
-              <ProtectedRoute requireFunction="TECHNICAL_ASSESSMENT"><PlaceholderPage title="Đánh giá Kỹ thuật" /></ProtectedRoute>
+              <ProtectedRoute requireFunction="TECHNICAL_ASSESSMENT"><TechnicalAssessmentForm /></ProtectedRoute>
+            } />
+            <Route path="/repair/spare-parts-issue" element={
+              <ProtectedRoute requireFunction="TECHNICAL_ASSESSMENT"><SparePartsIssueForm /></ProtectedRoute>
             } />
 
             {/* --- Materials --- */}
@@ -109,6 +144,12 @@ function App() {
             {/* --- Maintenance --- */}
             <Route path="/maintenance/plans" element={
               <ProtectedRoute requireFunction="MAINTENANCE"><PlaceholderPage title="Kế hoạch Bảo dưỡng" /></ProtectedRoute>
+            } />
+            <Route path="/maintenance/plans/new" element={
+              <ProtectedRoute requireFunction="MAINTENANCE"><LubricationPlanForm /></ProtectedRoute>
+            } />
+            <Route path="/maintenance/checklist" element={
+              <ProtectedRoute requireFunction="MAINTENANCE"><LubricationChecklistPage /></ProtectedRoute>
             } />
             <Route path="/maintenance/history" element={
               <ProtectedRoute requireFunction="MAINTENANCE"><PlaceholderPage title="Lịch sử Bảo dưỡng" /></ProtectedRoute>

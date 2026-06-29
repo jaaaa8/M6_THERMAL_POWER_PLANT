@@ -1,0 +1,108 @@
+# ================================================================
+#  GitLab CI/CD — Frontend: React 19 + Vite 8
+#  Deploy: Build → AWS S3 + CloudFront invalidation
+# ================================================================
+#
+# Biến môi trường cần cấu hình trong GitLab:
+# Settings → CI/CD → Variables
+#   AWS_ACCESS_KEY_ID             (masked)
+#   AWS_SECRET_ACCESS_KEY         (masked)
+#   S3_BUCKET                     (ví dụ: thermal-power-plant-frontend)
+#   CLOUDFRONT_DISTRIBUTION_ID    (ví dụ: E1ABCDEF2GHIJK)
+#   VITE_API_BASE_URL             (ví dụ: https://api.your-domain.com)
+# ================================================================
+
+stages:
+  - lint
+  - build
+  - deploy
+
+# ── Biến dùng chung ────────────────────────────────────────────
+variables:
+  AWS_REGION: "ap-northeast-1"   # Tokyo
+  NODE_VERSION: "20"
+  APP_DIR: "m6-thermal-power-plant"
+
+# ── Cache node_modules giữa các job ────────────────────────────
+.node-cache: &node-cache
+  cache:
+    key:
+      files:
+        - ${APP_DIR}/package-lock.json
+    paths:
+      - ${APP_DIR}/node_modules/
+    policy: pull-push
+
+# ══════════════════════════════════════════════════════════════
+# STAGE 1: LINT (chạy trên mọi branch và MR)
+# ══════════════════════════════════════════════════════════════
+eslint-check:
+  stage: lint
+  image: node:20-alpine
+  <<: *node-cache
+  script:
+    - cd $APP_DIR
+    - npm ci --prefer-offline
+    - npm run lint
+  allow_failure: false                  # Lint fail → pipeline dừng
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+# ══════════════════════════════════════════════════════════════
+# STAGE 2: BUILD REACT APP
+# ══════════════════════════════════════════════════════════════
+build-frontend:
+  stage: build
+  image: node:20-alpine
+  <<: *node-cache
+  script:
+    - cd $APP_DIR
+    - npm ci --prefer-offline
+    # VITE_API_BASE_URL được inject từ GitLab CI Variables
+    - npm run build
+    - echo "Build output:"
+    - ls -lh dist/
+  artifacts:
+    name: "frontend-dist-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - ${APP_DIR}/dist/
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+# ══════════════════════════════════════════════════════════════
+# STAGE 3: DEPLOY LÊN S3 + INVALIDATE CLOUDFRONT
+# ══════════════════════════════════════════════════════════════
+deploy-s3:
+  stage: deploy
+  image: amazon/aws-cli:latest
+  dependencies:
+    - build-frontend
+  script:
+    # Sync toàn bộ dist/ lên S3 (--delete xóa file cũ không còn tồn tại)
+    - |
+      aws s3 sync ${APP_DIR}/dist/ s3://${S3_BUCKET}/ \
+        --delete \
+        --region $AWS_REGION \
+        --cache-control "public, max-age=31536000, immutable" \
+        --exclude "index.html"
+    # index.html: KHÔNG cache (để user luôn nhận version mới)
+    - |
+      aws s3 cp ${APP_DIR}/dist/index.html s3://${S3_BUCKET}/index.html \
+        --region $AWS_REGION \
+        --cache-control "no-cache, no-store, must-revalidate"
+    # Xóa CloudFront cache để user thấy bản mới ngay
+    - |
+      aws cloudfront create-invalidation \
+        --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+        --paths "/*"
+    - echo "✅ Frontend deployed to S3 + CloudFront cache cleared!"
+  environment:
+    name: production
+    url: https://your-cloudfront-domain.cloudfront.net   # Thay bằng domain thực
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  when: on_success

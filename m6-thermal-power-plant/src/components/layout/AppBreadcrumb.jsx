@@ -4,6 +4,7 @@ import './AppBreadcrumb.css';
 
 /* Route slug → Vietnamese label hiển thị */
 const routeLabels = {
+  // English path slugs (ours)
   admin: 'Quản trị',
   roles: 'Phân quyền',
   hr: 'Nhân sự',
@@ -11,19 +12,38 @@ const routeLabels = {
   employees: 'Nhân viên',
   new: 'Thêm mới',
   accounts: 'Tài khoản & Quyền',
+  create: 'Tạo mới',
   equipment: 'Thiết bị',
   systems: 'Hệ thống',
   repair: 'Sửa chữa',
   requests: 'Yêu cầu Sửa chữa',
   'work-orders': 'Phiếu Công tác',
   assessments: 'Đánh giá Kỹ thuật',
+  'spare-parts-issue': 'Phiếu xuất VT thay thế',
   materials: 'Vật tư',
   transactions: 'Nhập / Xuất kho',
   tools: 'Công cụ Dụng cụ',
   borrowings: 'Mượn / Trả',
   maintenance: 'Bảo dưỡng',
   plans: 'Kế hoạch',
+  checklist: 'Checklist',
   history: 'Lịch sử',
+  // Vietnamese path slugs (main)
+  add: 'Thêm mới',
+  edit: 'Chỉnh sửa',
+  delete: 'Xóa',
+  system: 'Hệ thống',
+  'nhan-su': 'Nhân sự',
+  'phong-ban': 'Phòng ban',
+  'nhan-vien': 'Nhân viên',
+  'tai-khoan': 'Tài khoản & Quyền',
+  'sua-chua': 'Sửa chữa',
+  'yeu-cau': 'Yêu cầu Sửa chữa',
+  'phieu-cong-tac': 'Phiếu Công tác',
+  'danh-gia-kt': 'Đánh giá Kỹ thuật',
+  'bao-duong': 'Bảo dưỡng',
+  'ke-hoach': 'Kế hoạch',
+  'lich-su': 'Lịch sử',
 };
 
 export default function AppBreadcrumb() {

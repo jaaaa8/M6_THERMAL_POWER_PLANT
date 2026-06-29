@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './apiClient';
 
 const API_URL = '/api/v1/equipment';
 
@@ -23,7 +23,7 @@ export const equipmentService = {
    * Lấy danh sách thiết bị
    */
   getAll: () => {
-    // TODO: return axios.get(API_URL);
+    // TODO: return apiClient.get(API_URL);
     return new Promise((resolve) => {
       setTimeout(() => resolve({ data: MOCK_EQUIPMENT }), 300);
     });
@@ -33,7 +33,7 @@ export const equipmentService = {
    * Lấy thiết bị theo ID
    */
   getById: (id) => {
-    // TODO: return axios.get(`${API_URL}/${id}`);
+    // TODO: return apiClient.get(`${API_URL}/${id}`);
     return new Promise((resolve, reject) => {
       const item = MOCK_EQUIPMENT.find((e) => e.id === id);
       setTimeout(() => {

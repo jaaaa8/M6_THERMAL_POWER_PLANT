@@ -1,0 +1,29 @@
+# Ignore files không cần copy vào Docker image
+# Giảm build context size → build nhanh hơn
+
+# Node modules (sẽ được npm ci cài lại trong container)
+m6-thermal-power-plant/node_modules/
+
+# Vite build output (sẽ build trong container)
+m6-thermal-power-plant/dist/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+
+# Agents & docs không cần thiết
+.agents/
+.claude/
+.gitnexus/
+.playwright-mcp/
+docs/
+*.md
+
+# Temp files
+*.log
+*.tmp
