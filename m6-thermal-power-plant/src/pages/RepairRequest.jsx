@@ -10,6 +10,7 @@ import DataTable from '../components/common/DataTable';
 import StatusBadge from '../components/common/StatusBadge';
 import ModalCreateWorkOrder from '../components/repair/ModalCreateWorkOrder.jsx';
 import { workOrderService } from '../services/workOrderService';
+import { employeeService } from '../services/hr/employeeService';
 import './RepairRequest.css';
 
 /* ============================================================
@@ -50,6 +51,7 @@ export default function RepairRequest() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
+  const [employees, setEmployees] = useState([]);
 
   const [filter, setFilter]           = useState('PENDING');
   const [pctRequest, setPctRequest]   = useState(null);
@@ -70,7 +72,20 @@ export default function RepairRequest() {
     }
   }, []);
 
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  /* --- Fetch all employees from backend --- */
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const res = await employeeService.getAll();
+      setEmployees(res.data ?? []);
+    } catch (err) {
+      console.error('Không thể tải danh sách nhân viên:', err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRequests();
+    fetchEmployees();
+  }, [fetchRequests, fetchEmployees]);
 
   /* --- Thống kê --- */
   const stats = useMemo(() => {
@@ -206,11 +221,11 @@ export default function RepairRequest() {
       />
 
       {/* ===== MODAL: TẠO PCT ===== */}
-      {/* accountOptions: TODO — wire to GET /api/tai-khoan once that endpoint exists */}
+      {/* accountOptions: populated from GET /api/nhan-su via nhanSuService.getAll() */}
       <ModalCreateWorkOrder
         show={!!pctRequest}
         request={pctRequest}
-        accountOptions={[]}
+        accountOptions={employees}
         onClose={() => setPctRequest(null)}
         onCreated={handlePCTCreated}
       />
