@@ -55,29 +55,33 @@ const validationSchema = Yup.object({
  * @param {boolean}  props.show
  * @param {Function} props.onClose
  * @param {object}   props.request - Request nguồn (dạng RepairRequestDTO từ API)
- * @param {Array}    props.accountOptions - Danh sách tài khoản [{id, username, employee: {fullName, position: {name}}}]
+ * @param {Array}    props.employees - Danh sách nhân viên [{id, fullName, position: {name}}]
  * @param {Function} props.onCreated - (request, createdWorkOrder) => void
  */
 export default function ModalCreateWorkOrder({
   show,
   onClose,
   request,
-  accountOptions = [],
+  employees = [],
   onCreated,
 }) {
-  const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
-  // Chuẩn bị danh sách account để hiển thị trong select
-  const accountList = useMemo(() => {
-    return accountOptions.map((a) => ({
-      id: a.id,
-      label: `${a.employee?.fullName || a.username} · ${a.employee?.position?.name || ''}`,
+  // Chuẩn bị danh sách employee để hiển thị trong select
+  const employeeList = useMemo(() => {
+    // Ensure employees is an array
+    const empArray = Array.isArray(employees) ? employees : [];
+    return empArray.map((emp) => ({
+      id: emp.id,
+      label: `${emp.fullName || emp.name || 'Unknown'} · ${emp.positionName || emp.position?.name || emp.chucVu || ''}`,
+      fullName: emp.fullName || emp.name || 'Unknown',
+      position: emp.positionName || emp.position?.name || emp.chucVu || '',
     }));
-  }, [accountOptions]);
+  }, [employees]);
 
   // Lấy danh sách member hiện tại để filter option
-  function getAvailableAccounts(excludeIds) {
-    return accountList.filter((a) => !excludeIds.includes(a.id));
+  function getAvailableEmployees(excludeIds) {
+    return employeeList.filter((e) => !excludeIds.includes(e.id));
   }
 
   if (!request) return null;
@@ -93,7 +97,7 @@ export default function ModalCreateWorkOrder({
     safetySupervisorId: '',
     startTime: '',
     expectedEndTime: '',
-    members: [], // [{ accountId, roleInTask }]
+    members: [], // [{ employeeId, roleInTask }]
   };
 
   return (
@@ -112,12 +116,7 @@ export default function ModalCreateWorkOrder({
               startTime: values.startTime || null,
               expectedEndTime: values.expectedEndTime || null,
               members: values.members.map((m) => ({
-                // Backend MemberInput expects `employeeId` (not `accountId`).
-                // We store accountId on the form, but account.employee.id = employeeId.
-                // The accountId IS the Account PK; the backend MemberInput field is
-                // named `employeeId` but the service resolves it from the Account.
-                // Per the DTO: employeeId is Account.id (the account foreign key field).
-                employeeId: m.accountId,
+                employeeId: m.employeeId,
                 roleInTask: m.roleInTask || undefined,
               })),
             };
@@ -125,11 +124,27 @@ export default function ModalCreateWorkOrder({
             const res = await workOrderService.create(payload);
             toast.success(`Đã tạo phiếu công tác ${res.data.orderCode}`);
             onCreated?.(request, res.data);
-            setSelectedAccountId('');
+            setSelectedEmployeeId('');
             onClose?.();
           } catch (err) {
-            const msg = err.response?.data?.message || err.message || 'Lỗi không xác định';
-            toast.error(`Không thể tạo PCT: ${msg}`);
+            // Xử lý lỗi 409 Conflict - trùng lịch hoặc thành viên
+            if (err.response?.status === 409) {
+              const errorMsg = err.response?.data?.message || '';
+              
+              // Kiểm tra loại xung đột
+              if (errorMsg.toLowerCase().includes('time') || errorMsg.toLowerCase().includes('thời gian') || errorMsg.toLowerCase().includes('schedule')) {
+                toast.error('⚠️ Xung đột thời gian! Một hoặc nhiều nhân viên đã có lịch làm việc trùng với thời gian này. Vui lòng chọn thời gian khác hoặc thay đổi thành viên.');
+              } else if (errorMsg.toLowerCase().includes('member') || errorMsg.toLowerCase().includes('employee') || errorMsg.toLowerCase().includes('nhân viên') || errorMsg.toLowerCase().includes('thành viên')) {
+                toast.error('⚠️ Xung đột thành viên! Một hoặc nhiều nhân viên đã được phân công vào phiếu công tác khác trong khoảng thời gian này. Vui lòng chọn thành viên khác hoặc thay đổi thời gian.');
+              } else {
+                // Lỗi conflict khác
+                toast.error(`⚠️ Xung đột dữ liệu: ${errorMsg}`);
+              }
+            } else {
+              // Các lỗi khác (400, 500, network, etc.)
+              const msg = err.response?.data?.message || err.message || 'Lỗi không xác định';
+              toast.error(`Không thể tạo PCT: ${msg}`);
+            }
           } finally {
             setSubmitting(false);
           }
@@ -137,24 +152,24 @@ export default function ModalCreateWorkOrder({
       >
         {({ values, touched, errors, isSubmitting, setFieldValue }) => {
           const addMember = () => {
-            if (!selectedAccountId) return;
-            const id = Number(selectedAccountId);
-            if (values.members.some((m) => m.accountId === id)) {
+            if (!selectedEmployeeId) return;
+            const id = Number(selectedEmployeeId);
+            if (values.members.some((m) => m.employeeId === id)) {
               toast.info('Nhân viên đã có trong danh sách');
               return;
             }
-            const acct = accountOptions.find((a) => a.id === id);
-            const roleInTask = acct?.employee?.position?.name || '';
-            setFieldValue('members', [...values.members, { accountId: id, roleInTask }]);
-            setSelectedAccountId('');
+            const emp = employeeList.find((e) => e.id === id);
+            const roleInTask = emp?.position || '';
+            setFieldValue('members', [...values.members, { employeeId: id, roleInTask }]);
+            setSelectedEmployeeId('');
           };
 
-          const removeMember = (accountId) => {
-            setFieldValue('members', values.members.filter((m) => m.accountId !== accountId));
+          const removeMember = (employeeId) => {
+            setFieldValue('members', values.members.filter((m) => m.employeeId !== employeeId));
           };
 
-          const excludeIds = values.members.map((m) => m.accountId);
-          const available = getAvailableAccounts(excludeIds);
+          const excludeIds = values.members.map((m) => m.employeeId);
+          const available = getAvailableEmployees(excludeIds);
 
           return (
             <Form noValidate>
@@ -273,9 +288,9 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {accountList.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.label}
+                      {employeeList.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
                         </option>
                       ))}
                     </Field>
@@ -294,9 +309,9 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {accountList.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.label}
+                      {employeeList.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
                         </option>
                       ))}
                     </Field>
@@ -315,9 +330,9 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {accountList.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.label}
+                      {employeeList.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
                         </option>
                       ))}
                     </Field>
@@ -325,22 +340,22 @@ export default function ModalCreateWorkOrder({
                   </Col>
                 </Row>
 
-                {/* --- Nhân viên làm việc (nhiều người) --- */}
+                {/* --- Nhiều thành viên --- */}
                 <div className="mb-2">
                   <label className="form-label">
-                    Nhân viên làm việc
+                    Nhiều thành viên
                   </label>
                   <div className="pct-add-nv">
                     <select
                       className="form-select"
-                      value={selectedAccountId}
-                      onChange={(e) => setSelectedAccountId(e.target.value)}
+                      value={selectedEmployeeId}
+                      onChange={(e) => setSelectedEmployeeId(e.target.value)}
                       aria-label="Chọn nhân viên làm việc"
                     >
                       <option value="">— Chọn nhân viên để thêm —</option>
-                      {available.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.label}
+                      {available.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
                         </option>
                       ))}
                     </select>
@@ -348,7 +363,7 @@ export default function ModalCreateWorkOrder({
                       type="button"
                       variant="outline-primary"
                       onClick={addMember}
-                      disabled={!selectedAccountId}
+                      disabled={!selectedEmployeeId}
                     >
                       <BsPersonPlus /> Thêm
                     </Button>
@@ -357,11 +372,11 @@ export default function ModalCreateWorkOrder({
                   {values.members.length > 0 && (
                     <div className="pct-nv-list">
                       {values.members.map((m, idx) => {
-                        const acct = accountOptions.find((a) => a.id === m.accountId);
-                        const name = acct?.employee?.fullName || acct?.username || `ID ${m.accountId}`;
-                        const role = m.roleInTask || acct?.employee?.position?.name || '';
+                        const emp = employeeList.find((e) => e.id === m.employeeId);
+                        const name = emp?.fullName || `ID ${m.employeeId}`;
+                        const role = m.roleInTask || emp?.position || '';
                         return (
-                          <div key={m.accountId} className="pct-nv-chip">
+                          <div key={m.employeeId} className="pct-nv-chip">
                             <span className="pct-nv-chip-index">{idx + 1}</span>
                             <span className="pct-nv-chip-info">
                               <strong>{name}</strong>
@@ -370,7 +385,7 @@ export default function ModalCreateWorkOrder({
                             <button
                               type="button"
                               className="pct-nv-chip-remove"
-                              onClick={() => removeMember(m.accountId)}
+                              onClick={() => removeMember(m.employeeId)}
                               title="Xoá khỏi danh sách"
                             >
                               <BsTrash />

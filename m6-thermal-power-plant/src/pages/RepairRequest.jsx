@@ -76,7 +76,10 @@ export default function RepairRequest() {
   const fetchEmployees = useCallback(async () => {
     try {
       const res = await employeeService.getAll();
-      setEmployees(res.data ?? []);
+      // API returns { data: [...], message: "...", status: "success" }
+      const employeeArray = res.data?.data || res.data || [];
+      console.log('👥 Fetched employees:', employeeArray.length, 'records');
+      setEmployees(employeeArray);
     } catch (err) {
       console.error('Không thể tải danh sách nhân viên:', err.message);
     }
@@ -221,11 +224,11 @@ export default function RepairRequest() {
       />
 
       {/* ===== MODAL: TẠO PCT ===== */}
-      {/* accountOptions: populated from GET /api/nhan-su via nhanSuService.getAll() */}
+      {/* employees: populated from GET /api/employees via employeeService.getAll() */}
       <ModalCreateWorkOrder
         show={!!pctRequest}
         request={pctRequest}
-        accountOptions={employees}
+        employees={employees}
         onClose={() => setPctRequest(null)}
         onCreated={handlePCTCreated}
       />
