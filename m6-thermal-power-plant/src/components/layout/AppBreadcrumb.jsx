@@ -4,6 +4,11 @@ import './AppBreadcrumb.css';
 
 /* Route label mapping */
 const routeLabels = {
+  'equipment': 'Thiết bị',
+  'system': 'Hệ thống',
+  'add': 'Thêm mới',
+  'edit': 'Chỉnh sửa',
+  'delete': 'Xóa',
   'nhan-su': 'Nhân sự',
   'phong-ban': 'Phòng ban',
   'nhan-vien': 'Nhân viên',

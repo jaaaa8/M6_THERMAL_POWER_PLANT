@@ -26,6 +26,10 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
 import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import ListSystem from './components/equipment/ListSystem';
+import AddSystem from './components/equipment/AddSystem';
+import EditSystem from './components/equipment/EditSystem';
+import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 
 function App() {
   return (
@@ -58,17 +62,20 @@ function App() {
             <Route path="/nhan-su/thong-tin-chi-tiet/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
 
             {/* --- Thiết bị --- */}
-            <Route path="/thiet-bi/he-thong" element={<PlaceholderPage title="Danh sách Hệ thống" />} />
-            <Route path="/thiet-bi/danh-sach" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
+            <Route path="/equipment/system" element={<ListSystem />} />
+            <Route path="/equipment/system/add" element={<AddSystem />} />
+            <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
+            <Route path="/equipment/listsystem" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
 
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
-            <Route path="/sua-chua/phieu-cong-tac" element={<WorkOrderList />} />
-            <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm/>} />
-            <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm/>} />
+            <Route path="/sua-chua/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
+            <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm />} />
+            <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm />} />
+
 
             {/* --- Vật tư --- */}
-            <Route path="/vat-tu/danh-muc" element={<PlaceholderPage title="Danh mục Vật tư" />} />
+            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
             <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
 
             {/* --- CCDC --- */}
@@ -77,8 +84,8 @@ function App() {
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm/>} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage/>} />
+            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
+            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
             <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
