@@ -39,7 +39,7 @@ const FILTERS = [
 /* ============================================================
    COMPONENT
    ============================================================ */
-export default function WorkOrderList() {
+export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -137,7 +137,7 @@ export default function WorkOrderList() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Phiếu Công tác"
+        title={title}
         subtitle="Danh sách phiếu công tác (PCT) được tạo từ yêu cầu sửa chữa"
         icon={<BsClipboardCheck />}
         actions={

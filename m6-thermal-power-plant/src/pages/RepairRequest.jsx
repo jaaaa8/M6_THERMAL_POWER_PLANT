@@ -224,11 +224,11 @@ export default function RepairRequest() {
       />
 
       {/* ===== MODAL: TẠO PCT ===== */}
-      {/* accountOptions: TODO — wire to GET /api/tai-khoan once that endpoint exists */}
+      {/* employees: populated from GET /api/employees via employeeService.getAll() */}
       <ModalCreateWorkOrder
         show={!!pctRequest}
         request={pctRequest}
-        accountOptions={[]}
+        employees={employees}
         onClose={() => setPctRequest(null)}
         onCreated={handlePCTCreated}
       />
