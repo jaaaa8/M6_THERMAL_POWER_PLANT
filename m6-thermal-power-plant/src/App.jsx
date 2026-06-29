@@ -72,7 +72,6 @@ function App() {
 
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
-
             <Route path="/sua-chua/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
