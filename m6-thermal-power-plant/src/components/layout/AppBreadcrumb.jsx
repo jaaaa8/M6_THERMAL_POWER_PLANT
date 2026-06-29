@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { BsHouseDoor, BsChevronRight } from 'react-icons/bs';
 import './AppBreadcrumb.css';
 
-/* Route slug → Vietnamese label hiển thị */
+/* Route label mapping */
 const routeLabels = {
   admin: 'Quản trị',
   roles: 'Phân quyền',

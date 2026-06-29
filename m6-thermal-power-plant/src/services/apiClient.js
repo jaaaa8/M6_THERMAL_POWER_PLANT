@@ -2,7 +2,9 @@ import axios from 'axios';
 
 // Để trống → request đi qua Vite dev proxy (`/api → backend`). Cấu hình ở vite.config.js.
 // Khi build production, set VITE_API_BASE_URL để trỏ thẳng tới backend.
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = import.meta.env.MODE === 'production' 
+  ? (import.meta.env.VITE_API_BASE_URL || '')
+  : '';
 
 export const TOKEN_KEYS = {
   access: 'scms_access_token',

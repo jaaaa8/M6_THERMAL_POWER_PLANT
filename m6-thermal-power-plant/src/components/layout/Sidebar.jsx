@@ -7,7 +7,7 @@ import {
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,
   BsDropletHalf, BsCalendar3, BsClockHistory,
-  BsChevronRight, BsShieldLock
+  BsChevronRight, BsShieldLock, BsCheck
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
 import { canAccess, SYSTEM_ROLES } from '../../services/roleService';
@@ -30,11 +30,11 @@ const menuSections = [
     heading: 'Nhân sự',
     items: [
       {
-        icon: <BsPeople />, label: 'Quản lý Nhân sự',
+        icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['ADMIN', 'NHAN_SU'],
         children: [
-          { path: '/hr/departments', icon: <BsBuilding />, label: 'Phòng ban', func: 'DEPARTMENT' },
-          { path: '/hr/employees', icon: <BsPersonBadge />, label: 'Nhân viên', func: 'EMPLOYEE' },
-          { path: '/hr/accounts', icon: <BsShieldLock />, label: 'Tài khoản & Quyền', func: 'ACCOUNT' },
+          { path: '/nhan-su/phong-ban', icon: <BsBuilding />, label: 'Phòng ban' },
+          { path: '/nhan-su/nhan-vien', icon: <BsPersonBadge />, label: 'Nhân viên' },
+          { path: '/nhan-su/tai-khoan', icon: <BsShieldLock />, label: 'Tài khoản & Quyền' },
         ],
       },
     ],
@@ -45,8 +45,8 @@ const menuSections = [
       {
         icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị',
         children: [
-          { path: '/equipment/systems', icon: <BsListUl />, label: 'Hệ thống', func: 'EQUIPMENT_SYSTEM' },
-          { path: '/equipment', icon: <BsCpu />, label: 'Thiết bị', func: 'EQUIPMENT' },
+          { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
+          { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
         ],
       },
     ],
@@ -57,9 +57,10 @@ const menuSections = [
       {
         icon: <BsWrenchAdjustable />, label: 'Sửa chữa',
         children: [
-          { path: '/repair/requests', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa', func: 'REPAIR_REQUEST' },
-          { path: '/repair/work-orders', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', func: 'WORK_ORDER' },
-          { path: '/repair/assessments', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', func: 'TECHNICAL_ASSESSMENT' },
+          { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
+          { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
+          { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
+          { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư' },
         ],
       },
     ],
@@ -70,15 +71,15 @@ const menuSections = [
       {
         icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
-          { path: '/materials', icon: <BsTags />, label: 'Danh mục Vật tư', func: 'MATERIAL' },
-          { path: '/materials/transactions', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho', func: 'MATERIAL' },
+          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư' },
+          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
         ],
       },
       {
-        icon: <BsTools />, label: 'Công cụ Dụng cụ',
+        icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'THU_KHO_CCDC'],
         children: [
-          { path: '/tools', icon: <BsJournalBookmark />, label: 'Danh sách CCDC', func: 'TOOL' },
-          { path: '/tools/borrowings', icon: <BsArrowLeftRight />, label: 'Mượn / Trả', func: 'TOOL' },
+          { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC' },
+          { path: '/ccdc/muon-tra', icon: <BsArrowLeftRight />, label: 'Mượn / Trả' },
         ],
       },
     ],
@@ -89,8 +90,9 @@ const menuSections = [
       {
         icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ',
         children: [
-          { path: '/maintenance/plans', icon: <BsCalendar3 />, label: 'Kế hoạch', func: 'MAINTENANCE' },
-          { path: '/maintenance/history', icon: <BsClockHistory />, label: 'Lịch sử', func: 'MAINTENANCE' },
+          { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
+          { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
+          { path: '/lubrication/history', icon: <BsClockHistory />, label: 'Lịch sử' },
         ],
       },
     ],

@@ -2,6 +2,23 @@
    CreateWorkOrderModal — Tạo phiếu công tác từ yêu cầu sửa chữa
    ============================================================ */
 
+/* --- Modal size & scroll fix --- */
+.pct-modal .modal-dialog {
+  max-height: calc(100vh - 3.5rem);
+}
+
+.pct-modal .modal-content {
+  max-height: calc(100vh - 3.5rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.pct-modal .modal-body {
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  flex: 1 1 auto;
+}
+
 /* --- Title --- */
 .pct-modal-title {
   display: flex;
@@ -217,6 +234,16 @@
 /* --- Required asterisk --- */
 .required-asterisk {
   color: var(--color-status-danger);
+}
+
+/* --- Auto-code note --- */
+.pct-auto-code-note {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border-color);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
 }
 
 /* --- Responsive --- */

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './apiClient';
 import { authService } from './authService';
 
 const API_URL = '/api/phieu-yeu-cau';
@@ -155,7 +155,7 @@ export const repairRequestService = {
    * Lấy danh sách tất cả yêu cầu sửa chữa
    */
   getAll: () => {
-    // TODO: return axios.get(API_URL);
+    // TODO: return apiClient.get(API_URL);
     return new Promise((resolve) => {
       setTimeout(() => resolve({ data: [...mockRequests] }), 400);
     });
@@ -165,7 +165,7 @@ export const repairRequestService = {
    * Lấy yêu cầu theo ID
    */
   getById: (id) => {
-    // TODO: return axios.get(`${API_URL}/${id}`);
+    // TODO: return apiClient.get(`${API_URL}/${id}`);
     return new Promise((resolve, reject) => {
       const item = mockRequests.find((r) => r.id === Number(id));
       setTimeout(() => {
@@ -181,7 +181,7 @@ export const repairRequestService = {
    * @param {{ equipmentId: number, issueDescription: string, priority: string }} dto
    */
   create: (dto) => {
-    // TODO: return axios.post(API_URL, dto);
+    // TODO: return apiClient.post(API_URL, dto);
     return new Promise((resolve) => {
       const equipment = [
         { id: 1, kksCode: 'MAA10', ten: 'Lò hơi #1' },
@@ -304,7 +304,7 @@ export const repairRequestService = {
    * Xoá yêu cầu (chỉ khi trạng thái CHO_DUYET)
    */
   remove: (id) => {
-    // TODO: return axios.delete(`${API_URL}/${id}`);
+    // TODO: return apiClient.delete(`${API_URL}/${id}`);
     return new Promise((resolve, reject) => {
       const idx = mockRequests.findIndex((r) => r.id === Number(id));
       setTimeout(() => {

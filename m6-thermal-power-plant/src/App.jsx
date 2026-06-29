@@ -14,12 +14,26 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import NhanSuForm from './components/hr/EmployeeForm';
-import RoleManagementPage from './pages/RoleManagementPage';
-import CreateAccountPage from './pages/CreateAccountPage';
-import RepairRequestPage from './pages/RepairRequestPage';
-import WorkOrderPage from './pages/WorkOrderPage';
-import WorkOrderListPage from './pages/WorkOrderListPage';
+import RepairRequest from './pages/RepairRequest.jsx';
+import WorkOrderList from './pages/WorkOrderList.jsx';
+import ListDepartment from './components/hr/department/ListDepartment';
+import AddDepartment from './components/hr/department/AddDepartment';
+import ListEmployee from './components/hr/employee/ListEmployee';
+import AddEmployee from './components/hr/employee/AddEmployee';
+import ListAccount from './components/hr/account/ListAccount';
+import AddAccount from './components/hr/account/AddAccount';
+import TechnicalAssessmentList from "./components/technical_assessment/TechnicalAssessmentList.jsx";
+import TechnicalAssessmentForm from "./components/technical_assessment/AddComponent.jsx";
+import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueList.jsx";
+import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
+import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
+import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import ListSystem from './components/equipment/ListSystem';
+import AddSystem from './components/equipment/AddSystem';
+import EditSystem from './components/equipment/EditSystem';
+import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
+import RoleManagementPage from "./pages/RoleManagementPage.jsx";
+import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 
 function App() {
   return (
@@ -53,66 +67,42 @@ function App() {
                 <CreateAccountPage />
               </ProtectedRoute>
             } />
+            {/* --- Nhân sự --- */}
+            <Route path="/nhan-su/phong-ban" element={<ListDepartment />} />
+            <Route path="/nhan-su/phong-ban/them-moi" element={<AddDepartment />} />
+            <Route path="/nhan-su/nhan-vien" element={<ListEmployee />} />
+            <Route path="/nhan-su/them-moi" element={<AddEmployee onCancel={() => window.history.back()} />} />
+            <Route path="/nhan-su/tai-khoan" element={<ListAccount />} />
+            <Route path="/nhan-su/tai-khoan/them-moi" element={<AddAccount />} />
+            <Route path="/nhan-su/thong-tin-chi-tiet/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
 
-            {/* --- HR --- */}
-            <Route path="/hr/departments" element={
-              <ProtectedRoute requireFunction="DEPARTMENT"><PlaceholderPage title="Quản lý Phòng ban" /></ProtectedRoute>
-            } />
-            <Route path="/hr/employees" element={
-              <ProtectedRoute requireFunction="EMPLOYEE"><PlaceholderPage title="Quản lý Nhân viên" /></ProtectedRoute>
-            } />
-            <Route path="/hr/employees/new" element={
-              <ProtectedRoute requireFunction="EMPLOYEE"><NhanSuForm onCancel={() => window.history.back()} /></ProtectedRoute>
-            } />
-            <Route path="/hr/accounts" element={
-              <ProtectedRoute requireFunction="ACCOUNT"><PlaceholderPage title="Tài khoản & Phân quyền" /></ProtectedRoute>
-            } />
+            {/* --- Thiết bị --- */}
+            <Route path="/equipment/system" element={<ListSystem />} />
+            <Route path="/equipment/system/add" element={<AddSystem />} />
+            <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
+            <Route path="/equipment/listsystem" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
 
-            {/* --- Equipment --- */}
-            <Route path="/equipment/systems" element={
-              <ProtectedRoute requireFunction="EQUIPMENT_SYSTEM"><PlaceholderPage title="Danh sách Hệ thống" /></ProtectedRoute>
-            } />
-            <Route path="/equipment" element={
-              <ProtectedRoute requireFunction="EQUIPMENT"><PlaceholderPage title="Danh sách Thiết bị" /></ProtectedRoute>
-            } />
+            {/* --- Sửa chữa --- */}
+            <Route path="/repair/yeu-cau" element={<RepairRequest />} />
+            <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
+            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
+            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
+            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
+            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
 
-            {/* --- Repair --- */}
-            <Route path="/repair/requests" element={
-              <ProtectedRoute requireFunction="REPAIR_REQUEST"><RepairRequestPage /></ProtectedRoute>
-            } />
-            <Route path="/repair/work-orders" element={
-              <ProtectedRoute requireFunction="WORK_ORDER"><WorkOrderListPage /></ProtectedRoute>
-            } />
-            <Route path="/repair/work-orders/:id" element={
-              <ProtectedRoute requireFunction="WORK_ORDER"><WorkOrderPage /></ProtectedRoute>
-            } />
-            <Route path="/repair/assessments" element={
-              <ProtectedRoute requireFunction="TECHNICAL_ASSESSMENT"><PlaceholderPage title="Đánh giá Kỹ thuật" /></ProtectedRoute>
-            } />
+            {/* --- Vật tư --- */}
+            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
+            <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
 
-            {/* --- Materials --- */}
-            <Route path="/materials" element={
-              <ProtectedRoute requireFunction="MATERIAL"><PlaceholderPage title="Danh mục Vật tư" /></ProtectedRoute>
-            } />
-            <Route path="/materials/transactions" element={
-              <ProtectedRoute requireFunction="MATERIAL"><PlaceholderPage title="Nhập / Xuất kho" /></ProtectedRoute>
-            } />
+            {/* --- CCDC --- */}
+            <Route path="/ccdc/danh-sach" element={<PlaceholderPage title="Danh sách CCDC" />} />
+            <Route path="/ccdc/muon-tra" element={<PlaceholderPage title="Mượn / Trả CCDC" />} />
 
-            {/* --- Tools (CCDC) --- */}
-            <Route path="/tools" element={
-              <ProtectedRoute requireFunction="TOOL"><PlaceholderPage title="Danh sách CCDC" /></ProtectedRoute>
-            } />
-            <Route path="/tools/borrowings" element={
-              <ProtectedRoute requireFunction="TOOL"><PlaceholderPage title="Mượn / Trả CCDC" /></ProtectedRoute>
-            } />
-
-            {/* --- Maintenance --- */}
-            <Route path="/maintenance/plans" element={
-              <ProtectedRoute requireFunction="MAINTENANCE"><PlaceholderPage title="Kế hoạch Bảo dưỡng" /></ProtectedRoute>
-            } />
-            <Route path="/maintenance/history" element={
-              <ProtectedRoute requireFunction="MAINTENANCE"><PlaceholderPage title="Lịch sử Bảo dưỡng" /></ProtectedRoute>
-            } />
+            {/* --- Bảo dưỡng --- */}
+            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
+            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
+            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
+            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
           {/* 404 */}
