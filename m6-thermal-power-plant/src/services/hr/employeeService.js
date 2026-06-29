@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 const API_URL = `${BASE_URL}/api/v1/employees`;
 
 export const employeeService = {
-  getAll: () => axios.get(API_URL),
+  getAll: () => axios.get('/api/employees'),
   getAllWithAccounts: () => axios.get(`${API_URL}/accounts`),
   getById: (id) => axios.get(`${API_URL}/${id}`),
   create: (data) => axios.post(API_URL, data),
