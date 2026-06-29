@@ -157,11 +157,6 @@ export default function SparePartsIssuePDF({
             e => e.id.toString() === data.issuedBy
         )?.fullName || "";
 
-    const transactionLabel =
-        data.transactionType === "export"
-            ? "Xuất kho"
-            : "Nhập kho";
-
     return (
         <Document>
 
@@ -206,17 +201,7 @@ export default function SparePartsIssuePDF({
 
                     <View style={styles.row}>
                         <Text style={styles.label}>
-                            Loại giao dịch:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {transactionLabel}
-                        </Text>
-                    </View>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Người cấp phát:
+                            Người yêu cầu:
                         </Text>
 
                         <Text style={styles.value}>
@@ -226,7 +211,7 @@ export default function SparePartsIssuePDF({
 
                     <View style={styles.row}>
                         <Text style={styles.label}>
-                            Thời gian cấp:
+                            Thời gian yêu cầu:
                         </Text>
 
                         <Text style={styles.value}>
@@ -235,49 +220,10 @@ export default function SparePartsIssuePDF({
                     </View>
                 </View>
 
-                {/* THÔNG TIN ĐÁNH GIÁ */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                        II. Căn cứ phiếu đánh giá kỹ thuật
-                    </Text>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Mã đánh giá:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {technicalAssessment?.technicalCode}
-                        </Text>
-                    </View>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Người đánh giá:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {technicalAssessment?.assessorName}
-                        </Text>
-                    </View>
-
-                    <View style={styles.contentBox}>
-                        <Text>
-                            {technicalAssessment?.result}
-                        </Text>
-                    </View>
-
-                    <View style={styles.contentBox}>
-                        <Text>
-                            {technicalAssessment?.description}
-                        </Text>
-                    </View>
-                </View>
-
                 {/* DANH SÁCH VẬT TƯ */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>
-                        III. Danh sách vật tư cấp phát
+                        II. Danh sách vật tư cấp phát
                     </Text>
 
                     <View style={styles.table}>
@@ -404,7 +350,7 @@ export default function SparePartsIssuePDF({
                                 marginTop: 80,
                             }}
                         >
-                            {issuedBy}
+                            __________________
                         </Text>
                     </View>
                 </View>
