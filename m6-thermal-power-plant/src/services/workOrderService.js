@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// VITE_API_URL = http://localhost:8080  (set in .env)
 // All maintenance endpoints live under /api/maintenance
 const BASE = `${import.meta.env.VITE_API_URL}/api/maintenance`;
 
