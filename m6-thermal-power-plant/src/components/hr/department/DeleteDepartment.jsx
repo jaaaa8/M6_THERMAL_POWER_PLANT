@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Button, Spinner } from 'react-bootstrap';
 import { BsExclamationTriangleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import { phongBanService } from '../../../services/phongBanService';
+import { departmentService } from '../../../services/hr/departmentService';
 import './style/DeleteDepartment.css';
 
 export default function DeleteDepartment({ data, onClose, onSuccess }) {
@@ -11,7 +11,7 @@ export default function DeleteDepartment({ data, onClose, onSuccess }) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await phongBanService.remove(data.id);
+      await departmentService.remove(data.id);
       toast.success('Đã xóa phòng ban thành công');
       if (onSuccess) onSuccess();
     } catch (error) {

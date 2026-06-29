@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Row, Col, Button } from 'react-bootstrap';
@@ -7,12 +7,11 @@ import {
   BsPersonPlusFill,
   BsPersonBadge,
   BsBriefcase,
-  BsCameraFill,
   BsSave,
   BsXCircle,
   BsArrowClockwise,
 } from 'react-icons/bs';
-import { nhanSuService } from '../../../services/nhanSuService';
+import { employeeService } from '../../../services/hr/employeeService';
 import './style/AddEmployee.css';
 
 /* ============================================================
@@ -21,160 +20,86 @@ import './style/AddEmployee.css';
 const PHONE_REGEX = /^(0|\+84)[0-9]{9,10}$/;
 
 const validationSchema = Yup.object({
-  hoVaTen: Yup.string()
+  fullName: Yup.string()
     .required('Họ và tên không được để trống')
     .min(2, 'Họ tên tối thiểu 2 ký tự')
     .max(100, 'Họ tên không quá 100 ký tự'),
 
-  email: Yup.string()
+  gmail: Yup.string()
     .required('Email không được để trống')
     .email('Email không đúng định dạng')
     .max(150, 'Email không quá 150 ký tự'),
 
-  soDienThoai: Yup.string()
+  phone: Yup.string()
     .required('Số điện thoại không được để trống')
     .matches(PHONE_REGEX, 'Số điện thoại không hợp lệ (VD: 0912345678)'),
 
-  maPhongBan: Yup.string()
+  departmentId: Yup.string()
     .required('Vui lòng chọn phòng ban'),
 
-  chucVu: Yup.string()
-    .required('Chức vụ không được để trống')
-    .max(100, 'Chức vụ không quá 100 ký tự'),
+  expertiseId: Yup.string()
+    .required('Vui lòng chọn chuyên môn'),
 
-  chuyenMon: Yup.string()
-    .required('Chuyên môn không được để trống')
-    .max(200, 'Chuyên môn không quá 200 ký tự'),
-
-  trangThai: Yup.string()
-    .required('Vui lòng chọn trạng thái')
-    .oneOf(['DANG_LAM_VIEC', 'NGHI_VIEC', 'NGHI_PHEP'], 'Trạng thái không hợp lệ'),
+  positionId: Yup.string()
+    .required('Vui lòng chọn chức vụ'),
 });
 
-/* ============================================================
-   CONSTANTS
-   ============================================================ */
-const TRANG_THAI_OPTIONS = [
-  { value: 'DANG_LAM_VIEC', label: 'Đang làm việc', dotClass: 'active' },
-  { value: 'NGHI_PHEP', label: 'Nghỉ phép', dotClass: 'on-leave' },
-  { value: 'NGHI_VIEC', label: 'Nghỉ việc', dotClass: 'inactive' },
-];
-
-const AVATAR_MAX_SIZE = 2 * 1024 * 1024; // 2MB
-const AVATAR_ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
-
 const INITIAL_VALUES = {
-  hoVaTen: '',
-  email: '',
-  soDienThoai: '',
-  maPhongBan: '',
-  chucVu: '',
-  chuyenMon: '',
-  trangThai: 'DANG_LAM_VIEC',
+  fullName: '',
+  gmail: '',
+  phone: '',
+  departmentId: '',
+  expertiseId: '',
+  positionId: '',
 };
 
-/* ============================================================
-   COMPONENT: NhanSuForm
-   ============================================================ */
-
-/**
- * AddEmployee — Form thêm mới nhân sự với avatar upload.
- *
- * @param {Function} [props.onSuccess] - Callback sau khi thêm thành công
- * @param {Function} [props.onCancel] - Callback khi bấm Huỷ
- * @param {object} [props.initialData] - Dữ liệu ban đầu (dùng cho chế độ sửa)
- * @param {boolean} [props.isEdit] - Chế độ sửa
- */
 export default function AddEmployee({
   onSuccess,
   onCancel,
   initialData = null,
   isEdit = false,
 }) {
-  const [phongBanList, setPhongBanList] = useState([]);
-  const [loadingPhongBan, setLoadingPhongBan] = useState(true);
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [avatarError, setAvatarError] = useState('');
-  const fileInputRef = useRef(null);
+  const [departments, setDepartments] = useState([]);
+  const [expertises, setExpertises] = useState([]);
+  const [positions, setPositions] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
 
-  /* --- Load danh sách phòng ban --- */
   useEffect(() => {
-    nhanSuService
-      .getPhongBanList()
-      .then((res) => {
-        const list = res.data?.data || res.data || [];
-        setPhongBanList(Array.isArray(list) ? list : []);
-      })
-      .catch(() => {
-        toast.error('Không thể tải danh sách phòng ban');
-      })
-      .finally(() => setLoadingPhongBan(false));
+    Promise.all([
+      employeeService.getDepartments(),
+      employeeService.getExpertises(),
+      employeeService.getPositions()
+    ]).then(([depRes, expRes, posRes]) => {
+      setDepartments(depRes.data?.data || depRes.data || []);
+      setExpertises(expRes.data?.data || expRes.data || []);
+      setPositions(posRes.data?.data || posRes.data || []);
+    }).catch(() => {
+      toast.error('Không thể tải dữ liệu phòng ban, chuyên môn, hoặc chức vụ');
+    }).finally(() => {
+      setLoadingOptions(false);
+    });
   }, []);
 
-  /* --- Cleanup avatar preview URL khi unmount --- */
-  useEffect(() => {
-    return () => {
-      if (avatarPreview && avatarPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-    };
-  }, [avatarPreview]);
-
-  /* --- Avatar handler --- */
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    setAvatarError('');
-
-    if (!file) return;
-
-    // Validate type
-    if (!AVATAR_ACCEPTED.includes(file.type)) {
-      setAvatarError('Chỉ chấp nhận ảnh JPG, PNG hoặc WebP');
-      return;
-    }
-
-    // Validate size
-    if (file.size > AVATAR_MAX_SIZE) {
-      setAvatarError('Ảnh không được quá 2MB');
-      return;
-    }
-
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-  };
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  /* --- Submit handler --- */
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      const formData = new FormData();
-
-      // Append text fields
-      Object.entries(values).forEach(([key, val]) => {
-        formData.append(key, val);
-      });
-
-      // Append avatar nếu có
-      if (avatarFile) {
-        formData.append('avatar', avatarFile);
-      }
+      const payload = {
+        fullName: values.fullName,
+        gmail: values.gmail,
+        phone: values.phone,
+        departmentId: parseInt(values.departmentId),
+        expertiseId: parseInt(values.expertiseId),
+        positionId: parseInt(values.positionId)
+      };
 
       if (isEdit && initialData?.id) {
-        await nhanSuService.update(initialData.id, formData);
+        await employeeService.update(initialData.id, payload);
         toast.success('Cập nhật nhân sự thành công!');
       } else {
-        await nhanSuService.create(formData);
+        await employeeService.create(payload);
         toast.success('Thêm mới nhân sự thành công!');
       }
 
-      // Reset form
       resetForm();
-      setAvatarFile(null);
-      setAvatarPreview(null);
       onSuccess?.();
     } catch (err) {
       const message =
@@ -187,29 +112,19 @@ export default function AddEmployee({
     }
   };
 
-  /* --- Merge initial values (edit mode) --- */
   const mergedInitialValues = initialData
     ? {
-        hoVaTen: initialData.hoVaTen || '',
-        email: initialData.email || '',
-        soDienThoai: initialData.soDienThoai || '',
-        maPhongBan: initialData.maPhongBan?.toString() || '',
-        chucVu: initialData.chucVu || '',
-        chuyenMon: initialData.chuyenMon || '',
-        trangThai: initialData.trangThai || 'DANG_LAM_VIEC',
+        fullName: initialData.fullName || '',
+        gmail: initialData.gmail || '',
+        phone: initialData.phone || '',
+        departmentId: initialData.department?.id || '',
+        expertiseId: initialData.expertise?.id || '',
+        positionId: initialData.position?.id || '',
       }
     : INITIAL_VALUES;
 
-  /* --- Set avatar preview nếu edit mode có avatar URL --- */
-  useEffect(() => {
-    if (initialData?.avatarUrl) {
-      setAvatarPreview(initialData.avatarUrl);
-    }
-  }, [initialData]);
-
   return (
     <div className="nhansu-form-card animate-fade-in">
-      {/* ===== HEADER ===== */}
       <div className="nhansu-form-header">
         <div className="nhansu-form-header-icon">
           <BsPersonPlusFill />
@@ -224,60 +139,15 @@ export default function AddEmployee({
         </div>
       </div>
 
-      {/* ===== FORM BODY ===== */}
       <Formik
         initialValues={mergedInitialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {({ isSubmitting, touched, errors, values, setFieldValue, resetForm }) => (
+        {({ isSubmitting, touched, errors, resetForm }) => (
           <Form noValidate>
             <div className="nhansu-form-body">
-              {/* --- Avatar Upload --- */}
-              <div
-                className="avatar-upload-zone"
-                onClick={handleAvatarClick}
-                title="Bấm để chọn ảnh đại diện"
-              >
-                <div
-                  className={`avatar-upload-circle ${avatarPreview ? 'has-image' : ''}`}
-                >
-                  {avatarPreview ? (
-                    <>
-                      <img
-                        src={avatarPreview}
-                        alt="Avatar preview"
-                        className="avatar-preview-img"
-                      />
-                      <div className="avatar-overlay">
-                        <BsCameraFill className="avatar-overlay-icon" />
-                        <span className="avatar-overlay-text">Đổi ảnh</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <BsCameraFill className="avatar-upload-icon" />
-                      <span className="avatar-upload-hint">
-                        Tải ảnh lên
-                        <br />
-                        JPG, PNG · Max 2MB
-                      </span>
-                    </>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="avatar-upload-input"
-                  onChange={handleAvatarChange}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-              {avatarError && <div className="avatar-error">{avatarError}</div>}
-
-              {/* ===== SECTION: THÔNG TIN CƠ BẢN ===== */}
               <div className="form-section-title">
                 <BsPersonBadge />
                 Thông tin cơ bản
@@ -285,40 +155,40 @@ export default function AddEmployee({
 
               <Row className="mb-3">
                 <Col md={6}>
-                  <label htmlFor="nhansu-hoVaTen" className="form-label">
+                  <label htmlFor="fullName" className="form-label">
                     Họ và tên <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-hoVaTen"
-                    name="hoVaTen"
+                    id="fullName"
+                    name="fullName"
                     type="text"
                     placeholder="Nguyễn Văn A"
                     className={`form-control ${
-                      touched.hoVaTen && errors.hoVaTen ? 'is-invalid' : ''
+                      touched.fullName && errors.fullName ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="hoVaTen"
+                    name="fullName"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
 
                 <Col md={6}>
-                  <label htmlFor="nhansu-email" className="form-label">
+                  <label htmlFor="gmail" className="form-label">
                     Email <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-email"
-                    name="email"
+                    id="gmail"
+                    name="gmail"
                     type="email"
-                    placeholder="nguyenvana@email.com"
+                    placeholder="nguyenvana@gmail.com"
                     className={`form-control ${
-                      touched.email && errors.email ? 'is-invalid' : ''
+                      touched.gmail && errors.gmail ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="email"
+                    name="gmail"
                     component="div"
                     className="invalid-feedback"
                   />
@@ -326,57 +196,27 @@ export default function AddEmployee({
               </Row>
 
               <Row className="mb-3">
-                <Col md={6}>
-                  <label htmlFor="nhansu-soDienThoai" className="form-label">
+                <Col md={12}>
+                  <label htmlFor="phone" className="form-label">
                     Số điện thoại <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-soDienThoai"
-                    name="soDienThoai"
+                    id="phone"
+                    name="phone"
                     type="tel"
                     placeholder="0912345678"
                     className={`form-control ${
-                      touched.soDienThoai && errors.soDienThoai ? 'is-invalid' : ''
+                      touched.phone && errors.phone ? 'is-invalid' : ''
                     }`}
                   />
                   <ErrorMessage
-                    name="soDienThoai"
-                    component="div"
-                    className="invalid-feedback"
-                  />
-                </Col>
-
-                <Col md={6}>
-                  <label htmlFor="nhansu-maPhongBan" className="form-label">
-                    Phòng ban <span className="required-asterisk">*</span>
-                  </label>
-                  <Field
-                    as="select"
-                    id="nhansu-maPhongBan"
-                    name="maPhongBan"
-                    className={`form-select ${
-                      touched.maPhongBan && errors.maPhongBan ? 'is-invalid' : ''
-                    }`}
-                    disabled={loadingPhongBan}
-                  >
-                    <option value="">
-                      {loadingPhongBan ? 'Đang tải...' : '— Chọn phòng ban —'}
-                    </option>
-                    {phongBanList.map((pb) => (
-                      <option key={pb.id} value={pb.id}>
-                        {pb.tenPhongBan}
-                      </option>
-                    ))}
-                  </Field>
-                  <ErrorMessage
-                    name="maPhongBan"
+                    name="phone"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
               </Row>
 
-              {/* ===== SECTION: CÔNG VIỆC ===== */}
               <div className="form-section-title mt-4">
                 <BsBriefcase />
                 Công việc & Chuyên môn
@@ -384,76 +224,97 @@ export default function AddEmployee({
 
               <Row className="mb-3">
                 <Col md={6}>
-                  <label htmlFor="nhansu-chucVu" className="form-label">
-                    Chức vụ <span className="required-asterisk">*</span>
+                  <label htmlFor="departmentId" className="form-label">
+                    Phòng ban <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-chucVu"
-                    name="chucVu"
-                    type="text"
-                    placeholder="Trưởng ca, Tổ trưởng, Nhân viên..."
-                    className={`form-control ${
-                      touched.chucVu && errors.chucVu ? 'is-invalid' : ''
+                    as="select"
+                    id="departmentId"
+                    name="departmentId"
+                    className={`form-select ${
+                      touched.departmentId && errors.departmentId ? 'is-invalid' : ''
                     }`}
-                  />
+                    disabled={loadingOptions}
+                  >
+                    <option value="">
+                      {loadingOptions ? 'Đang tải...' : '— Chọn phòng ban —'}
+                    </option>
+                    {departments.map((pb) => (
+                      <option key={pb.id} value={pb.id}>
+                        {pb.name}
+                      </option>
+                    ))}
+                  </Field>
                   <ErrorMessage
-                    name="chucVu"
+                    name="departmentId"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
 
                 <Col md={6}>
-                  <label htmlFor="nhansu-chuyenMon" className="form-label">
+                  <label htmlFor="expertiseId" className="form-label">
                     Chuyên môn <span className="required-asterisk">*</span>
                   </label>
                   <Field
-                    id="nhansu-chuyenMon"
-                    name="chuyenMon"
-                    type="text"
-                    placeholder="Kỹ sư điện, Kỹ thuật cơ khí..."
-                    className={`form-control ${
-                      touched.chuyenMon && errors.chuyenMon ? 'is-invalid' : ''
+                    as="select"
+                    id="expertiseId"
+                    name="expertiseId"
+                    className={`form-select ${
+                      touched.expertiseId && errors.expertiseId ? 'is-invalid' : ''
                     }`}
-                  />
+                    disabled={loadingOptions}
+                  >
+                    <option value="">
+                      {loadingOptions ? 'Đang tải...' : '— Chọn chuyên môn —'}
+                    </option>
+                    {expertises.map((exp) => (
+                      <option key={exp.id} value={exp.id}>
+                        {exp.name}
+                      </option>
+                    ))}
+                  </Field>
                   <ErrorMessage
-                    name="chuyenMon"
+                    name="expertiseId"
                     component="div"
                     className="invalid-feedback"
                   />
                 </Col>
               </Row>
 
-              {/* --- Trạng thái (Radio Pills) --- */}
-              <div className="mb-3">
-                <label className="form-label">
-                  Trạng thái <span className="required-asterisk">*</span>
-                </label>
-                <div className="status-radio-group" role="radiogroup" aria-label="Trạng thái nhân sự">
-                  {TRANG_THAI_OPTIONS.map((opt) => (
-                    <div key={opt.value} className="status-radio-pill">
-                      <input
-                        type="radio"
-                        id={`trangThai-${opt.value}`}
-                        name="trangThai"
-                        value={opt.value}
-                        checked={values.trangThai === opt.value}
-                        onChange={() => setFieldValue('trangThai', opt.value)}
-                      />
-                      <label htmlFor={`trangThai-${opt.value}`}>
-                        <span className={`status-dot ${opt.dotClass}`} />
-                        {opt.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                {touched.trangThai && errors.trangThai && (
-                  <div className="invalid-feedback d-block">{errors.trangThai}</div>
-                )}
-              </div>
+              <Row className="mb-3">
+                <Col md={6}>
+                  <label htmlFor="positionId" className="form-label">
+                    Chức vụ <span className="required-asterisk">*</span>
+                  </label>
+                  <Field
+                    as="select"
+                    id="positionId"
+                    name="positionId"
+                    className={`form-select ${
+                      touched.positionId && errors.positionId ? 'is-invalid' : ''
+                    }`}
+                    disabled={loadingOptions}
+                  >
+                    <option value="">
+                      {loadingOptions ? 'Đang tải...' : '— Chọn chức vụ —'}
+                    </option>
+                    {positions.map((pos) => (
+                      <option key={pos.id} value={pos.id}>
+                        {pos.name}
+                      </option>
+                    ))}
+                  </Field>
+                  <ErrorMessage
+                    name="positionId"
+                    component="div"
+                    className="invalid-feedback"
+                  />
+                </Col>
+              </Row>
+
             </div>
 
-            {/* ===== FOOTER / ACTIONS ===== */}
             <div className="nhansu-form-footer">
               {onCancel && (
                 <Button
@@ -471,12 +332,7 @@ export default function AddEmployee({
                 variant="outline-secondary"
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => {
-                  resetForm();
-                  setAvatarFile(null);
-                  setAvatarPreview(initialData?.avatarUrl || null);
-                  setAvatarError('');
-                }}
+                onClick={() => resetForm()}
               >
                 <BsArrowClockwise />
                 Đặt lại

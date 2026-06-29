@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { BsExclamationTriangleFill, BsTrash } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import { nhanSuService } from '../../../services/nhanSuService';
+import { employeeService } from '../../../services/hr/employeeService';
 import './style/DeleteEmployee.css';
 
 export default function DeleteEmployee({ data, onClose, onSuccess }) {
@@ -13,7 +13,7 @@ export default function DeleteEmployee({ data, onClose, onSuccess }) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await nhanSuService.remove(data.id);
+      await employeeService.remove(data.id);
       toast.success('Xoá nhân sự thành công!');
       onSuccess?.();
     } catch (err) {

@@ -5,7 +5,7 @@ import * as Yup from 'yup';
 import { Form, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { BsArrowLeft, BsSave, BsBuilding } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import { phongBanService } from '../../../services/phongBanService';
+import { departmentService } from '../../../services/hr/departmentService';
 import PageHeader from '../../common/PageHeader';
 import './style/AddDepartment.css';
 
@@ -46,7 +46,7 @@ export default function AddDepartment({ onCancel }) {
       } else {
         // Fallback: Fetch từ API nếu không có data truyền sang
         setLoading(true);
-        phongBanService.getById(idParam)
+        departmentService.getById(idParam)
           .then((res) => {
             const data = res.data?.data || res.data;
             if (data) {
@@ -66,10 +66,10 @@ export default function AddDepartment({ onCancel }) {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       if (isEditMode) {
-        await phongBanService.update(idParam, values);
+        await departmentService.update(idParam, values);
         toast.success('Cập nhật thông tin thành công');
       } else {
-        await phongBanService.create(values);
+        await departmentService.create(values);
         toast.success('Thêm phòng ban mới thành công');
       }
       
