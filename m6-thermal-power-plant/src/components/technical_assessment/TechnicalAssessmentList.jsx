@@ -43,6 +43,7 @@ export default function TechnicalAssessmentList() {
         }
     };
 
+
     const getStatusBadge = (status) => {
         switch (status) {
             case "WAITING_PDF":
@@ -72,6 +73,7 @@ export default function TechnicalAssessmentList() {
         if (!file) return;
 
         try {
+            console.log(item.id);
             const payload = {
                 id: item.id, // hoặc item.id
             };
@@ -126,19 +128,18 @@ export default function TechnicalAssessmentList() {
                         </thead>
 
                         <tbody>
-                        {data.map((item, index) => (
-                            <tr key={`${item.id}-${index}`}>
+                        {data.map((item) => (
+                            <tr key={item.id}>
                                 <td>
                                     <strong>
-                                        {item.technicalCode}
+                                        {item.id}
                                     </strong>
                                 </td>
 
                                 <td>{item.description}</td>
 
                                 <td>
-                                    {item.assessor?.employee?.fullName ||
-                                        item.assessor?.username ||
+                                    {item.assessorId ||
                                         "-"}
                                 </td>
 

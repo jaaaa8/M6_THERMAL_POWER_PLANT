@@ -1,7 +1,7 @@
 const API_URL =
     "http://localhost:8080/api/v1/technical-assessment";
 
-const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzI4MzIzLCJleHAiOjE3ODI3MjkyMjN9.T2iQ8FPTqQ-y_1eiU0XyIJUYXWWU3xtqITM-HXngDKY";
+const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzM3NzQzLCJleHAiOjE3ODI3Mzg2NDN9.ZOtpKb4XUw5EwS9GWWDBd0qR6fch-qq47bajTeKu91A";
 
 const headers = {
     "Content-Type": "application/json",
@@ -17,6 +17,8 @@ export const getAllTechnicalAssessments = async () => {
     });
 
     console.log("Status:", response.status);
+
+    console.log("Response:", response);
 
     const text = await response.text();
 
