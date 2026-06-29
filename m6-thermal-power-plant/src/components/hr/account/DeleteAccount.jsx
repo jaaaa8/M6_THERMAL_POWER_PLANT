@@ -2,22 +2,21 @@ import { useState } from 'react';
 import { Modal, Button, Spinner } from 'react-bootstrap';
 import { BsExclamationTriangleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import { taiKhoanService } from '../../../services/taiKhoanService';
+import { accountService } from '../../../services/hr/accountService';
 import './style/DeleteAccount.css';
 
-export default function DeleteAccount({ data, onClose, onSuccess }) {
+export default function DeleteAccount({ data, action, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
+  const isLocking = action !== 'UNLOCK';
 
-  const handleDelete = async () => {
+  const handleUpdateStatus = async () => {
     setLoading(true);
     try {
-      await taiKhoanService.remove(data.id);
-      toast.success('Đã khóa/xóa tài khoản thành công');
+      await accountService.updateStatus({ username: data.username, status: isLocking ? 'LOCKED' : 'ACTIVE' });
+      toast.success(`${isLocking ? 'Khoá' : 'Mở khoá'} tài khoản thành công`);
       if (onSuccess) onSuccess();
     } catch (error) {
-      // Mock delete for demo if API fails
-      toast.success('(Mock) Đã vô hiệu hóa tài khoản thành công');
-      if (onSuccess) onSuccess();
+      toast.error(`Có lỗi xảy ra khi ${isLocking ? 'khoá' : 'mở khoá'} tài khoản`);
     } finally {
       setLoading(false);
     }
@@ -35,13 +34,13 @@ export default function DeleteAccount({ data, onClose, onSuccess }) {
     >
       <Modal.Body className="p-4 text-center">
         <div className="warning-icon-wrapper mx-auto mb-4">
-          <BsExclamationTriangleFill size={48} className="text-danger" />
+          <BsExclamationTriangleFill size={48} className={isLocking ? "text-danger" : "text-success"} />
         </div>
         
-        <h4 className="mb-3">Xác nhận vô hiệu hoá tài khoản?</h4>
+        <h4 className="mb-3">Xác nhận {isLocking ? 'khoá' : 'mở khoá'} tài khoản?</h4>
         <p className="text-secondary mb-4">
-          Bạn đang thao tác vô hiệu hoá tài khoản <strong>@{data.tenDangNhap}</strong> của nhân viên <strong>{data.hoVaTen}</strong>. 
-          Người dùng sẽ không thể đăng nhập vào hệ thống sau khi tài khoản bị khóa.
+          Bạn đang thao tác {isLocking ? 'khoá' : 'mở khoá'} tài khoản <strong>{data.tenDangNhap || data.username}</strong>.
+          <br/>Tài khoản {isLocking ? 'bị khoá sẽ không thể đăng nhập' : 'mở khoá sẽ có thể đăng nhập lại'} vào hệ thống.
         </p>
 
         <div className="d-flex justify-content-center gap-3">
@@ -54,8 +53,8 @@ export default function DeleteAccount({ data, onClose, onSuccess }) {
             Hủy bỏ
           </Button>
           <Button 
-            variant="danger" 
-            onClick={handleDelete}
+            variant={isLocking ? "danger" : "success"} 
+            onClick={handleUpdateStatus}
             disabled={loading}
             className="px-4 d-inline-flex align-items-center gap-2"
           >
@@ -65,7 +64,7 @@ export default function DeleteAccount({ data, onClose, onSuccess }) {
                 Đang xử lý...
               </>
             ) : (
-              'Vô hiệu hoá'
+              isLocking ? 'Khoá tài khoản' : 'Mở khoá tài khoản'
             )}
           </Button>
         </div>

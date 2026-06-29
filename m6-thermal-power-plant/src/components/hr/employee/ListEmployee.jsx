@@ -1,30 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button } from 'react-bootstrap';
-import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsTrash, BsKey } from 'react-icons/bs';
+import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsTrash, BsKey, BsLock, BsUnlock } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import { nhanSuService } from '../../../services/nhanSuService';
+import { employeeService } from '../../../services/hr/employeeService';
+import { accountService } from '../../../services/hr/accountService';
 import PageHeader from '../../common/PageHeader';
 import DataTable from '../../common/DataTable';
 import StatusBadge from '../../common/StatusBadge';
 import DetailEmployee from './DetailEmployee';
 import DeleteEmployee from './DeleteEmployee';
 import GrantAccountModal from './GrantAccountModal';
+import DeleteAccount from '../account/DeleteAccount';
 import './style/ListEmployee.css';
-
-const MOCK_PHONG_BAN = [
-  { id: 1, tenPhongBan: 'Phòng Kỹ thuật' },
-  { id: 2, tenPhongBan: 'Phòng Hành chính Nhân sự' },
-  { id: 3, tenPhongBan: 'Phòng Kế toán' },
-];
-
-const MOCK_NHAN_SU = [
-  { id: 1, hoVaTen: 'Nguyễn Văn An', tenDangNhap: 'an.nguyen', email: 'an.nguyen@powerplant.vn', soDienThoai: '0912345678', maPhongBan: 1, chucVu: 'Kỹ sư trưởng', chuyenMon: 'Kỹ thuật điện', trangThai: 'DANG_LAM_VIEC', avatarUrl: '' },
-  { id: 2, hoVaTen: 'Trần Thị Mai', tenDangNhap: 'mai.tran', email: 'mai.tran@powerplant.vn', soDienThoai: '0987654321', maPhongBan: 2, chucVu: 'Chuyên viên HCNS', chuyenMon: 'Quản trị nhân lực', trangThai: 'DANG_LAM_VIEC', avatarUrl: '' },
-  { id: 3, hoVaTen: 'Lê Bảo Khoa', tenDangNhap: 'khoa.le', email: 'khoa.le@powerplant.vn', soDienThoai: '0909112233', maPhongBan: 1, chucVu: 'Kỹ thuật viên', chuyenMon: 'Bảo trì cơ khí', trangThai: 'NGHI_PHEP', avatarUrl: '' },
-  { id: 4, hoVaTen: 'Phạm Minh Tuấn', tenDangNhap: 'tuan.pham', email: 'tuan.pham@powerplant.vn', soDienThoai: '0933445566', maPhongBan: 3, chucVu: 'Kế toán viên', chuyenMon: 'Kế toán tổng hợp', trangThai: 'NGHI_VIEC', avatarUrl: '' },
-  { id: 5, hoVaTen: 'Hoàng Ánh Nguyệt', tenDangNhap: 'nguyet.hoang', email: 'nguyet.hoang@powerplant.vn', soDienThoai: '0944556677', maPhongBan: 2, chucVu: 'Trưởng phòng HCNS', chuyenMon: 'Quản trị kinh doanh', trangThai: 'DANG_LAM_VIEC', avatarUrl: '' }
-];
 
 export default function ListEmployee() {
   const navigate = useNavigate();
@@ -32,36 +20,36 @@ export default function ListEmployee() {
   const [loading, setLoading] = useState(true);
   
   // Lọc
-  const [phongBanList, setPhongBanList] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [searchName, setSearchName] = useState('');
-  const [filterPhongBan, setFilterPhongBan] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState({ name: '', phongBan: '' });
+  const [filterDepartment, setFilterDepartment] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({ name: '', department: '' });
 
   // Modals
   const [detailModal, setDetailModal] = useState({ show: false, data: null });
   const [deleteModal, setDeleteModal] = useState({ show: false, data: null });
   const [grantModal, setGrantModal] = useState({ show: false, data: null });
+  const [deleteAccountModal, setDeleteAccountModal] = useState({ show: false, data: null });
 
   const handleApplyFilter = () => {
-    setAppliedFilters({ name: searchName, phongBan: filterPhongBan });
+    setAppliedFilters({ name: searchName, department: filterDepartment });
   };
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [resNhanSu, resPhongBan] = await Promise.all([
-        nhanSuService.getAll(),
-        nhanSuService.getPhongBanList()
+        employeeService.getAllWithAccounts(),
+        employeeService.getDepartments()
       ]);
       const listNhanSu = resNhanSu.data?.data || resNhanSu.data || [];
-      setData(Array.isArray(listNhanSu) && listNhanSu.length > 0 ? listNhanSu : MOCK_NHAN_SU);
+      setData(Array.isArray(listNhanSu) ? listNhanSu : []);
 
       const listPB = resPhongBan.data?.data || resPhongBan.data || [];
-      setPhongBanList(Array.isArray(listPB) && listPB.length > 0 ? listPB : MOCK_PHONG_BAN);
+      setDepartments(Array.isArray(listPB) ? listPB : []);
     } catch (error) {
-      toast.info('Không kết nối được API, đang hiển thị dữ liệu mẫu.');
-      setData(MOCK_NHAN_SU);
-      setPhongBanList(MOCK_PHONG_BAN);
+      toast.error('Không kết nối được API.');
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -71,35 +59,33 @@ export default function ListEmployee() {
     fetchData();
   }, []);
 
+
   const filteredData = useMemo(() => {
     if (!Array.isArray(data)) return [];
-    return data.filter(item => {
+    let result = data.filter(item => {
       if (!item) return false;
-      const matchName = (item.hoVaTen || '').toLowerCase().includes((appliedFilters.name || '').toLowerCase());
-      const matchPhongBan = appliedFilters.phongBan ? String(item.maPhongBan) === String(appliedFilters.phongBan) : true;
+      const matchName = (item.fullName || '').toLowerCase().includes((appliedFilters.name || '').toLowerCase());
+      const matchPhongBan = appliedFilters.department ? String(item.department?.id) === String(appliedFilters.department) : true;
       return matchName && matchPhongBan;
     });
+    return result.map((item, index) => ({ ...item, stt: index + 1 }));
   }, [data, appliedFilters]);
 
   const columns = [
-    { key: 'hoVaTen', label: 'Họ và tên', sortable: true },
-    { key: 'tenDangNhap', label: 'Tên đăng nhập', sortable: true },
-    { key: 'chucVu', label: 'Chức vụ', sortable: true },
+    { key: 'stt', label: 'STT', sortable: false },
+    { key: 'employeeCode', label: 'Mã NV', sortable: true },
+    { key: 'fullName', label: 'Họ và tên', sortable: true },
     { 
-      key: 'maPhongBan', 
+      key: 'department', 
       label: 'Phòng ban', 
       sortable: true,
-      render: (val) => {
-        const pb = phongBanList.find(p => String(p.id) === String(val));
-        return pb ? pb.tenPhongBan : val;
-      }
+      render: (val) => val?.name || ''
     },
-    { key: 'soDienThoai', label: 'SĐT', sortable: false, mono: true },
     { 
-      key: 'trangThai', 
+      key: 'isActive', 
       label: 'Trạng thái', 
       sortable: true,
-      render: (val) => <StatusBadge status={val} />
+      render: (val) => <span className={val ? 'text-success fw-bold' : 'text-danger fw-bold'}>{val ? 'Đang làm việc' : 'Nghỉ việc'}</span>
     }
   ];
 
@@ -127,12 +113,12 @@ export default function ListEmployee() {
             <Form.Group>
               <Form.Label>Phòng ban</Form.Label>
               <Form.Select 
-                value={filterPhongBan}
-                onChange={(e) => setFilterPhongBan(e.target.value)}
+                value={filterDepartment}
+                onChange={(e) => setFilterDepartment(e.target.value)}
               >
                 <option value="">Tất cả phòng ban</option>
-                {phongBanList.map(pb => (
-                  <option key={pb.id} value={pb.id}>{pb.tenPhongBan}</option>
+                {departments.map(pb => (
+                  <option key={pb.id} value={pb.id}>{pb.name}</option>
                 ))}
               </Form.Select>
             </Form.Group>
@@ -164,12 +150,22 @@ export default function ListEmployee() {
         columns={columns}
         data={filteredData}
         loading={loading}
-        searchable={false} // Tắt search mặc định vì đã có filter custom
+        searchable={false}
         renderActions={(row) => (
           <div className="data-table-actions">
-            <button className="btn btn-sm btn-outline-success" onClick={() => setGrantModal({ show: true, data: row })} title="Cấp tài khoản">
-              <BsKey />
-            </button>
+            {!row.username ? (
+                <button className="btn btn-sm btn-outline-success" onClick={() => setGrantModal({ show: true, data: row })} title="Cấp tài khoản">
+                <BsKey />
+                </button>
+            ) : row.status === 'LOCKED' ? (
+                <button className="btn btn-sm btn-outline-success" onClick={() => setDeleteAccountModal({ show: true, data: row, action: 'UNLOCK' })} title="Mở khoá tài khoản">
+                <BsUnlock />
+                </button>
+            ) : (
+                <button className="btn btn-sm btn-outline-warning" onClick={() => setDeleteAccountModal({ show: true, data: row, action: 'LOCK' })} title="Khoá tài khoản">
+                <BsLock />
+                </button>
+            )}
             <button className="btn btn-sm btn-outline-primary" onClick={() => setDetailModal({ show: true, data: row })} title="Xem">
               <BsEye />
             </button>
@@ -197,7 +193,6 @@ export default function ListEmployee() {
       {detailModal.show && detailModal.data && (
         <DetailEmployee 
           data={detailModal.data} 
-          phongBanList={phongBanList}
           onClose={() => setDetailModal({ show: false, data: null })} 
         />
       )}
@@ -208,6 +203,18 @@ export default function ListEmployee() {
           onClose={() => setDeleteModal({ show: false, data: null })}
           onSuccess={() => {
             setDeleteModal({ show: false, data: null });
+            fetchData();
+          }}
+        />
+      )}
+
+      {deleteAccountModal.show && deleteAccountModal.data && (
+        <DeleteAccount 
+          data={deleteAccountModal.data} 
+          action={deleteAccountModal.action}
+          onClose={() => setDeleteAccountModal({ show: false, data: null })}
+          onSuccess={() => {
+            setDeleteAccountModal({ show: false, data: null });
             fetchData();
           }}
         />
