@@ -180,21 +180,21 @@ export default function ListAccount() {
         searchable={false}
         renderActions={(row) => (
           <div className="data-table-actions">
+            {row.status === 'LOCKED' ? (
+              <button className="btn btn-sm btn-outline-success" onClick={() => setDeleteModal({ show: true, data: row, action: 'UNLOCK' })} title="Mở khoá tài khoản">
+                <BsUnlock />
+              </button>
+            ) : (
+              <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteModal({ show: true, data: row, action: 'LOCK' })} title="Khoá tài khoản">
+                <BsLock />
+              </button>
+            )}
             <button className="btn btn-sm btn-outline-primary" onClick={() => setDetailModal({ show: true, data: row })} title="Xem">
               <BsEye />
             </button>
             <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(`/nhan-su/tai-khoan/them-moi?id=${row.id}`, { state: { initialData: row } })} title="Sửa">
               <BsPencil />
             </button>
-            {row.status === 'LOCKED' ? (
-              <button className="btn btn-sm btn-outline-success" onClick={() => setDeleteModal({ show: true, data: row, action: 'UNLOCK' })} title="Mở khoá tài khoản">
-                <BsUnlock />
-              </button>
-            ) : (
-              <button className="btn btn-sm btn-outline-warning" onClick={() => setDeleteModal({ show: true, data: row, action: 'LOCK' })} title="Khoá tài khoản">
-                <BsLock />
-              </button>
-            )}
           </div>
         )}
       />
@@ -208,8 +208,8 @@ export default function ListAccount() {
       )}
 
       {deleteModal.show && deleteModal.data && (
-        <DeleteAccount 
-          data={deleteModal.data} 
+        <DeleteAccount
+          data={deleteModal.data}
           action={deleteModal.action}
           onClose={() => setDeleteModal({ show: false, data: null })}
           onSuccess={() => {

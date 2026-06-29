@@ -68,11 +68,10 @@ export default function ListEmployee() {
       const matchPhongBan = appliedFilters.department ? String(item.department?.id) === String(appliedFilters.department) : true;
       return matchName && matchPhongBan;
     });
-    return result.map((item, index) => ({ ...item, stt: index + 1 }));
+    return result;
   }, [data, appliedFilters]);
 
   const columns = [
-    { key: 'stt', label: 'STT', sortable: false },
     { key: 'employeeCode', label: 'Mã NV', sortable: true },
     { key: 'fullName', label: 'Họ và tên', sortable: true },
     { 
@@ -162,7 +161,7 @@ export default function ListEmployee() {
                 <BsUnlock />
                 </button>
             ) : (
-                <button className="btn btn-sm btn-outline-warning" onClick={() => setDeleteAccountModal({ show: true, data: row, action: 'LOCK' })} title="Khoá tài khoản">
+                <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteAccountModal({ show: true, data: row, action: 'LOCK' })} title="Khoá tài khoản">
                 <BsLock />
                 </button>
             )}
