@@ -72,17 +72,13 @@ function App() {
 
             {/* --- Sửa chữa --- */}
             <Route path="/sua-chua/yeu-cau" element={<RepairRequest />} />
-<<<<<<< HEAD
+
             <Route path="/sua-chua/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
-            <Route path="/repair/danh-gia-kt" element={<TechnicalAssessmentForm />} />
-            <Route path="/sua-chua/phieu-xuat-vtthaythe" element={<SparePartsIssueForm />} />
-=======
-            <Route path="/sua-chua/phieu-cong-tac" element={<PlaceholderPage title="Phiếu Công tác" />} />
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
             <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
->>>>>>> 44d640e46adf691670e6f67812afdbc717497833
+
 
 
             {/* --- Vật tư --- */}
