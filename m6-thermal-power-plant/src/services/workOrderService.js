@@ -1,7 +1,15 @@
 import axios from 'axios';
 
 // All maintenance endpoints live under /api/maintenance
-const BASE = `${import.meta.env.VITE_API_URL}/api/maintenance`;
+const BASE = `${import.meta.env.VITE_API_URL}/api/v1/work-orders`;
+
+// TODO: Get token from auth context/localStorage instead of hardcoding
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token') || "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzYxODAwLCJleHAiOjE3ODI3NjI3MDB9.sjxKTRyXR01jV0hGBmn08jOMBQFqp-bVHxgU78o3znk";
+  return {
+    Authorization: `Bearer ${token}`
+  };
+};
 
 export const workOrderService = {
   /**
@@ -11,7 +19,10 @@ export const workOrderService = {
    * @param {number} size - Số dòng / trang
    */
   getPendingRequests: (page = 0, size = 20) =>
-    axios.get(`${BASE}/repair-requests/pending`, { params: { page, size, sort: 'createdAt,desc' } }),
+    axios.get('http://localhost:8080/api/v1/repair-requests/pending', { 
+      params: { page, size, sort: 'createdAt,desc' },
+      headers: getAuthHeader()
+    }),
 
   /**
    * Lấy danh sách phiếu công tác (có phân trang + tìm kiếm).
@@ -21,7 +32,10 @@ export const workOrderService = {
    * @param {number} size - Số dòng / trang
    */
   getAll: (search, page = 0, size = 20) =>
-    axios.get(`${BASE}/work-orders`, { params: { search, page, size } }),
+    axios.get(`${BASE}`, { 
+      params: { search, page, size },
+      headers: getAuthHeader()
+    }),
 
   /**
    * Tạo phiếu công tác từ một yêu cầu sửa chữa.
@@ -36,11 +50,15 @@ export const workOrderService = {
    * @param {string}  [data.expectedEndTime]       - tuỳ chọn (ISO datetime)
    * @param {Array<{employeeId: number, roleInTask?: string}>} [data.members]
    */
-  create: (data) => axios.post(`${BASE}/work-orders`, data),
+  create: (data) => axios.post(`${BASE}`, data, {
+    headers: getAuthHeader()
+  }),
 
   /**
    * Huỷ một phiếu công tác (đặt status = CANCELLED).
    * → PATCH /api/maintenance/work-orders/{id}/cancel
    */
-  cancel: (id) => axios.patch(`${BASE}/work-orders/${id}/cancel`),
+  cancel: (id) => axios.patch(`${BASE}/${id}/cancel`, {}, {
+    headers: getAuthHeader()
+  }),
 };

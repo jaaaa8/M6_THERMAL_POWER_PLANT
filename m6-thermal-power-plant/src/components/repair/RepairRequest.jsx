@@ -5,18 +5,15 @@ import {
   BsListUl, BsHourglassSplit, BsFileEarmarkCheck, BsLightningChargeFill,
   BsCpu,
 } from 'react-icons/bs';
-import PageHeader from '../components/common/PageHeader';
-import DataTable from '../components/common/DataTable';
-import StatusBadge from '../components/common/StatusBadge';
-import ModalCreateWorkOrder from '../components/repair/ModalCreateWorkOrder.jsx';
-import { workOrderService } from '../services/workOrderService';
-import { employeeService } from '../services/hr/employeeService';
+import PageHeader from '../common/PageHeader';
+import DataTable from '../common/DataTable';
+import StatusBadge from '../common/StatusBadge';
+import ModalCreateWorkOrder from './ModalCreateWorkOrder.jsx';
+import { workOrderService } from '../../services/workOrderService';
+import { employeeService } from '../../services/hr/employeeService';
 import './RepairRequest.css';
 
-/* ============================================================
-   MAPS — Priority (RepairPriority enum) & Status (RepairRequestStatus enum)
-   Values match the Java enums returned by RepairRequestDTO.
-   ============================================================ */
+
 const PRIORITY_MAP = {
   EMERGENCY: { label: 'Khẩn cấp', status: 'danger', pulse: true },
   HIGH:      { label: 'Ưu tiên cao', status: 'warning' },
@@ -28,7 +25,7 @@ const STATUS_MAP = {
   PENDING:     { label: 'Chờ xử lý', status: 'warning' },
   IN_PROGRESS: { label: 'Đang thực hiện', status: 'info' },
   COMPLETED:   { label: 'Hoàn thành', status: 'normal' },
-  REJECTED:    { label: 'Từ chối', status: 'inactive' },
+  CANCELLED:    { label: 'Từ chối', status: 'inactive' },
 };
 
 /* ============================================================
@@ -39,6 +36,7 @@ const FILTERS = [
   { key: 'ALL',     label: 'Tất cả' },
   { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
   { key: 'COMPLETED',   label: 'Hoàn thành' },
+  { key: 'CANCELLED',   label: 'Đã hủy' },
 ];
 
 /* ============================================================
@@ -62,7 +60,6 @@ export default function RepairRequest() {
     setLoading(true);
     setError(null);
     try {
-      // Backend returns PagedModel: { content: [...], page: { ... } }
       const res = await workOrderService.getPendingRequests(0, 100);
       setRequests(res.data.content ?? []);
     } catch (err) {
