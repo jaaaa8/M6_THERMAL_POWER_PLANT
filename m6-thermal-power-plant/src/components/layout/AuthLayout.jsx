@@ -7,7 +7,7 @@ export default function AuthLayout() {
       {/* Animated background grid */}
       <div className="auth-bg-pattern" />
 
-      <div className="auth-container animate-fade-in">
+      <div className="auth-container">
         {/* Brand */}
         <div className="auth-brand">
           <div className="auth-brand-icon">⚡</div>

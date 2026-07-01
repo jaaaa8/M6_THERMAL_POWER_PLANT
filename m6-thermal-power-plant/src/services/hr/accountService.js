@@ -1,15 +1,15 @@
-import axios from 'axios';
+import apiClient from '../apiClient';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const API_URL = `${BASE_URL}/api/v1/accounts`;
 
 export const accountService = {
-  getAll: () => axios.get(API_URL),
-  getById: (id) => axios.get(`${API_URL}/${id}`),
-  create: (data) => axios.post(API_URL, data),
-  update: (id, data) => axios.put(`${API_URL}/${id}`, data),
-  remove: (id) => axios.delete(`${API_URL}/${id}`),
-  grantRole: (data) => axios.post(`${API_URL}/grant`, data),
-  updateStatus: (data) => axios.patch(`${API_URL}/status`, data),
-  getRoles: () => axios.get(`${BASE_URL}/api/v1/roles`)
+  getAll: () => apiClient.get(API_URL),
+  getById: (id) => apiClient.get(`${API_URL}/${id}`),
+  create: (data) => apiClient.post(API_URL, data),
+  update: (id, data) => apiClient.put(`${API_URL}/${id}`, data),
+  remove: (id) => apiClient.delete(`${API_URL}/${id}`),
+  grantRole: (data) => apiClient.post(`${API_URL}/grant`, data),
+  updateStatus: (data) => apiClient.patch(`${API_URL}/status`, data),
+  getRoles: () => apiClient.get(`${BASE_URL}/api/v1/roles`)
 };

@@ -1,0 +1,15 @@
+# Java / Gradle
+/gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+
+# Binary documents (không diff)
+*.pdf binary
+*.xlsx binary
+*.mwb binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

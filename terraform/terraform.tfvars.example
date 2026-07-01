@@ -1,0 +1,14 @@
+# ================================================================
+#  terraform.tfvars — Điền các giá trị bí mật vào đây
+#  ⚠️  File này đã được thêm vào .gitignore — KHÔNG commit lên Git!
+# ================================================================
+
+# MySQL password (đặt password mạnh của bạn)
+db_password = "YourStrongPassword123!"
+
+# JWT Secret (có thể dùng cái mặc định hoặc generate mới)
+jwt_secret = "eWVsbG93d29vZGVub3JnYW5pemVkZGlzdGFuY2Vkcml2aW5nbGVhZGJyYXNzYnJlYXQ="
+
+# Gmail để gửi email thông báo
+mail_username = "your-email@gmail.com"
+mail_password = "your-gmail-app-password"

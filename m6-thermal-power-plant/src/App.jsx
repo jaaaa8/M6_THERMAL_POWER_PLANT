@@ -32,6 +32,8 @@ import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
+import RoleManagementPage from "./pages/RoleManagementPage.jsx";
+import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 
 function App() {
   return (
@@ -54,6 +56,17 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+            {/* --- Admin --- */}
+            <Route path="/admin/roles" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <RoleManagementPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/accounts/create" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <CreateAccountPage />
+              </ProtectedRoute>
+            } />
             {/* --- Nhân sự --- */}
             <Route path="/nhan-su/phong-ban" element={<ListDepartment />} />
             <Route path="/nhan-su/phong-ban/them-moi" element={<AddDepartment />} />
@@ -115,7 +128,7 @@ function App() {
 /* --- Placeholder page cho các module chưa triển khai --- */
 function PlaceholderPage({ title }) {
   return (
-    <div className="animate-fade-in">
+    <div>
       <div style={{
         display: 'flex',
         flexDirection: 'column',

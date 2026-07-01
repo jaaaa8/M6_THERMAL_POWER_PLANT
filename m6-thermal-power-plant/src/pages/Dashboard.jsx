@@ -19,17 +19,17 @@ const stats = [
 ];
 
 const recentRequests = [
-  { id: 1, maPhieu: 'YC-2026-0045', thietBi: 'Bơm cấp nước thô', maKKS: 'ABC002M1', mucDo: 'warning', trangThai: 'Chờ xử lý', ngay: '19/06/2026' },
-  { id: 2, maPhieu: 'YC-2026-0044', thietBi: 'Động cơ bơm nước thải', maKKS: 'DEF005E2', mucDo: 'danger', trangThai: 'Đang sửa', ngay: '18/06/2026' },
-  { id: 3, maPhieu: 'YC-2026-0043', thietBi: 'Van điều khiển áp suất', maKKS: 'GHI010V3', mucDo: 'normal', trangThai: 'Hoàn thành', ngay: '17/06/2026' },
-  { id: 4, maPhieu: 'YC-2026-0042', thietBi: 'Đồng hồ đo áp suất', maKKS: 'ABC002I1', mucDo: 'warning', trangThai: 'Chờ xử lý', ngay: '17/06/2026' },
-  { id: 5, maPhieu: 'YC-2026-0041', thietBi: 'Máy nén khí chính', maKKS: 'JKL003M5', mucDo: 'danger', trangThai: 'Đang sửa', ngay: '16/06/2026' },
+  { id: 1, maPhieu: 'YC-2026-0045', thietBi: 'Bơm cấp nước thô', kksCode: 'ABC002M1', mucDo: 'warning', status: 'Chờ xử lý', ngay: '19/06/2026' },
+  { id: 2, maPhieu: 'YC-2026-0044', thietBi: 'Động cơ bơm nước thải', kksCode: 'DEF005E2', mucDo: 'danger', status: 'Đang sửa', ngay: '18/06/2026' },
+  { id: 3, maPhieu: 'YC-2026-0043', thietBi: 'Van điều khiển áp suất', kksCode: 'GHI010V3', mucDo: 'normal', status: 'Hoàn thành', ngay: '17/06/2026' },
+  { id: 4, maPhieu: 'YC-2026-0042', thietBi: 'Đồng hồ đo áp suất', kksCode: 'ABC002I1', mucDo: 'warning', status: 'Chờ xử lý', ngay: '17/06/2026' },
+  { id: 5, maPhieu: 'YC-2026-0041', thietBi: 'Máy nén khí chính', kksCode: 'JKL003M5', mucDo: 'danger', status: 'Đang sửa', ngay: '16/06/2026' },
 ];
 
 const requestColumns = [
   { key: 'maPhieu', label: 'Mã phiếu', mono: true },
   { key: 'thietBi', label: 'Thiết bị' },
-  { key: 'maKKS', label: 'Mã KKS', mono: true },
+  { key: 'kksCode', label: 'Mã KKS', mono: true },
   {
     key: 'mucDo', label: 'Mức độ',
     render: (val) => {
@@ -53,7 +53,7 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title="Bảng điều khiển"
         subtitle="Tổng quan tình trạng vận hành nhà máy"
         icon={<BsGrid1X2 />}
       />
@@ -152,11 +152,11 @@ export default function Dashboard() {
                 <BsBoxSeam className="qa-icon" style={{ color: 'var(--color-status-info)' }} />
                 <span>Nhập kho<br />vật tư</span>
               </button>
-              <button className="quick-action-btn" onClick={() => navigate('/bao-duong/ke-hoach')}>
+              <button className="quick-action-btn" onClick={() => navigate('/maintenance/plans')}>
                 <BsDropletHalf className="qa-icon" style={{ color: 'var(--color-status-normal)' }} />
                 <span>Lịch bảo<br />dưỡng</span>
               </button>
-              <button className="quick-action-btn" onClick={() => navigate('/nhan-su/them-moi')}>
+              <button className="quick-action-btn" onClick={() => navigate('/hr/employees/new')}>
                 <BsPersonPlusFill className="qa-icon" style={{ color: 'var(--color-accent)' }} />
                 <span>Thêm mới<br />nhân sự</span>
               </button>
