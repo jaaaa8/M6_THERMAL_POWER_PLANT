@@ -67,9 +67,91 @@ resource "aws_iam_role" "jenkins" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "jenkins_admin" {
-  role       = aws_iam_role.jenkins.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+# Policy tối thiểu cho Jenkins — CHỈ đủ quyền để build & deploy, không phải toàn quyền
+resource "aws_iam_role_policy" "jenkins_deploy" {
+  name = "${var.project_name}-jenkins-deploy-policy"
+  role = aws_iam_role.jenkins.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # ecr:GetAuthorizationToken bắt buộc Resource = "*" (AWS quy định, không có ARN cấp repo cho action này)
+        Sid      = "EcrAuth"
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        # Push/pull image — chỉ giới hạn trong 2 repo của chính project này
+        Sid    = "EcrPushPull"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+        ]
+        Resource = [
+          aws_ecr_repository.api.arn,
+          aws_ecr_repository.frontend.arn,
+        ]
+      },
+      {
+        # Deploy image mới — chỉ đúng 1 service này, không đụng được service ECS khác trong account
+        Sid      = "EcsDeployScoped"
+        Effect   = "Allow"
+        Action   = ["ecs:UpdateService", "ecs:DescribeServices"]
+        Resource = [aws_ecs_service.api.id]
+      },
+      {
+        # Các action ECS này KHÔNG hỗ trợ giới hạn theo ARN cụ thể (AWS IAM action reference) → bắt buộc "*"
+        Sid    = "EcsDeployUnscoped"
+        Effect = "Allow"
+        Action = [
+          "ecs:RegisterTaskDefinition",
+          "ecs:DescribeTaskDefinition",
+          "ecs:ListTasks",
+          "ecs:DescribeTasks",
+        ]
+        Resource = "*"
+      },
+      {
+        # Khi register task definition mới, ECS cần "mượn" role thực thi — chỉ cho mượn ĐÚNG role này,
+        # và chỉ khi role được gán cho ECS (chặn Jenkins tự gán role này cho service khác để leo thang quyền)
+        Sid      = "PassExecutionRoleOnly"
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = aws_iam_role.ecs_task_execution.arn
+        Condition = {
+          StringEquals = { "iam:PassedToService" = "ecs-tasks.amazonaws.com" }
+        }
+      },
+      {
+        Sid      = "S3FrontendListBucket"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.frontend.arn
+      },
+      {
+        # Sync file tĩnh (aws s3 sync) — chỉ trong đúng bucket frontend
+        Sid      = "S3FrontendObjects"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.frontend.arn}/*"
+      },
+      {
+        # Xoá cache CDN sau khi deploy frontend mới — chỉ đúng distribution này
+        Sid      = "CloudFrontInvalidate"
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
+        Resource = aws_cloudfront_distribution.frontend.arn
+      },
+    ]
+  })
 }
 
 resource "aws_iam_instance_profile" "jenkins" {

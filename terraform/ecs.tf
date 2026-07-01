@@ -36,6 +36,37 @@ resource "aws_iam_role_policy" "ecs_cloudwatch" {
   })
 }
 
+# Key KMS mặc định mà AWS dùng để mã hoá SSM SecureString (không tốn phí tạo key riêng)
+data "aws_kms_alias" "ssm" {
+  name = "alias/aws/ssm"
+}
+
+# Cho phép Execution Role đọc + giải mã ĐÚNG 3 secret của project này (không phải toàn bộ SSM)
+resource "aws_iam_role_policy" "ecs_ssm_secrets" {
+  name = "ssm-secrets-access"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:GetParameters"]
+        Resource = [
+          aws_ssm_parameter.db_password.arn,
+          aws_ssm_parameter.jwt_secret.arn,
+          aws_ssm_parameter.mail_password.arn,
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = data.aws_kms_alias.ssm.target_key_arn
+      }
+    ]
+  })
+}
+
 # ── CloudWatch Log Group ─────────────────────────────────────────
 resource "aws_cloudwatch_log_group" "api" {
   name              = "/ecs/${var.project_name}-api"
@@ -84,16 +115,21 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
 
+    # Giá trị KHÔNG nhạy cảm — plaintext là chấp nhận được (không phải mật khẩu/secret)
     environment = [
       {
         name  = "DB_URL"
         value = "jdbc:mysql://${aws_db_instance.mysql.endpoint}/${var.db_name}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh"
       },
-      { name = "DB_USERNAME",    value = var.db_username },
-      { name = "DB_PASSWORD",    value = var.db_password },
-      { name = "JWT_SECRET",     value = var.jwt_secret },
-      { name = "MAIL_USERNAME",  value = var.mail_username },
-      { name = "MAIL_PASSWORD",  value = var.mail_password },
+      { name = "DB_USERNAME", value = var.db_username },
+      { name = "MAIL_USERNAME", value = var.mail_username },
+    ]
+
+    # Giá trị NHẠY CẢM — lấy từ SSM Parameter Store lúc container khởi động, không nằm trong task definition dạng plaintext
+    secrets = [
+      { name = "DB_PASSWORD", valueFrom = aws_ssm_parameter.db_password.arn },
+      { name = "JWT_SECRET", valueFrom = aws_ssm_parameter.jwt_secret.arn },
+      { name = "MAIL_PASSWORD", valueFrom = aws_ssm_parameter.mail_password.arn },
     ]
 
     logConfiguration = {
