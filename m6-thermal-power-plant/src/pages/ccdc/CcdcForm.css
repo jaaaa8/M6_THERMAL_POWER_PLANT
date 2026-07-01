@@ -63,6 +63,43 @@
   padding: var(--space-6);
 }
 
+/* --- Ảnh CCDC (URL + preview) --- */
+.ccdc-image-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.ccdc-image-preview {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface-hover);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ccdc-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ccdc-image-preview-placeholder {
+  font-size: 1.75rem;
+  color: var(--text-tertiary);
+}
+
+.ccdc-image-input {
+  flex: 1;
+  min-width: 0;
+}
+
 .ccdc-form-info-banner {
   background: var(--bg-surface-hover);
   border: 1px solid var(--border-color);

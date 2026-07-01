@@ -73,6 +73,7 @@ const menuSections = [
         icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'THU_KHO_CCDC'],
         children: [
           { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC' },
+          { path: '/ccdc/chung-loai', icon: <BsTags />, label: 'Chủng loại CCDC' },
           { path: '/ccdc/muon-tra', icon: <BsArrowLeftRight />, label: 'Mượn / Trả' },
         ],
       },

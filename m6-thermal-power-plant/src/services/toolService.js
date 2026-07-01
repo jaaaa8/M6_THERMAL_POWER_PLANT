@@ -9,6 +9,12 @@ export const toolCategoryService = {
   create: (payload) => axios.post(CATEGORY_URL, payload),
   update: (id, payload) => axios.put(`${CATEGORY_URL}/${id}`, payload),
   remove: (id) => axios.delete(`${CATEGORY_URL}/${id}`),
+
+  /**
+   * Tìm kiếm chủng loại theo tên và/hoặc mã.
+   * @param {{ categoryName?: string, categoryCode?: string }} params
+   */
+  search: (params = {}) => axios.get(`${CATEGORY_URL}/search`, { params }),
 };
 
 export const toolService = {
@@ -39,13 +45,16 @@ export const toolBorrowLogService = {
   getById: (id) => axios.get(`${BORROW_URL}/${id}`),
 
   createBorrowRequest: (accountId, payload) =>
-    axios.post(BORROW_URL, payload, { params: { accountId } }),
+      axios.post(BORROW_URL, payload, { params: { accountId } }),
 
   approve: (id, approvedByAccountId) =>
-    axios.patch(`${BORROW_URL}/${id}/approve`, null, { params: { approvedByAccountId } }),
+      axios.patch(`${BORROW_URL}/${id}/approve`, null, { params: { approvedByAccountId } }),
 
   reject: (id, approvedByAccountId, payload) =>
-    axios.patch(`${BORROW_URL}/${id}/reject`, payload, { params: { approvedByAccountId } }),
+      axios.patch(`${BORROW_URL}/${id}/reject`, payload, { params: { approvedByAccountId } }),
 
   returnTool: (id, payload) => axios.patch(`${BORROW_URL}/${id}/return`, payload),
+
+  /** Quét và gửi ngay email nhắc các phiếu quá hạn, không cần chờ job theo giờ */
+  notifyOverdueNow: () => axios.post(`${BORROW_URL}/notify-overdue`),
 };

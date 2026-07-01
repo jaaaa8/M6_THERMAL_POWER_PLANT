@@ -1,0 +1,114 @@
+
+.ccdc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ccdc-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.ccdc-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-hover);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.ccdc-stat-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.ccdc-stat-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.ccdc-stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-medium);
+}
+
+/* --- Ô tìm kiếm theo mã / tên --- */
+.ccdc-search-input {
+  position: relative;
+}
+
+.ccdc-search-input .ccdc-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.ccdc-search-input input {
+  padding-left: 36px;
+}
+
+/* --- Cột ảnh CCDC trong bảng --- */
+.ccdc-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ccdc-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ccdc-thumb-placeholder {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+}
+
+.ccdc-thumb-broken {
+  display: none;
+}
+
+/* --- Cột số lượng khả dụng --- */
+.ccdc-available {
+  font-weight: var(--font-semibold);
+  color: var(--color-status-normal);
+}
+
+.ccdc-available.zero {
+  color: var(--color-status-danger);
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+  .ccdc-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .ccdc-stats {
+    grid-template-columns: 1fr;
+  }
+}

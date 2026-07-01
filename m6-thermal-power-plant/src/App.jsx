@@ -16,8 +16,9 @@ import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import RepairRequest from './pages/RepairRequest.jsx';
 import NhanSuForm from './components/nhansu/NhanSuForm';
-import DanhSachCCDC from './pages/ccdc/DanhSachCCDC.jsx';
-import MuonTraCCDC from './pages/ccdc/MuonTraCCDC.jsx';
+import ToolList from './pages/ccdc/ToolList.jsx';
+import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
+import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
 import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
 
@@ -62,10 +63,11 @@ function App() {
             <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
 
             {/* --- CCDC --- */}
-            <Route path="/ccdc/danh-sach" element={<DanhSachCCDC />} />
+            <Route path="/ccdc/danh-sach" element={<ToolList />} />
             <Route path="/ccdc/danh-sach/them-moi" element={<ToolForm />} />
             <Route path="/ccdc/danh-sach/sua/:id" element={<ToolForm />} />
-            <Route path="/ccdc/muon-tra" element={<MuonTraCCDC />} />
+            <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
+            <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
 
             {/* --- Bảo dưỡng --- */}
