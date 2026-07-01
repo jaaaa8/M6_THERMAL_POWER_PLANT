@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Row, Col, Button } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { BsTools, BsSave, BsXCircle, BsInfoCircle, BsImage } from 'react-icons/bs';
+import { BsTools, BsSave, BsXCircle, BsInfoCircle, BsImage, BsUpload, BsTrash } from 'react-icons/bs';
 import PageHeader from '../../components/common/PageHeader';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { toolService, toolCategoryService } from '../../services/toolService';
@@ -34,6 +34,7 @@ export default function ToolForm() {
     const [tool, setTool] = useState(null);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         let active = true;
@@ -106,7 +107,7 @@ export default function ToolForm() {
                 enableReinitialize
                 onSubmit={handleSubmit}
             >
-                {({ touched, errors, isSubmitting, values }) => (
+                {({ touched, errors, isSubmitting, values, setFieldValue }) => (
                     <Form noValidate>
                         <div className="ccdc-form-card">
                             <div className="ccdc-form-header">
@@ -119,7 +120,12 @@ export default function ToolForm() {
 
                             <div className="ccdc-form-body">
                                 <div className="ccdc-image-row">
-                                    <div className="ccdc-image-preview">
+                                    <div
+                                        className="ccdc-image-preview"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        style={{ cursor: 'pointer' }}
+                                        title="Nhấn để chọn ảnh"
+                                    >
                                         {values.imgPath ? (
                                             <img src={values.imgPath} alt="Ảnh CCDC" onError={(e) => { e.target.style.display = 'none'; }} />
                                         ) : (
@@ -127,15 +133,43 @@ export default function ToolForm() {
                                         )}
                                     </div>
                                     <div className="ccdc-image-input">
-                                        <label htmlFor="tool-imgPath" className="form-label">Ảnh CCDC (đường dẫn / URL)</label>
-                                        <Field
-                                            id="tool-imgPath"
-                                            name="imgPath"
-                                            type="text"
-                                            placeholder="https://... hoặc /uploads/tools/ten-anh.jpg"
-                                            className="form-control"
+                                        <label className="form-label">Ảnh CCDC</label>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const reader = new FileReader();
+                                                reader.onload = (ev) => setFieldValue('imgPath', ev.target.result);
+                                                reader.readAsDataURL(file);
+                                            }}
                                         />
-                                        <div className="form-text">Dán URL ảnh hoặc đường dẫn file đã upload sẵn lên server.</div>
+                                        <div className="d-flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline-primary"
+                                                size="sm"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <BsUpload className="me-1" /> Chọn ảnh từ máy
+                                            </Button>
+                                            {values.imgPath && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline-danger"
+                                                    size="sm"
+                                                    onClick={() => setFieldValue('imgPath', '')}
+                                                >
+                                                    <BsTrash /> Xoá ảnh
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <div className="form-text mt-1">
+                                            {values.imgPath ? 'Ảnh đã chọn. Nhấn "Chọn ảnh" để đổi ảnh khác.' : 'Nhấn để chọn ảnh từ máy tính (JPG, PNG, WEBP).'}
+                                        </div>
                                     </div>
                                 </div>
 
