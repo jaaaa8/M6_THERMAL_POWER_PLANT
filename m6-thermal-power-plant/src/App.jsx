@@ -14,8 +14,8 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import RepairRequest from './pages/RepairRequest.jsx';
-import WorkOrderList from './pages/WorkOrderList.jsx';
+import RepairRequest from './components/repair_request/RepairRequest.jsx';
+import WorkOrderList from './components/work_order/WorkOrderList.jsx';
 import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
 import ListEmployee from './components/hr/employee/ListEmployee';
@@ -32,6 +32,13 @@ import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
+import RoleManagementPage from "./pages/RoleManagementPage.jsx";
+import CreateAccountPage from "./pages/CreateAccountPage.jsx";
+import ToolList from './pages/ccdc/ToolList.jsx';
+import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
+import ToolCategory from './pages/ccdc/ToolCategory .jsx';
+import ToolForm from './pages/ccdc/ToolForm.jsx';
+import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
 
 function App() {
   return (
@@ -54,14 +61,25 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+            {/* --- Admin --- */}
+            <Route path="/admin/roles" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <RoleManagementPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/accounts/create" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <CreateAccountPage />
+              </ProtectedRoute>
+            } />
             {/* --- Nhân sự --- */}
-            <Route path="/nhan-su/phong-ban" element={<ListDepartment />} />
-            <Route path="/nhan-su/phong-ban/them-moi" element={<AddDepartment />} />
-            <Route path="/nhan-su/nhan-vien" element={<ListEmployee />} />
-            <Route path="/nhan-su/them-moi" element={<AddEmployee onCancel={() => window.history.back()} />} />
-            <Route path="/nhan-su/tai-khoan" element={<ListAccount />} />
-            <Route path="/nhan-su/tai-khoan/them-moi" element={<AddAccount />} />
-            <Route path="/nhan-su/thong-tin-chi-tiet/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
+            <Route path="/hr/departments" element={<ListDepartment />} />
+            <Route path="/hr/departments/create" element={<AddDepartment />} />
+            <Route path="/hr/employees" element={<ListEmployee />} />
+            <Route path="/hr/employees/create" element={<AddEmployee onCancel={() => window.history.back()} />} />
+            <Route path="/hr/accounts" element={<ListAccount />} />
+            <Route path="/hr/accounts/create" element={<AddAccount />} />
+            <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
 
             {/* --- Thiết bị --- */}
             <Route path="/equipment/system" element={<ListSystem />} />
@@ -82,8 +100,12 @@ function App() {
             <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
 
             {/* --- CCDC --- */}
-            <Route path="/ccdc/danh-sach" element={<PlaceholderPage title="Danh sách CCDC" />} />
-            <Route path="/ccdc/muon-tra" element={<PlaceholderPage title="Mượn / Trả CCDC" />} />
+            <Route path="/ccdc/danh-sach" element={<ToolList />} />
+            <Route path="/ccdc/danh-sach/them-moi" element={<ToolForm />} />
+            <Route path="/ccdc/danh-sach/sua/:id" element={<ToolForm />} />
+            <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
+            <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
+            <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
@@ -115,7 +137,7 @@ function App() {
 /* --- Placeholder page cho các module chưa triển khai --- */
 function PlaceholderPage({ title }) {
   return (
-    <div className="animate-fade-in">
+    <div>
       <div style={{
         display: 'flex',
         flexDirection: 'column',

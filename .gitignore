@@ -67,3 +67,32 @@ __pycache__/
 
 ### Uploads ###
 uploads/
+
+### Agent / AI Config ###
+.agents/
+.agentignore
+.gitnexus/
+.claude/
+.mcp.json
+CLAUDE.md
+AGENTS.md
+skills-lock.json
+
+### Documentation & Design ###
+docs/
+v0-docs/
+RULE.MD
+1-surfaces--backgrounds-nn--khng-gian.md
+
+### Playwright MCP ###
+.playwright-mcp/
+
+### Binary / Office Files ###
+database.mwb
+*.pdf
+*.xlsx
+PROJECT_CONTEXT.md
+
+### Temp / Scratch Files ###
+temp_*
+

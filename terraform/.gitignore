@@ -1,0 +1,15 @@
+# Terraform state — chứa thông tin nhạy cảm, không commit!
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# File biến bí mật — tự tạo từ terraform.tfvars.example
+terraform.tfvars
+
+# Crash log
+crash.log
+crash.*.log
+
+# Jenkins SSH key — KHÔNG commit!
+jenkins-key.pem

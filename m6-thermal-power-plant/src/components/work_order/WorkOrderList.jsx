@@ -5,13 +5,13 @@ import {
   BsHourglassSplit, BsCheckCircle, BsXCircle, BsPlayCircle,
   BsEye,
 } from 'react-icons/bs';
-import PageHeader from '../components/common/PageHeader';
-import DataTable from '../components/common/DataTable';
-import StatusBadge from '../components/common/StatusBadge';
-import SearchBox from '../components/common/SearchBox';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import EmptyState from '../components/common/EmptyState';
-import { workOrderService } from '../services/workOrderService';
+import PageHeader from '../common/PageHeader';
+import DataTable from '../common/DataTable';
+import StatusBadge from '../common/StatusBadge';
+import SearchBox from '../common/SearchBox';
+import LoadingSpinner from '../common/LoadingSpinner';
+import EmptyState from '../common/EmptyState';
+import { workOrderService } from '../../services/workOrderService';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
 

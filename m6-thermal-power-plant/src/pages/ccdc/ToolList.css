@@ -1,0 +1,170 @@
+
+.ccdc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ccdc-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.ccdc-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-hover);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.ccdc-stat-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.ccdc-stat-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.ccdc-stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-medium);
+}
+
+/* --- Ô tìm kiếm theo mã / tên --- */
+.ccdc-search-input {
+  position: relative;
+}
+
+.ccdc-search-input .ccdc-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.ccdc-search-input input {
+  padding-left: 36px;
+}
+
+/* --- Cột ảnh CCDC trong bảng --- */
+.ccdc-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ccdc-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ccdc-thumb-placeholder {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+}
+
+.ccdc-thumb-broken {
+  display: none;
+}
+
+/* --- Cột số lượng khả dụng --- */
+.ccdc-available {
+  font-weight: var(--font-semibold);
+  color: var(--color-status-normal);
+}
+
+.ccdc-available.zero {
+  color: var(--color-status-danger);
+}
+
+/* --- Lịch sử thao tác modal --- */
+.tool-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tool-log-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.tool-log-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.tool-log-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-log-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tool-log-qty {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.tool-log-date {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+.tool-log-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-surface-hover);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  white-space: pre-wrap;
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+  .ccdc-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .ccdc-stats {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,208 @@
+/* ============================================================
+   RoleManagementPage — Phân quyền hệ thống (Ma trận checkbox)
+   ============================================================ */
+
+.role-loading,
+.role-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 30vh;
+  gap: var(--space-4);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+/* --- Header Actions --- */
+.role-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.role-changes-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25em 0.65em;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-accent-hover);
+  background: var(--color-accent-light);
+  border-radius: var(--radius-full);
+}
+
+/* --- Matrix Wrapper --- */
+.role-matrix-wrapper {
+  margin-top: var(--space-4);
+  overflow: hidden;
+}
+
+.role-matrix-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- Matrix Table --- */
+.role-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.role-matrix-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* --- Headers --- */
+.role-matrix-func-header {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--bg-surface);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  border-bottom: 2px solid var(--border-color-strong);
+  border-right: 2px solid var(--border-color-strong);
+  min-width: 200px;
+  text-align: left;
+}
+
+.role-matrix-role-header {
+  background: var(--bg-surface);
+  padding: var(--space-3) var(--space-2);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-primary-700);
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+  border-left: 2px solid var(--border-color-strong);
+}
+
+.role-matrix-action-header {
+  background: var(--bg-surface-hover);
+  padding: var(--space-2);
+  font-weight: var(--font-medium);
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  border-bottom: 2px solid var(--border-color-strong);
+  text-align: center;
+  min-width: 48px;
+}
+
+/* --- Group Row --- */
+.role-matrix-group-row td {
+  background: var(--color-primary-50);
+  padding: var(--space-2) var(--space-4);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary-700);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .role-matrix-group-row td {
+  background: rgba(62, 101, 162, 0.1);
+  color: var(--color-primary-300);
+}
+
+/* --- Data Rows --- */
+.role-matrix-data-row:hover td {
+  background-color: var(--bg-surface-hover);
+}
+
+.role-matrix-func-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg-surface);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 2px solid var(--border-color-strong);
+  min-width: 200px;
+}
+
+.role-matrix-data-row:hover .role-matrix-func-cell {
+  background-color: var(--bg-surface-hover);
+}
+
+/* --- Checkbox Cell --- */
+.role-matrix-checkbox-cell {
+  padding: var(--space-2);
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color var(--transition-fast);
+}
+
+.role-matrix-checkbox-cell:first-of-type,
+.role-matrix-checkbox-cell:nth-of-type(4n + 1) {
+  border-left: 2px solid var(--border-color-strong);
+}
+
+.cell-changed {
+  background-color: var(--color-accent-light) !important;
+}
+
+[data-theme="dark"] .cell-changed {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+/* --- Checkbox styling --- */
+.role-checkbox .form-check-input {
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-neutral-300);
+  transition: all var(--transition-fast);
+}
+
+.role-checkbox .form-check-input:checked {
+  background-color: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+}
+
+.role-checkbox .form-check-input:hover {
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px rgba(62, 101, 162, 0.1);
+}
+
+.role-checkbox {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- Responsive --- */
+@media (max-width: 991.98px) {
+  .role-matrix-func-cell,
+  .role-matrix-func-header {
+    min-width: 160px;
+  }
+
+  .role-matrix-action-header {
+    min-width: 40px;
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .role-header-actions {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}

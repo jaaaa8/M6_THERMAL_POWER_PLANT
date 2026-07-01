@@ -1,95 +1,95 @@
+import axios from 'axios';
 
-import axios from "axios";
+// Để trống → request đi qua Vite dev proxy (`/api → backend`). Cấu hình ở vite.config.js.
+// Khi build production, set VITE_API_BASE_URL để trỏ thẳng tới backend.
+export const API_BASE_URL = import.meta.env.MODE === 'production' 
+  ? (import.meta.env.VITE_API_BASE_URL || '')
+  : '';
 
-const BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:8080";
+export const TOKEN_KEYS = {
+  access: 'scms_access_token',
+  refresh: 'scms_refresh_token',
+  user: 'scms_current_user',
+};
+
+export const tokenStore = {
+  getAccess: () => localStorage.getItem(TOKEN_KEYS.access),
+  getRefresh: () => localStorage.getItem(TOKEN_KEYS.refresh),
+  setTokens: (access, refresh) => {
+    if (access) localStorage.setItem(TOKEN_KEYS.access, access);
+    if (refresh) localStorage.setItem(TOKEN_KEYS.refresh, refresh);
+  },
+  clear: () => {
+    localStorage.removeItem(TOKEN_KEYS.access);
+    localStorage.removeItem(TOKEN_KEYS.refresh);
+    localStorage.removeItem(TOKEN_KEYS.user);
+  },
+};
 
 const apiClient = axios.create({
-    baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-apiClient.interceptors.request.use(
-    (config) => {
-        const token =
-            localStorage.getItem("accessToken");
+apiClient.interceptors.request.use((config) => {
+  const token = tokenStore.getAccess();
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-        if (token) {
-            config.headers.Authorization =
-                `Bearer ${token}`;
-        }
+let refreshPromise = null;
 
-        return config;
-    }
-);
+async function performRefresh() {
+  const refreshToken = tokenStore.getRefresh();
+  if (!refreshToken) throw new Error('NO_REFRESH_TOKEN');
+
+  const res = await axios.post(
+    '/api/v1/auth/refresh',
+    { refreshToken },
+    { baseURL: API_BASE_URL, headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = res.data?.data;
+  if (!data?.accessToken || !data?.refreshToken) {
+    throw new Error('INVALID_REFRESH_RESPONSE');
+  }
+  tokenStore.setTokens(data.accessToken, data.refreshToken);
+  return data.accessToken;
+}
 
 apiClient.interceptors.response.use(
-    (response) => response,
-    async (error) => {
+  (res) => res,
+  async (err) => {
+    const original = err.config;
+    const status = err.response?.status;
+    const url = original?.url || '';
 
-        const originalRequest = error.config;
+    const isAuthEndpoint =
+      url.includes('/auth/login') ||
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/logout');
 
-        console.log("ERROR STATUS:",
-            error.response?.status);
-
-        console.log("URL:",
-            error.config?.url);
-
-        if (
-
-            error.response?.status === 401 &&
-            !originalRequest._retry &&
-            !originalRequest.url.includes("/auth/login") &&
-            !originalRequest.url.includes("/auth/refresh")
-        ) {
-
-            originalRequest._retry = true;
-
-            try {
-
-                const refreshToken =
-                    localStorage.getItem("refreshToken");
-
-                const refreshResponse =
-                    await axios.post(
-                        `${BASE_URL}/api/v1/auth/refresh`,
-                        {
-                            refreshToken,
-                        }
-                    );
-
-                const {
-                    accessToken,
-                    refreshToken: newRefreshToken,
-                } = refreshResponse.data.data;
-
-                localStorage.setItem(
-                    "accessToken",
-                    accessToken
-                );
-
-                localStorage.setItem(
-                    "refreshToken",
-                    newRefreshToken
-                );
-
-                originalRequest.headers.Authorization =
-                    `Bearer ${accessToken}`;
-
-                return apiClient(originalRequest);
-
-            } catch (refreshError) {
-
-                localStorage.clear();
-
-                window.location.href = "/login";
-
-                return Promise.reject(refreshError);
-            }
+    if (status === 401 && !original._retry && !isAuthEndpoint) {
+      original._retry = true;
+      try {
+        refreshPromise = refreshPromise || performRefresh();
+        const newAccess = await refreshPromise;
+        refreshPromise = null;
+        original.headers.Authorization = `Bearer ${newAccess}`;
+        return apiClient(original);
+      } catch (refreshErr) {
+        refreshPromise = null;
+        tokenStore.clear();
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
         }
-
-        return Promise.reject(error);
+        return Promise.reject(refreshErr);
+      }
     }
+
+    return Promise.reject(err);
+  }
 );
 
 export default apiClient;

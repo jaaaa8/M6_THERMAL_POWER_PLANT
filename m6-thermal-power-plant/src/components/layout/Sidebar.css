@@ -187,12 +187,13 @@
 .sidebar-link-arrow {
   margin-left: auto;
   font-size: 0.75rem;
-  transition: transform var(--transition-fast);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0.5;
 }
 
 .sidebar-link-arrow.open {
   transform: rotate(90deg);
+  opacity: 0.8;
 }
 
 .sidebar.collapsed .sidebar-link-arrow {
@@ -203,16 +204,34 @@
 .sidebar-submenu {
   overflow: hidden;
   max-height: 0;
-  transition: max-height var(--transition-base);
+  opacity: 0;
+  transition:
+    max-height 350ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 250ms ease-out;
 }
 
 .sidebar-submenu.open {
   max-height: 500px;
+  opacity: 1;
+  transition:
+    max-height 400ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms ease-in 50ms;
 }
 
 .sidebar-submenu .sidebar-link {
   padding-left: calc(var(--space-5) + 22px + var(--space-3));
   font-size: var(--text-xs);
+  transform: translateX(0);
+  transition:
+    all var(--transition-fast),
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 200ms ease-out;
+}
+
+/* Khi đóng, child items slide nhẹ sang trái */
+.sidebar-submenu:not(.open) .sidebar-link {
+  transform: translateX(-8px);
+  opacity: 0;
 }
 
 .sidebar.collapsed .sidebar-submenu {

@@ -1,31 +1,15 @@
-import axios from "axios";
+import apiClient from '../apiClient';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
-const token =
-    "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzQxOTIzLCJleHAiOjE3ODI3NDI4MjN9.6xvDahsU0j6lgP36liCej8JMXa8OIrxBvGBvEND8dk8";
-
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_URL = `${BASE_URL}/api/v1/accounts`;
 
 export const accountService = {
-  getAll: () => api.get("/api/v1/accounts"),
-
-  getById: (id) => api.get(`/api/v1/accounts/${id}`),
-
-  create: (data) => api.post("/api/v1/accounts", data),
-
-  update: (id, data) => api.put(`/api/v1/accounts/${id}`, data),
-
-  remove: (id) => api.delete(`/api/v1/accounts/${id}`),
-
-  grantRole: (data) => api.post("/api/v1/accounts/grant", data),
-
-  updateStatus: (data) => api.patch("/api/v1/accounts/status", data),
-
-  getRoles: () => api.get("/api/v1/roles"),
+  getAll: () => apiClient.get(API_URL),
+  getById: (id) => apiClient.get(`${API_URL}/${id}`),
+  create: (data) => apiClient.post(API_URL, data),
+  update: (id, data) => apiClient.put(`${API_URL}/${id}`, data),
+  remove: (id) => apiClient.delete(`${API_URL}/${id}`),
+  grantRole: (data) => apiClient.post(`${API_URL}/grant`, data),
+  updateStatus: (data) => apiClient.patch(`${API_URL}/status`, data),
+  getRoles: () => apiClient.get(`${BASE_URL}/api/v1/roles`)
 };

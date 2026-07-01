@@ -1,8 +1,7 @@
 /* ============================================================
-   NhanSuForm — Form thêm/sửa nhân sự
+   EmployeeForm — Form thêm/sửa nhân sự
    ============================================================ */
 
-/* --- Avatar Upload Zone --- */
 .avatar-upload-zone {
   position: relative;
   width: 130px;
@@ -107,7 +106,7 @@
 }
 
 /* --- Form Card Container --- */
-.nhansu-form-card {
+.employee-form-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
@@ -116,7 +115,7 @@
   animation: fadeIn 0.35s ease-out;
 }
 
-.nhansu-form-header {
+.employee-form-header {
   padding: var(--space-5) var(--space-6);
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -124,7 +123,7 @@
   gap: var(--space-3);
 }
 
-.nhansu-form-header-icon {
+.employee-form-header-icon {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-lg);
@@ -137,7 +136,7 @@
   flex-shrink: 0;
 }
 
-.nhansu-form-header-text h2 {
+.employee-form-header-text h2 {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   color: var(--text-primary);
@@ -145,13 +144,13 @@
   line-height: 1.3;
 }
 
-.nhansu-form-header-text p {
+.employee-form-header-text p {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   margin: 0;
 }
 
-.nhansu-form-body {
+.employee-form-body {
   padding: var(--space-6);
 }
 
@@ -176,23 +175,23 @@
 }
 
 /* --- Field group enhancements --- */
-.nhansu-form-body .form-control,
-.nhansu-form-body .form-select {
+.employee-form-body .form-control,
+.employee-form-body .form-select {
   height: 40px;
 }
 
-.nhansu-form-body textarea.form-control {
+.employee-form-body textarea.form-control {
   height: auto;
   min-height: 80px;
 }
 
-.nhansu-form-body .form-control.is-invalid,
-.nhansu-form-body .form-select.is-invalid {
+.employee-form-body .form-control.is-invalid,
+.employee-form-body .form-select.is-invalid {
   border-color: var(--color-status-danger);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
-.nhansu-form-body .invalid-feedback {
+.employee-form-body .invalid-feedback {
   font-size: var(--text-xs);
   color: var(--color-status-danger);
   margin-top: 2px;
@@ -205,7 +204,7 @@
 }
 
 /* --- Form footer / actions --- */
-.nhansu-form-footer {
+.employee-form-footer {
   padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--border-color);
   display: flex;
@@ -215,7 +214,7 @@
   background: var(--bg-surface-hover);
 }
 
-.nhansu-form-footer .btn {
+.employee-form-footer .btn {
   min-width: 120px;
   display: inline-flex;
   align-items: center;
@@ -283,14 +282,14 @@
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
-  .nhansu-form-body {
+  .employee-form-body {
     padding: var(--space-4);
   }
-  .nhansu-form-footer {
+  .employee-form-footer {
     flex-direction: column;
     padding: var(--space-4);
   }
-  .nhansu-form-footer .btn {
+  .employee-form-footer .btn {
     width: 100%;
   }
 }

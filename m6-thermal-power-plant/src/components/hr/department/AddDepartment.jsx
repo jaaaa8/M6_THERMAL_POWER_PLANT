@@ -76,7 +76,7 @@ export default function AddDepartment({ onCancel }) {
       if (onCancel) {
         onCancel();
       } else {
-        navigate('/nhan-su/phong-ban');
+        navigate('/hr/departments');
       }
     } catch (error) {
       console.error(error);
@@ -90,7 +90,7 @@ export default function AddDepartment({ onCancel }) {
     if (onCancel) {
       onCancel();
     } else {
-      navigate('/nhan-su/phong-ban');
+      navigate('/hr/departments');
     }
   };
 
