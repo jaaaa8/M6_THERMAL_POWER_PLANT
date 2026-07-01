@@ -107,14 +107,6 @@ resource "aws_security_group" "rds" {
     description     = "MySQL from ECS"
   }
 
-  ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "MySQL public access for development"
-  }
-
   egress {
     from_port   = 0
     to_port     = 0

@@ -17,6 +17,12 @@ variable "project_name" {
   description = "Tên project (dùng làm prefix cho tất cả resource)"
 }
 
+# ── Bảo mật truy cập ──────────────────────────────────────────────
+variable "my_ip" {
+  description = "IP public của máy bạn (dạng x.x.x.x/32), dùng để giới hạn SSH vào Jenkins. Điền trong terraform.tfvars, không đặt default vì đây là thông tin cá nhân."
+  type        = string
+}
+
 # ── Database ─────────────────────────────────────────────────────
 variable "db_name" {
   default     = "m6_thermal_power_plant"

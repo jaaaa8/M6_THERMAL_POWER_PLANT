@@ -3,6 +3,9 @@
 #  ⚠️  File này đã được thêm vào .gitignore — KHÔNG commit lên Git!
 # ================================================================
 
+# IP public của bạn — dùng để giới hạn SSH vào Jenkins (curl ifconfig.me để lấy)
+my_ip = "1.2.3.4"
+
 # MySQL password (đặt password mạnh của bạn)
 db_password = "YourStrongPassword123!"
 

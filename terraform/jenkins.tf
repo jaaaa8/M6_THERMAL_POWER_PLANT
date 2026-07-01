@@ -34,13 +34,13 @@ resource "aws_security_group" "jenkins" {
     description = "Jenkins Web UI"
   }
 
-  # SSH
+  # SSH — chỉ cho phép từ IP của bạn, không mở ra cả Internet
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "SSH access"
+    cidr_blocks = ["${var.my_ip}/32"]
+    description = "SSH access (admin IP only)"
   }
 
   egress {
