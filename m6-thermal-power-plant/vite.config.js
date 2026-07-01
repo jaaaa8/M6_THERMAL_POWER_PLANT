@@ -6,10 +6,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      // Proxy mọi request /api → backend Spring Boot (dev). Tránh CORS.
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8080',
         changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // Giả lập Origin từ backend để Spring Security không coi là Cross-Origin
+            proxyReq.setHeader('Origin', 'http://localhost:8080');
+          });
+        }
       },
-    }
+    },
   },
 })

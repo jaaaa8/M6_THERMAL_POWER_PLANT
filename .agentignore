@@ -1,0 +1,50 @@
+# Dependencies & Locks (Heavy Token Usage)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.npm/
+.pnpm-store/
+
+# Build Outputs (Generated code, Heavy Token Usage)
+dist/
+build/
+target/
+.next/
+out/
+.gradle/
+bin/
+
+# Test coverage & Logs (Heavy Token Usage)
+coverage/
+.nyc_output/
+*.log
+
+# Binaries, Media & Documents (Unreadable or massive token usage)
+*.jar
+*.class
+*.war
+*.zip
+*.tar.gz
+*.pdf
+*.xlsx
+*.xls
+*.doc
+*.docx
+*.sqlite3
+*.db
+*.mwb
+*.mp4
+*.mov
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# Environments & Git Data (Many files or heavy)
+.git/
+.gemini/
+skills/
+__pycache__/
+.venv/
+venv/

@@ -1,0 +1,263 @@
+/* ============================================================
+   CreateWorkOrderModal — Tạo phiếu công tác từ yêu cầu sửa chữa
+   ============================================================ */
+
+/* --- Modal size & scroll fix --- */
+.pct-modal .modal-dialog {
+  max-height: calc(100vh - 3.5rem);
+}
+
+.pct-modal .modal-content {
+  max-height: calc(100vh - 3.5rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.pct-modal .modal-body {
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  flex: 1 1 auto;
+}
+
+/* --- Title --- */
+.pct-modal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pct-modal-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.pct-modal-title-main {
+  display: block;
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.pct-modal-title-sub {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-regular);
+  color: var(--text-tertiary);
+}
+
+/* --- Section title --- */
+.pct-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-primary-700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pct-section-title svg {
+  color: var(--color-primary-500);
+}
+
+/* --- Request info card (read-only) --- */
+.pct-request-card {
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-primary-500);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.pct-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3) var(--space-4);
+}
+
+.pct-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pct-info-full {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border-color);
+}
+
+.pct-info-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pct-info-value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+/* --- Priority tag (dùng trong card thiết bị) --- */
+.pct-priority-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.2em 0.6em;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-sm);
+  color: var(--priority-color, var(--text-secondary));
+  background: color-mix(in srgb, var(--priority-color, var(--text-secondary)) 12%, transparent);
+}
+
+.pct-priority-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--priority-color, var(--text-secondary));
+  flex-shrink: 0;
+}
+
+/* --- Add nhân viên --- */
+.pct-add-nv {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.pct-add-nv .form-select {
+  flex: 1;
+}
+
+.pct-add-nv .btn {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Danh sách nhân viên đã chọn --- */
+.pct-nv-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.pct-nv-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pct-nv-chip:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.pct-nv-chip-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-600);
+  color: var(--text-on-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  flex-shrink: 0;
+}
+
+.pct-nv-chip-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+}
+
+.pct-nv-chip-info strong {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.pct-nv-chip-info span {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.pct-nv-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.pct-nv-chip-remove:hover {
+  background: var(--color-status-danger-bg);
+  color: var(--color-status-danger);
+}
+
+/* --- Required asterisk --- */
+.required-asterisk {
+  color: var(--color-status-danger);
+}
+
+/* --- Auto-code note --- */
+.pct-auto-code-note {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border-color);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .pct-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .pct-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .pct-add-nv {
+    flex-direction: column;
+  }
+}

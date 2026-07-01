@@ -5,6 +5,11 @@
   overflow: hidden;
 }
 
+/* Tắt card hover-lift — dòng bảng đã có hover highlight riêng */
+.data-table-wrapper:hover {
+  box-shadow: var(--shadow-sm);
+}
+
 .data-table-toolbar {
   display: flex;
   align-items: center;
@@ -98,4 +103,19 @@
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-buttons .btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

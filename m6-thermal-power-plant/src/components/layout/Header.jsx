@@ -1,16 +1,33 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   BsList, BsBell, BsMoonStars, BsSun,
   BsPerson, BsKey, BsBoxArrowRight, BsChevronDown
 } from 'react-icons/bs';
+import { authService } from '../../services/authService';
+import { SYSTEM_ROLES } from '../../services/roleService';
 import './Header.css';
 
 export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
+  const navigate = useNavigate();
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('scms-theme') || 'light';
   });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // User hiện tại
+  const currentUser = authService.getCurrentUser();
+  const userName = currentUser?.fullName || 'Người dùng';
+  const roleLabel = SYSTEM_ROLES.find((r) => r.roleCode === currentUser?.role)?.roleName || 'Người dùng';
+  const userInitials = userName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
+
+  const handleLogout = async () => {
+    await authService.logout();
+    toast.success('Đã đăng xuất');
+    navigate('/login', { replace: true });
+  };
 
   // Apply theme
   useEffect(() => {
@@ -68,10 +85,10 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
         {/* User dropdown */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button className="header-user" onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <div className="header-user-avatar">AD</div>
+            <div className="header-user-avatar">{userInitials || 'U'}</div>
             <div className="header-user-info">
-              <div className="name">Admin User</div>
-              <div className="role">Quản trị viên</div>
+              <div className="name">{userName}</div>
+              <div className="role">{roleLabel}</div>
             </div>
             <BsChevronDown className="header-user-arrow" />
           </button>
@@ -85,7 +102,7 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
                 <BsKey /> Đổi mật khẩu
               </button>
               <div className="header-dropdown-divider" />
-              <button className="header-dropdown-item danger">
+              <button className="header-dropdown-item danger" onClick={handleLogout}>
                 <BsBoxArrowRight /> Đăng xuất
               </button>
             </div>
