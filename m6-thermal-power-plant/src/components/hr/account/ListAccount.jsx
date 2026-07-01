@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { accountService } from '../../../services/hr/accountService';
 import PageHeader from '../../common/PageHeader';
 import DataTable from '../../common/DataTable';
-import StatusBadge from '../../common/StatusBadge';
 import DetailAccount from './DetailAccount';
 import DeleteAccount from './DeleteAccount';
 import './style/ListAccount.css';
@@ -43,7 +42,7 @@ export default function ListAccount() {
 
       const rolesList = rolesRes.data?.data || rolesRes.data || [];
       setRoles(Array.isArray(rolesList) ? rolesList : []);
-    } catch (error) {
+    } catch {
       toast.error('Không kết nối được API.');
       setData([]);
     } finally {
