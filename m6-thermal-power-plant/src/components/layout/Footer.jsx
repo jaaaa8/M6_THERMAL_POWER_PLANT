@@ -13,5 +13,6 @@ export default function Footer() {
         <span className="footer-version">v1.0.0</span>
       </div>
     </footer>
-  );
+  ); // TEST-CI: cố ý gây lỗi cú pháp để kiểm thử pipeline CI
 }
+const brokenSyntax = {{{
