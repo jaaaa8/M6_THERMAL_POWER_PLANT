@@ -8,10 +8,10 @@ import {
 import PageHeader from '../components/common/PageHeader';
 import DataTable from '../components/common/DataTable';
 import StatusBadge from '../components/common/StatusBadge';
-import ModalCreateWorkOrder from '../components/repair/ModalCreateWorkOrder.jsx';
+import ModalCreateWorkOrder from '../components/requests/CreateWorkOrderModal.jsx';
 import { workOrderService } from '../services/workOrderService';
 import { employeeService } from '../services/hr/employeeService';
-import './RepairRequest.css';
+import './RepairRequestPage.css';
 
 /* ============================================================
    MAPS — Priority (RepairPriority enum) & Status (RepairRequestStatus enum)

@@ -1,5 +1,5 @@
 /* ============================================================
-   ModalCreateWorkOrder — Tạo phiếu công tác từ Request
+   CreateWorkOrderModal — Tạo phiếu công tác từ yêu cầu sửa chữa
    ============================================================ */
 
 /* --- Modal size & scroll fix --- */
@@ -115,7 +115,29 @@
   font-weight: var(--font-medium);
 }
 
-/* --- Add nhân viên row --- */
+/* --- Priority tag (dùng trong card thiết bị) --- */
+.pct-priority-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.2em 0.6em;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-sm);
+  color: var(--priority-color, var(--text-secondary));
+  background: color-mix(in srgb, var(--priority-color, var(--text-secondary)) 12%, transparent);
+}
+
+.pct-priority-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--priority-color, var(--text-secondary));
+  flex-shrink: 0;
+}
+
+/* --- Add nhân viên --- */
 .pct-add-nv {
   display: flex;
   gap: var(--space-2);
@@ -209,7 +231,7 @@
   color: var(--color-status-danger);
 }
 
-/* --- Required asterisk (dùng chung style với form) --- */
+/* --- Required asterisk --- */
 .required-asterisk {
   color: var(--color-status-danger);
 }

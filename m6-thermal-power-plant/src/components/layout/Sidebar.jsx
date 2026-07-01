@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge,
+  BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge, BsPersonPlus,
   BsGearWideConnected, BsListUl, BsCpu,
   BsWrenchAdjustable, BsExclamationTriangle, BsFileEarmarkText, BsClipboard2Check,
   BsBoxSeam, BsTags, BsArrowLeftRight,
@@ -9,16 +9,21 @@ import {
   BsDropletHalf, BsCalendar3, BsClockHistory,
   BsChevronRight, BsShieldLock, BsCheck
 } from 'react-icons/bs';
+import { authService } from '../../services/authService';
+import { canAccess, SYSTEM_ROLES } from '../../services/roleService';
 import './Sidebar.css';
 
 /* ============================================================
-   Menu Configuration — Cấu hình menu theo Role
+   Menu Configuration — Lọc theo ma trận phân quyền (func = mã chức năng).
+   - func: cần quyền XEM chức năng tương ứng (theo roleService).
+   - roles: kiểm tra cứng theo vai trò (cho mục không nằm trong ma trận).
+   - không có cả hai: ai cũng thấy.
    ============================================================ */
 const menuSections = [
   {
     heading: 'Tổng quan',
     items: [
-      { path: '/', icon: <BsGrid1X2 />, label: 'Dashboard', roles: [] },
+      { path: '/', icon: <BsGrid1X2 />, label: 'Bảng điều khiển' },
     ],
   },
   {
@@ -38,7 +43,7 @@ const menuSections = [
     heading: 'Thiết bị',
     items: [
       {
-        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['ADMIN', 'QUAN_DOC_VH', 'KY_THUAT_VIEN'],
+        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị',
         children: [
           { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
           { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
@@ -50,7 +55,7 @@ const menuSections = [
     heading: 'Sửa chữa',
     items: [
       {
-        icon: <BsWrenchAdjustable />, label: 'Sửa chữa', roles: ['ADMIN', 'TRUONG_CA', 'TRUONG_KIP', 'QUAN_DOC_SC', 'TO_TRUONG'],
+        icon: <BsWrenchAdjustable />, label: 'Sửa chữa',
         children: [
           { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
           { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
@@ -64,9 +69,9 @@ const menuSections = [
     heading: 'Kho & Vật tư',
     items: [
       {
-        icon: <BsBoxSeam />, label: 'Kho Vật tư', roles: ['ADMIN', 'THU_KHO_VT'],
+        icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
-          { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
+          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư' },
           { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
         ],
       },
@@ -83,13 +88,20 @@ const menuSections = [
     heading: 'Bảo dưỡng',
     items: [
       {
-        icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ', roles: ['ADMIN', 'TO_TRUONG'],
+        icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ',
         children: [
           { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
           { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
           { path: '/lubrication/history', icon: <BsClockHistory />, label: 'Lịch sử' },
         ],
       },
+    ],
+  },
+  {
+    heading: 'Quản trị',
+    items: [
+      { path: '/admin/roles', icon: <BsShieldLock />, label: 'Phân quyền', roles: ['ADMIN'] },
+      { path: '/admin/accounts/create', icon: <BsPersonPlus />, label: 'Tạo tài khoản', roles: ['ADMIN'] },
     ],
   },
 ];
@@ -101,20 +113,37 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState({});
 
-  // TODO: Lấy role từ auth context khi có backend
-  const userRole = 'ADMIN';
+  // Lấy user/role thật từ authService
+  const currentUser = authService.getCurrentUser();
+  const userRole = currentUser?.role;
+  const roleLabel = SYSTEM_ROLES.find((r) => r.roleCode === userRole)?.roleName || 'Người dùng';
+  const userName = currentUser?.fullName || 'Người dùng';
+  const userInitials = userName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Khi click vào child item (NavLink) → đóng tất cả dropdown khác, chỉ giữ dropdown chứa item đó
+  const closeOtherMenus = (currentMenuKey) => {
+    setOpenMenus((prev) => {
+      const next = {};
+      Object.keys(prev).forEach((k) => {
+        next[k] = k === currentMenuKey ? prev[k] : false;
+      });
+      return next;
+    });
   };
 
   const isSubmenuActive = (children) => {
     return children?.some((child) => location.pathname === child.path);
   };
 
-  const hasAccess = (roles) => {
-    if (!roles || roles.length === 0) return true;
-    return roles.includes(userRole);
+  // Quyền xem một mục (item hoặc child)
+  const canSee = (node) => {
+    if (node.roles && node.roles.length > 0) return node.roles.includes(userRole);
+    if (node.func) return canAccess(userRole, node.func);
+    return true;
   };
 
   const sidebarClasses = [
@@ -144,7 +173,17 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
         {/* Navigation */}
         <nav className="sidebar-nav">
           {menuSections.map((section, sIdx) => {
-            const visibleItems = section.items.filter((item) => hasAccess(item.roles));
+            // Lọc các item: item có children → còn ≥1 child xem được; item đơn → canSee
+            const visibleItems = section.items
+              .map((item) => {
+                if (item.children) {
+                  const visibleChildren = item.children.filter(canSee);
+                  return visibleChildren.length > 0 ? { ...item, children: visibleChildren } : null;
+                }
+                return canSee(item) ? item : null;
+              })
+              .filter(Boolean);
+
             if (visibleItems.length === 0) return null;
 
             return (
@@ -192,7 +231,10 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
                             className={({ isActive: navActive }) =>
                               `sidebar-link ${navActive ? 'active' : ''}`
                             }
-                            onClick={onCloseMobile}
+                            onClick={() => {
+                              closeOtherMenus(menuKey);
+                              onCloseMobile?.();
+                            }}
                           >
                             <span className="sidebar-link-icon">{child.icon}</span>
                             <span className="sidebar-link-text">{child.label}</span>
@@ -210,10 +252,10 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
         {/* Footer — User info */}
         <div className="sidebar-footer">
           <div className="sidebar-footer-user">
-            <div className="sidebar-footer-avatar">AD</div>
+            <div className="sidebar-footer-avatar">{userInitials || 'U'}</div>
             <div className="sidebar-footer-info">
-              <div className="name">Admin User</div>
-              <div className="role">Quản trị viên</div>
+              <div className="name">{userName}</div>
+              <div className="role">{roleLabel}</div>
             </div>
           </div>
         </div>
