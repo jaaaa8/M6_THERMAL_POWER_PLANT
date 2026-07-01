@@ -1,62 +1,16 @@
-import axios from "axios";
+import apiClient from './apiClient';
 
-const CONSUMABLE_URL = 'http://localhost:8080/api/v1/consumables';
-const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyODk2MDk5LCJleHAiOjE3ODI4OTY5OTl9.QYnjTU9t5_U4-68yJ6oEBDMlINRXy6lF2uxql4LxxRs"
-export const getAll = () => {
-    return axios.get(CONSUMABLE_URL,{
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-}
+const CONSUMABLE_URL = '/api/v1/consumables';
 
-export const getById = (id) => {
-    return axios.get(`${CONSUMABLE_URL}/${id}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-}
+export const getAll = () => apiClient.get(CONSUMABLE_URL);
 
-export const create = (data) => {
-    return axios.post(
-        CONSUMABLE_URL,
-        data,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }
-    );
-}
+export const getById = (id) => apiClient.get(`${CONSUMABLE_URL}/${id}`);
 
-export const update = (id, data) => {
-    return axios.put(
-        `${CONSUMABLE_URL}/${id}`,
-        data,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }
-    );
-}
+export const create = (data) => apiClient.post(CONSUMABLE_URL, data);
 
-export const remove = (id) => {
-    return axios.delete(`${CONSUMABLE_URL}/${id}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-}
+export const update = (id, data) => apiClient.put(`${CONSUMABLE_URL}/${id}`, data);
+
+export const remove = (id) => apiClient.delete(`${CONSUMABLE_URL}/${id}`);
 export { remove as delete };
 
-export const search = (params) => {
-    return axios.get(CONSUMABLE_URL, {
-        params,
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-}
-
+export const search = (params) => apiClient.get(CONSUMABLE_URL, { params });
