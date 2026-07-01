@@ -199,11 +199,12 @@ resource "aws_instance" "jenkins" {
     # === Cập nhật hệ thống ===
     dnf update -y
 
-    # === Cài curl, git ===
-    dnf install -y curl git
+    # === Cài git ===
+    # Không cài "curl" (Amazon Linux 2023 đã có sẵn "curl-minimal", 2 gói này conflict nhau) — chỉ cần git
+    dnf install -y git
 
-    # === Cài Java 17 (Jenkins cần) ===
-    dnf install -y java-17-amazon-corretto-devel
+    # === Cài Java 21 (Jenkins LTS hiện tại yêu cầu tối thiểu Java 21, không còn hỗ trợ Java 17) ===
+    dnf install -y java-21-amazon-corretto-devel
 
     # === Cài Jenkins LTS (dùng curl thay wget) ===
     curl -fsSL https://pkg.jenkins.io/redhat-stable/jenkins.repo -o /etc/yum.repos.d/jenkins.repo
