@@ -135,7 +135,7 @@ export default function ListEmployee() {
           <Col md={4} className="text-md-end text-start">
             <Button 
               variant="primary" 
-              onClick={() => navigate('/nhan-su/them-moi')}
+              onClick={() => navigate('/hr/employees/create')}
               className="d-inline-flex align-items-center gap-2"
             >
               <BsPersonPlusFill />
@@ -168,7 +168,7 @@ export default function ListEmployee() {
             <button className="btn btn-sm btn-outline-primary" onClick={() => setDetailModal({ show: true, data: row })} title="Xem">
               <BsEye />
             </button>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(`/nhan-su/them-moi?id=${row.id}`, { state: { initialData: row } })} title="Sửa">
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(`/hr/employees/create?id=${row.id}`, { state: { initialData: row } })} title="Sửa">
               <BsPencil />
             </button>
             <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteModal({ show: true, data: row })} title="Xoá">
