@@ -12,22 +12,27 @@ resource "aws_s3_bucket" "frontend" {
   tags   = { Name = "${var.project_name}-frontend" }
 }
 
+# Chặn TOÀN BỘ truy cập public — bucket giờ hoàn toàn riêng tư, chỉ CloudFront đọc được
 resource "aws_s3_bucket_public_access_block" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_website_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-
-  index_document { suffix = "index.html" }
-  error_document { key    = "index.html" }  # React Router SPA fallback
+# Origin Access Control — "chứng minh thư" để CloudFront tự xác thực với S3
+# (thay cho cách cũ: bucket bật "website hosting" + policy public "*" đọc được từ bất kỳ đâu)
+resource "aws_cloudfront_origin_access_control" "frontend" {
+  name                              = "${var.project_name}-frontend-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
+# Bucket policy: CHỈ cho phép chính CloudFront distribution này đọc object,
+# và chỉ khi request thực sự đến từ distribution đó (điều kiện SourceArn — chặn distribution khác "mượn" quyền)
 resource "aws_s3_bucket_policy" "frontend" {
   bucket     = aws_s3_bucket.frontend.id
   depends_on = [aws_s3_bucket_public_access_block.frontend]
@@ -35,11 +40,16 @@ resource "aws_s3_bucket_policy" "frontend" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid       = "PublicReadGetObject"
+      Sid       = "AllowCloudFrontServicePrincipalReadOnly"
       Effect    = "Allow"
-      Principal = "*"
+      Principal = { Service = "cloudfront.amazonaws.com" }
       Action    = "s3:GetObject"
       Resource  = "${aws_s3_bucket.frontend.arn}/*"
+      Condition = {
+        StringEquals = {
+          "AWS:SourceArn" = aws_cloudfront_distribution.frontend.arn
+        }
+      }
     }]
   })
 }
@@ -53,15 +63,11 @@ resource "aws_cloudfront_distribution" "frontend" {
   comment             = "${var.project_name} frontend"
 
   origin {
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
-    origin_id   = "S3-${local.bucket_name}"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
+    # Dùng REST API endpoint của S3 (bucket_regional_domain_name), KHÔNG dùng website endpoint nữa
+    # vì website endpoint không hỗ trợ OAC/HTTPS tới origin
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "S3-${local.bucket_name}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
   default_cache_behavior {
