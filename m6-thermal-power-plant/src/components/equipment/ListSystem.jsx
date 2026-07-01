@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button, Modal, Spinner } from 'react-bootstrap';
 import { BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX, BsGearWideConnected } from 'react-icons/bs';
-import { systemService } from '../../services/systemService';
+import * as systemService from "../../services/systemService";
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
 import StatusBadge from '../common/StatusBadge';
