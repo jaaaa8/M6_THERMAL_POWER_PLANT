@@ -45,6 +45,23 @@ const validationSchema = Yup.object({
 });
 
 /**
+ * Lấy nguyên văn message lỗi backend trả về.
+ *
+ * GlobalExceptionHandler trả về 2 dạng response khác nhau tuỳ exception:
+ *  - ApiResponse<Object> (JSON, có field `message`) — VD lỗi validation.
+ *  - ResponseEntity<String> (body là CHUỖI THUẦN) — VD ObjectNotFoundException,
+ *    IllegalStateException, DuplicateHumanResourceException, TimeOverlapException.
+ * Nếu chỉ đọc `err.response.data.message` thì ở dạng thứ 2 sẽ luôn ra `undefined`
+ * (chuỗi thuần không có field `.message`) — nên phải kiểm tra cả hai dạng.
+ */
+function extractErrorMessage(err) {
+  const data = err.response?.data;
+  if (typeof data === 'string' && data.trim()) return data;
+  if (data && typeof data === 'object' && data.message) return data.message;
+  return err.message || 'Lỗi không xác định';
+}
+
+/**
  * ModalCreateWorkOrder — Tạo phiếu công tác (PCT) từ một Request.
  * (User story #40 — Quản đốc sửa chữa / Tổ trưởng)
  *
@@ -127,23 +144,24 @@ export default function ModalCreateWorkOrder({
             setSelectedEmployeeId('');
             onClose?.();
           } catch (err) {
-            // Xử lý lỗi 409 Conflict - trùng lịch hoặc thành viên
-            if (err.response?.status === 409) {
-              const errorMsg = err.response?.data?.message || '';
-              
-              // Kiểm tra loại xung đột
-              if (errorMsg.toLowerCase().includes('time') || errorMsg.toLowerCase().includes('thời gian') || errorMsg.toLowerCase().includes('schedule')) {
-                toast.error('⚠️ Xung đột thời gian! Một hoặc nhiều nhân viên đã có lịch làm việc trùng với thời gian này. Vui lòng chọn thời gian khác hoặc thay đổi thành viên.');
-              } else if (errorMsg.toLowerCase().includes('member') || errorMsg.toLowerCase().includes('employee') || errorMsg.toLowerCase().includes('nhân viên') || errorMsg.toLowerCase().includes('thành viên')) {
-                toast.error('⚠️ Xung đột thành viên! Một hoặc nhiều nhân viên đã được phân công vào phiếu công tác khác trong khoảng thời gian này. Vui lòng chọn thành viên khác hoặc thay đổi thời gian.');
-              } else {
-                // Lỗi conflict khác
-                toast.error(`⚠️ Xung đột dữ liệu: ${errorMsg}`);
+            const errorMsg = extractErrorMessage(err);
+            const status = err.response?.status;
+
+            if (status === 409) {
+              // 409 Conflict: TimeOverlapException / DuplicateHumanResourceException /
+              // IllegalStateException — backend đã soạn sẵn message mô tả CHÍNH XÁC
+              // xung đột nào (kèm mã PCT liên quan) nên hiển thị nguyên văn, không
+              // đoán/diễn giải lại. Chỉ chọn icon theo loại để dễ nhận biết.
+              let icon = '⚠️';
+              if (errorMsg.includes('chong lan')) {
+                icon = '⏰'; // TimeOverlapException
+              } else if (errorMsg.includes('da duoc phan cong')) {
+                icon = '👥'; // DuplicateHumanResourceException
               }
+              toast.error(`${icon} ${errorMsg}`, { autoClose: 8000 });
             } else {
-              // Các lỗi khác (400, 500, network, etc.)
-              const msg = err.response?.data?.message || err.message || 'Lỗi không xác định';
-              toast.error(`Không thể tạo PCT: ${msg}`);
+              // Các lỗi khác (400, 404, 500, network, etc.) — vẫn hiển thị nguyên văn.
+              toast.error(`Không thể tạo PCT: ${errorMsg}`, { autoClose: 8000 });
             }
           } finally {
             setSubmitting(false);
