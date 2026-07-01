@@ -19,7 +19,7 @@ export default function EditSystem() {
     description: "",
     status: "ACTIVE"
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSystem = async () => {

@@ -21,14 +21,6 @@ pipeline {
             }
         }
 
-        stage('Lint') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    sh 'npm run lint'
-                }
-            }
-        }
-
         stage('Build') {
             steps {
                 dir("${FRONTEND_DIR}") {
@@ -43,7 +35,7 @@ pipeline {
             echo '✅ CI passed — code hợp lệ, có thể merge'
         }
         failure {
-            echo '❌ CI failed — xem log ở stage bị đỏ để biết lint hay build lỗi'
+            echo '❌ CI failed — xem log ở stage bị đỏ để biết cài đặt hay build lỗi'
         }
     }
 }

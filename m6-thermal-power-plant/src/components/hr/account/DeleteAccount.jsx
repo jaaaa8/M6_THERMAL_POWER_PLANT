@@ -15,7 +15,7 @@ export default function DeleteAccount({ data, action, onClose, onSuccess }) {
       await accountService.updateStatus({ username: data.username, status: isLocking ? 'LOCKED' : 'ACTIVE' });
       toast.success(`${isLocking ? 'Khoá' : 'Mở khoá'} tài khoản thành công`);
       if (onSuccess) onSuccess();
-    } catch (error) {
+    } catch {
       toast.error(`Có lỗi xảy ra khi ${isLocking ? 'khoá' : 'mở khoá'} tài khoản`);
     } finally {
       setLoading(false);
