@@ -13,3 +13,7 @@ crash.*.log
 
 # Jenkins SSH key — KHÔNG commit!
 jenkins-key.pem
+
+# Debug dump của AWS CLI (aws ecs describe-task-definition > task.json, ...) — không phải code hạ tầng
+task.json
+new_task.json
