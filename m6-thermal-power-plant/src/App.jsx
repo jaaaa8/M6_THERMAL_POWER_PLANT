@@ -73,13 +73,13 @@ function App() {
               </ProtectedRoute>
             } />
             {/* --- Nhân sự --- */}
-            <Route path="/nhan-su/phong-ban" element={<ListDepartment />} />
-            <Route path="/nhan-su/phong-ban/them-moi" element={<AddDepartment />} />
-            <Route path="/nhan-su/nhan-vien" element={<ListEmployee />} />
-            <Route path="/nhan-su/them-moi" element={<AddEmployee onCancel={() => window.history.back()} />} />
-            <Route path="/nhan-su/tai-khoan" element={<ListAccount />} />
-            <Route path="/nhan-su/tai-khoan/them-moi" element={<AddAccount />} />
-            <Route path="/nhan-su/thong-tin-chi-tiet/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
+            <Route path="/hr/departments" element={<ListDepartment />} />
+            <Route path="/hr/departments/create" element={<AddDepartment />} />
+            <Route path="/hr/employees" element={<ListEmployee />} />
+            <Route path="/hr/employees/create" element={<AddEmployee onCancel={() => window.history.back()} />} />
+            <Route path="/hr/accounts" element={<ListAccount />} />
+            <Route path="/hr/accounts/create" element={<AddAccount />} />
+            <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
 
             {/* --- Thiết bị --- */}
             <Route path="/equipment/system" element={<ListSystem />} />

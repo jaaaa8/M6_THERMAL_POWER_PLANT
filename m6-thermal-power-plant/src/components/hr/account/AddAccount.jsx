@@ -13,7 +13,12 @@ import './style/AddAccount.css';
 const AccountSchema = Yup.object().shape({
   username: Yup.string()
     .required('Vui lòng nhập tên đăng nhập')
-    .min(3, 'Tên đăng nhập ít nhất 3 ký tự'),
+    .min(8, 'Tên đăng nhập phải chứa từ 8 đến 50 ký tự')
+    .max(50, 'Tên đăng nhập phải chứa từ 8 đến 50 ký tự')
+    .matches(
+      /^(?=.*[a-z])(?=.*[0-9])[a-z0-9]+$/,
+      'Tên đăng nhập chỉ gồm chữ thường, chữ số và phải có ít nhất 1 chữ cái và 1 chữ số'
+    ),
   roleIds: Yup.string()
     .required('Vui lòng chọn vai trò'),
   accountType: Yup.string(),
@@ -90,7 +95,7 @@ export default function AddAccount({ onCancel }) {
     try {
       const payload = {
         username: values.username,
-        roleIds: parseInt(values.roleIds)
+        roleIds: [parseInt(values.roleIds)]
       };
 
       if (values.accountType === 'INTERNAL') {
@@ -110,7 +115,7 @@ export default function AddAccount({ onCancel }) {
       if (onCancel) {
         onCancel();
       } else {
-        navigate('/nhan-su/tai-khoan');
+        navigate('/hr/accounts');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
@@ -123,7 +128,7 @@ export default function AddAccount({ onCancel }) {
     if (onCancel) {
       onCancel();
     } else {
-      navigate('/nhan-su/tai-khoan');
+      navigate('/hr/accounts');
     }
   };
 
@@ -216,7 +221,7 @@ export default function AddAccount({ onCancel }) {
                       id="username"
                       name="username"
                       type="text"
-                      placeholder="VD: an.nguyen"
+                      placeholder="VD: annguyen26"
                       value={values.username}
                       onChange={handleChange}
                       onBlur={handleBlur}
