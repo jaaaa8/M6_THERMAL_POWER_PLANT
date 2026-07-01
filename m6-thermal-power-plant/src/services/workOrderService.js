@@ -1,7 +1,11 @@
 import apiClient from './apiClient';
 
-// All maintenance endpoints live under /api/maintenance
-const BASE = `${import.meta.env.VITE_API_URL}/api/v1/work-orders`;
+// BASE_URL rỗng ở dev (đi qua Vite proxy /api → backend) hoặc VITE_API_BASE_URL
+// ở production — khớp với apiClient.js/departmentService.js/accountService.js.
+// KHÔNG dùng VITE_API_URL (biến khác, chỉ có trong .env local, KHÔNG có trong
+// .env.production) — dùng sai sẽ ra "undefined/..." khi build production.
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE = `${BASE_URL}/api/v1/work-orders`;
 
 export const workOrderService = {
   /**
@@ -11,7 +15,7 @@ export const workOrderService = {
    * @param {number} size - Số dòng / trang
    */
   getPendingRequests: (page = 0, size = 20) =>
-    apiClient.get(`http://localhost:8080/api/v1/repair-requests/pending`, { params: { page, size, sort: 'createdAt,desc' } }),
+    apiClient.get(`${BASE_URL}/api/v1/repair-requests/pending`, { params: { page, size, sort: 'createdAt,desc' } }),
 
   /**
    * Lấy danh sách phiếu công tác (có phân trang + tìm kiếm).

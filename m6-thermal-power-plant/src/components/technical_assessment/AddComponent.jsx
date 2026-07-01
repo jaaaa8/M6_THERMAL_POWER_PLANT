@@ -213,12 +213,16 @@ export default function TechnicalAssessmentForm() {
                 status: formData.status
             };
 
-            const response = await createTechnicalAssessment(payload, imageFiles);
+            const response =
+                await createTechnicalAssessment(
+                    payload,
+                    imageFiles
+                );
 
             console.log("RESPONSE =", response.data);
 
             const technicalCode =
-                response.technicalCode;
+                response.data.technicalCode;
             console.log(technicalCode);
 
             if (!technicalCode) {
