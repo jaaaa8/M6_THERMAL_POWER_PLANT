@@ -1,4 +1,5 @@
-import axios from 'axios';
+import apiClient from './apiClient';
+const axios = apiClient;
 
 const TOOL_URL = '/api/v1/tools';
 const CATEGORY_URL = '/api/v1/tool-categories';
