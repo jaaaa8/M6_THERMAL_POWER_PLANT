@@ -26,7 +26,7 @@ export default function ToolQuantityModal({ show, onClose, onSaved, tool }) {
   if (!tool) return null;
 
   return (
-    <Modal show={show} onHide={onClose} centered size="sm">
+    <Modal show={show} onHide={onClose} centered size="md">
       <Formik
         initialValues={{ quantity: 1, note: '' }}
         validationSchema={validationSchema}
@@ -75,7 +75,7 @@ export default function ToolQuantityModal({ show, onClose, onSaved, tool }) {
               </div>
               <div className="mb-1">
                 <label htmlFor="qty-note" className="form-label">Ghi chú</label>
-                <Field as="textarea" id="qty-note" name="note" rows={2} className="form-control" placeholder="VD: Nhập theo hoá đơn số..." />
+                <Field as="textarea" id="qty-note" name="note" rows={3} className="form-control" placeholder="VD: Nhập theo hoá đơn số..." />
               </div>
             </Modal.Body>
             <Modal.Footer>

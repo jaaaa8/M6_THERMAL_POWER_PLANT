@@ -19,6 +19,8 @@ export const toolCategoryService = {
 };
 
 export const toolService = {
+  getTransactionLogs: (id) => axios.get(`${TOOL_URL}/${id}/logs`),
+
   /**
    * Tìm kiếm CCDC theo tên/mã + chủng loại.
    * @param {{ keyword?: string, categoryId?: number, page?: number, size?: number }} params

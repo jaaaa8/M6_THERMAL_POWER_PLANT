@@ -100,6 +100,62 @@
   color: var(--color-status-danger);
 }
 
+/* --- Lịch sử thao tác modal --- */
+.tool-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tool-log-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.tool-log-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.tool-log-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-log-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tool-log-qty {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.tool-log-date {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+.tool-log-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-surface-hover);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  white-space: pre-wrap;
+}
+
 /* --- Responsive --- */
 @media (max-width: 992px) {
   .ccdc-stats {

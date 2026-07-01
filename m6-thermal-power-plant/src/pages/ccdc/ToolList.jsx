@@ -5,6 +5,7 @@ import {
     BsTools, BsPlusLg, BsArrowClockwise, BsPencil, BsBoxArrowInDown,
     BsExclamationOctagon, BsTrash, BsBoxSeam, BsArrowLeftRight,
     BsExclamationTriangle, BsCheckCircle, BsTags, BsImage, BsSearch,
+    BsClockHistory,
 } from 'react-icons/bs';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable';
@@ -12,6 +13,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import ToolQuantityModal from '../../components/ccdc/ToolQuantityModal';
 import ToolDamageModal from '../../components/ccdc/ToolDamageModal';
+import ToolTransactionLogsModal from '../../components/ccdc/ToolTransactionLogsModal';
 import { toolService, toolCategoryService } from '../../services/toolService';
 
 import { toast } from 'react-toastify';
@@ -33,6 +35,7 @@ export default function ToolList() {
     const [damageTool, setDamageTool] = useState(null);
     const [deleteTool, setDeleteTool] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [logsTool, setLogsTool] = useState(null);
 
 
     useEffect(() => {
@@ -224,6 +227,9 @@ export default function ToolList() {
                         <button className="btn btn-sm btn-outline-warning" onClick={() => setDamageTool(row)} title="Huỷ hư hỏng">
                             <BsExclamationOctagon />
                         </button>
+                        <button className="btn btn-sm btn-outline-info" onClick={() => setLogsTool(row)} title="Lịch sử thao tác">
+                            <BsClockHistory />
+                        </button>
                         <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteTool(row)} title="Xoá CCDC">
                             <BsTrash />
                         </button>
@@ -243,6 +249,11 @@ export default function ToolList() {
                 tool={damageTool}
                 onClose={() => setDamageTool(null)}
                 onSaved={handleSaved}
+            />
+            <ToolTransactionLogsModal
+                show={!!logsTool}
+                tool={logsTool}
+                onClose={() => setLogsTool(null)}
             />
             <ConfirmModal
                 show={!!deleteTool}
