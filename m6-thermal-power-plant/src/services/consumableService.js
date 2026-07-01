@@ -59,4 +59,3 @@ export const search = (params) => {
         }
     });
 }
-
