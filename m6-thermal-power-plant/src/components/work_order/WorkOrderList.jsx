@@ -108,8 +108,15 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     { key: 'requestCode', label: 'Mã YC', mono: true, width: 130 },
     { key: 'leaderName', label: 'Người LĐ', width: 150 },
     {
-      key: 'startTime', label: 'Bắt đầu', width: 150,
-      render: (val) => val ? new Date(val).toLocaleString('vi-VN') : '—',
+      key: 'startTime', label: 'Thời gian', width: 170,
+      render: (val, row) => (
+        <div>
+          <div>{val ? new Date(val).toLocaleString('vi-VN') : '—'}</div>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+            Dự kiến kết thúc: {row.expectedEndTime ? new Date(row.expectedEndTime).toLocaleString('vi-VN') : '—'}
+          </span>
+        </div>
+      ),
     },
     {
       key: 'status', label: 'Trạng thái', width: 140,

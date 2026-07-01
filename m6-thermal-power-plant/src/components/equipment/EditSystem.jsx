@@ -5,7 +5,7 @@ import { BsArrowLeft, BsGearWideConnected } from 'react-icons/bs';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { systemService } from '../../services/systemService';
+import * as systemService from "../../services/systemService";
 import PageHeader from '../common/PageHeader';
 import './style/EditSystem.css';
 
@@ -208,7 +208,6 @@ export default function EditSystem() {
                     <Form.Control
                       id="description"
                       name="description"
-
                       as="textarea"
                       rows={4}
                       placeholder="Nhập mô tả hoạt động..."
