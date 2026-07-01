@@ -5,12 +5,12 @@ import {
   BsListUl, BsHourglassSplit, BsFileEarmarkCheck, BsLightningChargeFill,
   BsCpu,
 } from 'react-icons/bs';
-import PageHeader from '../common/PageHeader';
-import DataTable from '../common/DataTable';
-import StatusBadge from '../common/StatusBadge';
-import ModalCreateWorkOrder from './ModalCreateWorkOrder.jsx';
-import { workOrderService } from '../../services/workOrderService';
-import { employeeService } from '../../services/hr/employeeService';
+import PageHeader from '../common/PageHeader.jsx';
+import DataTable from '../common/DataTable.jsx';
+import StatusBadge from '../common/StatusBadge.jsx';
+import ModalCreateWorkOrder from './CreateWorkOrderModal.jsx'
+import { workOrderService } from '../../services/workOrderService.js';
+import { employeeService } from '../../services/hr/employeeService.js';
 import './RepairRequest.css';
 
 
