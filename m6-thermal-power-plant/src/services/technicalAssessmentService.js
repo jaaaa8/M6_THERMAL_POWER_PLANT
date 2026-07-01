@@ -9,7 +9,7 @@ export const getAllTechnicalAssessments = async () => {
 
 export const createTechnicalAssessment = async (
     data,
-    images = []
+    imageFiles
 ) => {
 
     const formData = new FormData();
@@ -18,25 +18,25 @@ export const createTechnicalAssessment = async (
         "data",
         new Blob(
             [JSON.stringify(data)],
-            {
-                type: "application/json",
-            }
+            { type: "application/json" }
         )
     );
 
-    images.forEach((image) => {
+    imageFiles.forEach(file => {
         formData.append(
             "imageFiles",
-            image
+            file
         );
     });
 
-    const response = await apiClient.post(
-        `${API_URL}/add`,
+    for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+    }
+
+    return apiClient.post(
+        "/api/v1/technical-assessment/add",
         formData
     );
-
-    return response.data;
 };
 
 export const uploadPdf = async (
