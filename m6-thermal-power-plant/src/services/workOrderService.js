@@ -1,46 +1,53 @@
-import axios from 'axios';
+import axios from "axios";
 
-// All maintenance endpoints live under /api/maintenance
 const BASE = `${import.meta.env.VITE_API_URL}/api/maintenance`;
 
+const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzM5Nzg4LCJleHAiOjE3ODI3NDA2ODh9.vBvm1UV1oV4O5ACB-nYTONWFPwVx2c14wbIOTm1hlq8"
+
+const authConfig = {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+};
+
 export const workOrderService = {
-  /**
-   * Lấy danh sách yêu cầu sửa chữa đang chờ xử lý (status = PENDING).
-   * → GET /api/maintenance/repair-requests/pending
-   * @param {number} page - Trang (0-based)
-   * @param {number} size - Số dòng / trang
-   */
   getPendingRequests: (page = 0, size = 20) =>
-    axios.get(`${BASE}/repair-requests/pending`, { params: { page, size, sort: 'createdAt,desc' } }),
+      axios.get(
+          `${BASE}/repair-requests/pending`,
+          {
+            ...authConfig,
+            params: {
+              page,
+              size,
+              sort: "createdAt,desc",
+            },
+          }
+      ),
 
-  /**
-   * Lấy danh sách phiếu công tác (có phân trang + tìm kiếm).
-   * → GET /api/maintenance/work-orders
-   * @param {string} search - Từ khoá tìm trong mã PCT / mã yêu cầu / nội dung
-   * @param {number} page - Trang (0-based)
-   * @param {number} size - Số dòng / trang
-   */
   getAll: (search, page = 0, size = 20) =>
-    axios.get(`${BASE}/work-orders`, { params: { search, page, size } }),
+      axios.get(
+          `${BASE}/work-orders`,
+          {
+            ...authConfig,
+            params: {
+              search,
+              page,
+              size,
+            },
+          }
+      ),
 
-  /**
-   * Tạo phiếu công tác từ một yêu cầu sửa chữa.
-   * → POST /api/maintenance/work-orders
-   * Body khớp với CreateWorkOrderRequest DTO:
-   * @param {object} data
-   * @param {number}  data.repairRequestId
-   * @param {number}  data.leaderId               - bắt buộc
-   * @param {number}  data.directSupervisorId      - bắt buộc
-   * @param {number}  data.safetySupervisorId      - bắt buộc
-   * @param {string}  data.startTime               - bắt buộc (ISO datetime)
-   * @param {string}  [data.expectedEndTime]       - tuỳ chọn (ISO datetime)
-   * @param {Array<{employeeId: number, roleInTask?: string}>} [data.members]
-   */
-  create: (data) => axios.post(`${BASE}/work-orders`, data),
+  create: (data) =>
+      axios.post(
+          `${BASE}/work-orders`,
+          data,
+          authConfig
+      ),
 
-  /**
-   * Huỷ một phiếu công tác (đặt status = CANCELLED).
-   * → PATCH /api/maintenance/work-orders/{id}/cancel
-   */
-  cancel: (id) => axios.patch(`${BASE}/work-orders/${id}/cancel`),
+  cancel: (id) =>
+      axios.patch(
+          `${BASE}/work-orders/${id}/cancel`,
+          {},
+          authConfig
+      ),
 };

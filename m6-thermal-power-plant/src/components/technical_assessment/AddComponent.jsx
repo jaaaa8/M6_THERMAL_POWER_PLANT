@@ -13,6 +13,8 @@ import {
   Form,
 } from "react-bootstrap";
 
+import { toast } from "react-toastify";
+
 import {
   BsClipboard2Check,
   BsFileEarmarkText,
@@ -21,13 +23,18 @@ import {
   BsXCircle,
   BsArrowClockwise,
 } from "react-icons/bs";
-import {Link} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 
 
 export default function TechnicalAssessmentForm() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        technicalCode: "DGKT-2026-001",
+        assessor: {
+            username: "",
+            email: "",
+            name: ""
+        },
         workOrderId: "1",
         assessorId: "2",
 
@@ -43,26 +50,41 @@ export default function TechnicalAssessmentForm() {
         status: "PENDING",
     });
 
-    const [imageFiles, setImageFiles] = useState([]);
+    const [imageFiles, setImageFiles] = useState([]);      // File[]
+    const [imagePreviews, setImagePreviews] = useState([]); // base64
 
     const handleImageUpload = async (e) => {
-        const files = Array.from(e.target.files);
+        try {
+            const files = Array.from(e.target.files);
 
-        const promises = files.map((file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
+            setImageFiles(files);
 
-                reader.onload = () => {
-                    resolve(reader.result);
-                };
+            const previews = await Promise.all(
+                files.map((file) => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
 
-                reader.readAsDataURL(file);
-            });
-        });
+                        reader.onload = () => {
+                            resolve(reader.result);
+                        };
 
-        const images = await Promise.all(promises);
+                        reader.readAsDataURL(file);
+                    });
+                })
+            );
 
-        setImageFiles(images);
+            setImagePreviews(previews);
+
+            toast.success(
+                `Đã tải lên ${files.length} ảnh`
+            );
+
+        } catch (error) {
+
+            toast.error(
+                "Không thể tải ảnh lên"
+            );
+        }
     };
 
   const workOrders = [
@@ -122,20 +144,18 @@ export default function TechnicalAssessmentForm() {
         },
     ];
 
-  const assessors = [
-    {
-      id: 1,
-      fullName: "Nguyễn Văn A",
-    },
-    {
-      id: 2,
-      fullName: "Trần Văn B",
-    },
-    {
-      id: 3,
-      fullName: "Lê Văn C",
-    },
-  ];
+    const assessors = [
+        {
+            username: "admin",
+            email: "vana@gmail.com",
+            name: "Nguyễn Văn A"
+        },
+        {
+            username: "engineer",
+            email: "vanb@gmail.com",
+            name: "Trần Văn B"
+        }
+    ];
 
   const handleChange = (e) => {
     setFormData({
@@ -151,10 +171,14 @@ export default function TechnicalAssessmentForm() {
         e => e.id.toString() === formData.equipmentId
     );
 
-    const generatePdfFile = async () => {
+    const generatePdfFile = async (technicalCode) => {
+
         const blob = await pdf(
             <TechnicalAssessmentPDF
-                data={formData}
+                data={{
+                    ...formData,
+                    technicalCode
+                }}
                 workOrders={workOrders}
                 assessors={assessors}
                 systems={systems}
@@ -167,7 +191,7 @@ export default function TechnicalAssessmentForm() {
 
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${formData.technicalCode}.pdf`;
+        link.download = `${technicalCode}.pdf`;
 
         document.body.appendChild(link);
         link.click();
@@ -180,21 +204,49 @@ export default function TechnicalAssessmentForm() {
 
     const handleSaveAndExport = async () => {
         try {
+
             const payload = {
-                technicalCode: formData.technicalCode,
-                assessor: { id: Number(formData.assessorId) },
+                technicalCode: formData.technicalCode, // tạm giữ
+                assessor: formData.assessor,
                 result: formData.result,
                 description: formData.description,
                 status: formData.status
             };
-            await createTechnicalAssessment(payload);
 
-            await generatePdfFile();
+            const response = await createTechnicalAssessment(payload, imageFiles);
 
-            alert("Lưu phiếu và xuất PDF thành công");
+            console.log("RESPONSE =", response.data);
+
+            const technicalCode =
+                response.technicalCode;
+            console.log(technicalCode);
+
+            if (!technicalCode) {
+                throw new Error("Backend không trả về technicalCode");
+            }
+
+            // ✅ update lại state để dùng cho PDF
+            setFormData(prev => ({
+                ...prev,
+                technicalCode: technicalCode,
+            }));
+
+            // đảm bảo state update xong trước khi export
+            await generatePdfFile(technicalCode);
+
+            toast.success("Lưu phiếu và xuất PDF thành công");
+
+            setTimeout(() => {
+                navigate("/repair/technical-assessment");
+            }, 1000);
+
         } catch (error) {
             console.error(error);
-            alert("Lỗi: " + error.message);
+            toast.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Có lỗi xảy ra khi lưu phiếu"
+            );
         }
     };
     return (
@@ -229,31 +281,33 @@ export default function TechnicalAssessmentForm() {
 
                     <Col md={4}>
                         <Form.Group>
-                            <Form.Label>Mã phiếu</Form.Label>
-
-                            <Form.Control
-                                name="technicalCode"
-                                value={formData.technicalCode}
-                                onChange={handleChange}
-                            />
-                        </Form.Group>
-                    </Col>
-
-                    <Col md={4}>
-                        <Form.Group>
                             <Form.Label>Người đánh giá</Form.Label>
 
                             <Form.Select
-                                name="assessorId"
-                                value={formData.assessorId}
-                                onChange={handleChange}
+                                value={formData.assessor.username}
+                                onChange={(e) => {
+
+                                    const selected = assessors.find(
+                                        item =>
+                                            item.username === e.target.value
+                                    );
+
+                                    setFormData({
+                                        ...formData,
+                                        assessor: selected
+                                    });
+                                }}
                             >
+                                <option value="">
+                                    Chọn người đánh giá
+                                </option>
+
                                 {assessors.map((item) => (
                                     <option
-                                        key={item.id}
-                                        value={item.id}
+                                        key={item.username}
+                                        value={item.username}
                                     >
-                                        {item.fullName}
+                                        {item.name}
                                     </option>
                                 ))}
                             </Form.Select>
@@ -401,7 +455,7 @@ export default function TechnicalAssessmentForm() {
 
                 {/* PREVIEW ẢNH */}
                 <div className="image-preview-grid">
-                    {imageFiles.map((img, index) => (
+                    {imagePreviews.map((img, index) => (
                         <div
                             key={index}
                             className="image-preview-item"
