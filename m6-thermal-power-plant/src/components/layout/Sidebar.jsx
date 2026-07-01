@@ -71,7 +71,7 @@ const menuSections = [
       {
         icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
-          { path: '/vat-tu/danh-muc', icon: <BsTags />, label: 'Danh mục Vật tư' },
+          { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
           { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
         ],
       },
@@ -79,6 +79,7 @@ const menuSections = [
         icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'THU_KHO_CCDC'],
         children: [
           { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC' },
+          { path: '/ccdc/chung-loai', icon: <BsTags />, label: 'Chủng loại CCDC' },
           { path: '/ccdc/muon-tra', icon: <BsArrowLeftRight />, label: 'Mượn / Trả' },
         ],
       },

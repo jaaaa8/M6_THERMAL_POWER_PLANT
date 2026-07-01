@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const SPARE_PART_URL = '/api/v1/spare-parts';
-const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzM5Nzg4LCJleHAiOjE3ODI3NDA2ODh9.vBvm1UV1oV4O5ACB-nYTONWFPwVx2c14wbIOTm1hlq8"
+const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyODk2MDk5LCJleHAiOjE3ODI4OTY5OTl9.QYnjTU9t5_U4-68yJ6oEBDMlINRXy6lF2uxql4LxxRs"
 
 export const getAll = () => {
     return axios.get(SPARE_PART_URL, {
