@@ -41,9 +41,9 @@ variable "db_password" {
 
 # ── Application ──────────────────────────────────────────────────
 variable "jwt_secret" {
-  description = "JWT Base64 secret"
+  description = "JWT Base64 secret — BẮT BUỘC điền trong terraform.tfvars, không có default vì secret cũ đã bị lộ lên GitHub"
   sensitive   = true
-  default     = "eWVsbG93d29vZGVub3JnYW5pemVkZGlzdGFuY2Vkcml2aW5nbGVhZGJyYXNzYnJlYXQ="
+  type        = string
 }
 
 variable "mail_username" {

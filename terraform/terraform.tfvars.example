@@ -9,8 +9,9 @@ my_ip = "1.2.3.4"
 # MySQL password (đặt password mạnh của bạn)
 db_password = "YourStrongPassword123!"
 
-# JWT Secret (có thể dùng cái mặc định hoặc generate mới)
-jwt_secret = "eWVsbG93d29vZGVub3JnYW5pemVkZGlzdGFuY2Vkcml2aW5nbGVhZGJyYXNzYnJlYXQ="
+# JWT Secret — BẮT BUỘC tự generate (KHÔNG dùng lại secret cũ trong lịch sử git, đã bị lộ)
+# Cách tạo: openssl rand -base64 48
+jwt_secret = "REPLACE_ME_WITH_YOUR_OWN_GENERATED_SECRET"
 
 # Gmail để gửi email thông báo
 mail_username = "your-email@gmail.com"
