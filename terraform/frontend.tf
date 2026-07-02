@@ -70,6 +70,21 @@ resource "aws_cloudfront_distribution" "frontend" {
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
+  # Origin thứ 2 — trỏ tới ALB đứng trước ECS backend. Nhờ route "/api/*" bên dưới,
+  # frontend gọi API bằng đường dẫn tương đối cùng domain, trình duyệt luôn thấy HTTPS
+  # (viewer -> CloudFront), còn CloudFront -> ALB là HTTP nội bộ (không cần ACM riêng)
+  origin {
+    domain_name = aws_lb.api.dns_name
+    origin_id    = "ALB-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
@@ -85,6 +100,27 @@ resource "aws_cloudfront_distribution" "frontend" {
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
+  }
+
+  # Mọi request /api/* đi thẳng tới backend qua ALB — không cache (dữ liệu động),
+  # forward đủ method/header/cookie/query string vì đây là API thật, không phải static file
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    allowed_methods         = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods          = ["GET", "HEAD"]
+    target_origin_id        = "ALB-api"
+    viewer_protocol_policy  = "redirect-to-https"
+    compress                = true
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Accept"]
+      cookies { forward = "all" }
+    }
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
   }
 
   # React Router — 403/404 fallback về index.html

@@ -68,18 +68,49 @@ resource "aws_db_subnet_group" "main" {
   tags       = { Name = "${var.project_name}-db-subnet" }
 }
 
+# Danh sách IP CloudFront dùng để gọi ra ngoài (AWS quản lý, tự cập nhật) —
+# giới hạn ALB chỉ nhận traffic thực sự đến từ CloudFront, không cho ai gọi thẳng
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+# ── Security Group: ALB (đứng trước ECS, nhận traffic từ CloudFront) ─────
+resource "aws_security_group" "alb" {
+  name        = "${var.project_name}-alb-sg"
+  description = "Security group for ALB - only accepts traffic from CloudFront"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
+    description     = "HTTP from CloudFront (viewer HTTPS handled at browser side)"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${var.project_name}-alb-sg" }
+}
+
 # ── Security Group: ECS (backend container) ──────────────────────
 resource "aws_security_group" "ecs" {
   name        = "${var.project_name}-ecs-sg"
   description = "Security group for ECS Fargate tasks"
   vpc_id      = aws_vpc.main.id
 
+  # Chỉ nhận traffic từ ALB — không còn mở public 0.0.0.0/0
   ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Spring Boot API"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+    description     = "Spring Boot API (from ALB only)"
   }
 
   egress {
