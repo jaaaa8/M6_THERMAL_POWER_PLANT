@@ -10,7 +10,7 @@ export default function Footer() {
         <span>© {year} <strong>SCMS</strong> — Hệ thống Quản lý Sửa chữa & Bảo dưỡng Nhà máy Nhiệt điện</span>
       </div>
       <div className="footer-right">
-        <span className="footer-version">v1.0.0</span>
+        <span className="footer-version">v1.0.1</span>
       </div>
     </footer>
   );
