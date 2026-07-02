@@ -3,21 +3,14 @@
 #  Free Tier eligible (12 tháng đầu)
 # ================================================================
 
-# Lấy AMI Amazon Linux 2023 mới nhất
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+# AMI Amazon Linux 2023 — GHIM CỨNG (không dùng most_recent) để tránh Terraform
+# tự động muốn destroy + tạo lại EC2 mỗi khi AWS phát hành AMI mới.
+# Muốn cập nhật AMI mới (vá bảo mật...): tự đổi giá trị default bên dưới rồi apply.
+variable "jenkins_ami_id" {
+  description = "AMI ID cố định cho Jenkins EC2 (Amazon Linux 2023, ap-northeast-1)"
+  default     = "ami-08a10d548a59b4f15"
 }
+
 
 # ── Security Group cho Jenkins ───────────────────────────────────
 resource "aws_security_group" "jenkins" {
@@ -179,7 +172,7 @@ resource "local_file" "jenkins_key" {
 
 # ── EC2 Instance ─────────────────────────────────────────────────
 resource "aws_instance" "jenkins" {
-  ami                    = data.aws_ami.amazon_linux.id
+  ami                    = var.jenkins_ami_id
   instance_type          = "t2.small"
   key_name               = aws_key_pair.jenkins.key_name
   vpc_security_group_ids = [aws_security_group.jenkins.id]
@@ -199,12 +192,25 @@ resource "aws_instance" "jenkins" {
     # === Cập nhật hệ thống ===
     dnf update -y
 
+    # === Tạo swap 2GB — t2.small chỉ có 2GB RAM, không đủ chạy Jenkins + Docker build
+    #     cùng lúc (Gradle build + docker build dễ gây OOM làm treo cả máy) ===
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+
     # === Cài git ===
     # Không cài "curl" (Amazon Linux 2023 đã có sẵn "curl-minimal", 2 gói này conflict nhau) — chỉ cần git
     dnf install -y git
 
     # === Cài Java 21 (Jenkins LTS hiện tại yêu cầu tối thiểu Java 21, không còn hỗ trợ Java 17) ===
     dnf install -y java-21-amazon-corretto-devel
+
+    # === Cài thêm Java 17 (song song với Java 21) — backend Spring Boot khai báo
+    #     cứng languageVersion 17 trong build.gradle, Gradle cần JDK 17 riêng để compile,
+    #     dù bản thân Gradle/Jenkins vẫn chạy bằng Java 21 ===
+    dnf install -y java-17-amazon-corretto-devel
 
     # === Cài Jenkins LTS (dùng curl thay wget) ===
     curl -fsSL https://pkg.jenkins.io/redhat-stable/jenkins.repo -o /etc/yum.repos.d/jenkins.repo
