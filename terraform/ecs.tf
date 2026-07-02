@@ -168,12 +168,19 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = true   # Cần để container pull image từ ECR
   }
 
+  # Gắn vào ALB — frontend gọi qua ALB DNS name cố định, không cần biết IP task thật
+  load_balancer {
+    target_group_arn = aws_lb_target_group.api.arn
+    container_name    = "api"
+    container_port    = 8080
+  }
+
   # Ignore changes to task definition khi CI/CD deploy image mới
   lifecycle {
     ignore_changes = [task_definition]
   }
 
-  depends_on = [aws_iam_role_policy_attachment.ecs_task_execution]
+  depends_on = [aws_iam_role_policy_attachment.ecs_task_execution, aws_lb_listener.api_http]
 
   tags = { Name = "${var.project_name}-api-service" }
 }
