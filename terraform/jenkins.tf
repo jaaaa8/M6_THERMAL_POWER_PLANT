@@ -228,6 +228,17 @@ resource "aws_instance" "jenkins" {
     curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
     dnf install -y nodejs
 
+    # === Chuyển java.io.tmpdir ra khỏi /tmp (tmpfs chỉ ~1GB, dưới ngưỡng cảnh báo
+    #     "Free Temp Space" của Jenkins khiến Built-In Node bị đánh dấu offline) ===
+    mkdir -p /var/lib/jenkins/tmp
+    chown jenkins:jenkins /var/lib/jenkins/tmp
+    mkdir -p /etc/systemd/system/jenkins.service.d
+    cat > /etc/systemd/system/jenkins.service.d/override.conf <<'TMPDIR_EOF'
+[Service]
+Environment="JAVA_OPTS=-Djava.awt.headless=true -Djava.io.tmpdir=/var/lib/jenkins/tmp"
+TMPDIR_EOF
+    systemctl daemon-reload
+
     # === Start Jenkins ===
     systemctl start jenkins
     systemctl enable jenkins
