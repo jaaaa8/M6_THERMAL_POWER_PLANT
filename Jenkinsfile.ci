@@ -1,0 +1,41 @@
+// ================================================================
+//  Jenkins CI — Frontend
+//  Chạy khi có Pull Request (qua Multibranch Pipeline "Discover PRs")
+//  CHỈ kiểm tra code — không có bất kỳ bước deploy nào trong file này,
+//  nên dù job có bị cấu hình sai cũng không thể vô tình deploy từ 1 PR
+// ================================================================
+
+pipeline {
+    agent any
+
+    environment {
+        FRONTEND_DIR = 'm6-thermal-power-plant'
+    }
+
+    stages {
+        stage('Install') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'npm run build'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ CI passed — code hợp lệ, có thể merge'
+        }
+        failure {
+            echo '❌ CI failed — xem log ở stage bị đỏ để biết cài đặt hay build lỗi'
+        }
+    }
+}
