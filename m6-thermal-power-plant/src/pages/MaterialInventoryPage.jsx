@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Tabs, Tab, Button, Form as BootstrapForm, Row, Col } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { BsBoxSeam, BsPlusLg, BsSearch, BsArrowClockwise, BsImage } from 'react-icons/bs';
+import { BsBoxSeam, BsPlusLg, BsSearch, BsArrowClockwise, BsImage, BsTags, BsCashCoin, BsExclamationTriangle } from 'react-icons/bs';
 
 import PageHeader from '../components/common/PageHeader';
 import DataTable from '../components/common/DataTable';
@@ -189,6 +189,33 @@ export default function MaterialInventoryPage({ type = 'consumables' }) {
         }
     ], [materialType]);
 
+    // Phân tích thống kê tổng quan
+    const stats = useMemo(() => {
+        const totalCategories = stockList.length;
+        let totalStockQuantity = 0;
+        let totalValue = 0;
+        let lowStockCount = 0;
+
+        stockList.forEach(item => {
+            const stock = item.currentStock || 0;
+            const price = item.price || 0;
+            
+            totalStockQuantity += stock;
+            totalValue += (stock * price);
+            
+            if (stock <= 5) {
+                lowStockCount++;
+            }
+        });
+
+        return {
+            totalCategories,
+            totalStockQuantity,
+            totalValue,
+            lowStockCount
+        };
+    }, [stockList]);
+
     return (
         <div className="animate-fade-in">
             <PageHeader
@@ -203,6 +230,62 @@ export default function MaterialInventoryPage({ type = 'consumables' }) {
                 className="mb-4 scms-tabs"
             >
                 <Tab eventKey="stock" title="Tồn kho hiện tại">
+                    {/* THẺ CHỈ SỐ TỔNG QUAN */}
+                    <Row className="g-3 mb-4">
+                        <Col xs={12} md={4}>
+                            <div className="stat-card surface-card p-3 d-flex align-items-center">
+                                <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
+                                     style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', background: 'var(--color-primary-50)', color: 'var(--color-primary-500)', fontSize: '1.4rem' }}>
+                                    <BsTags />
+                                </div>
+                                <div>
+                                    <div className="text-muted" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' }}>Chủng loại vật tư</div>
+                                    <div className="fw-bold" style={{ fontSize: 'var(--text-xl)', color: 'var(--text-primary)' }}>
+                                        {stats.totalCategories.toLocaleString('vi-VN')}
+                                    </div>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={12} md={4}>
+                            <div className="stat-card surface-card p-3 d-flex align-items-center">
+                                <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
+                                     style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', background: 'var(--color-status-info-bg)', color: 'var(--color-status-info)', fontSize: '1.4rem' }}>
+                                    <BsBoxSeam />
+                                </div>
+                                <div>
+                                    <div className="text-muted" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' }}>Tổng lượng tồn kho</div>
+                                    <div className="fw-bold" style={{ fontSize: 'var(--text-xl)', color: 'var(--text-primary)' }}>
+                                        {stats.totalStockQuantity.toLocaleString('vi-VN')}
+                                    </div>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={12} md={4}>
+                            <div className={`stat-card surface-card p-3 d-flex align-items-center ${stats.lowStockCount > 0 ? 'border-danger' : ''}`}
+                                 style={{ transition: 'all 0.3s ease' }}>
+                                <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
+                                     style={{ 
+                                         width: '48px', 
+                                         height: '48px', 
+                                         borderRadius: 'var(--radius-lg)', 
+                                         background: stats.lowStockCount > 0 ? 'var(--color-status-danger-bg)' : 'var(--color-status-inactive-bg)', 
+                                         color: stats.lowStockCount > 0 ? 'var(--color-status-danger)' : 'var(--color-status-inactive)', 
+                                         fontSize: '1.4rem' 
+                                     }}>
+                                    <BsExclamationTriangle />
+                                </div>
+                                <div>
+                                    <div className="text-muted" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' }}>Vật tư sắp hết (Tồn ≤ 5)</div>
+                                    <div className={`fw-bold ${stats.lowStockCount > 0 ? 'text-danger' : ''}`} style={{ fontSize: 'var(--text-xl)' }}>
+                                        {stats.lowStockCount.toLocaleString('vi-VN')}
+                                    </div>
+                                </div>
+                            </div>
+                        </Col>
+                    </Row>
+
                     {/* Tìm kiếm tồn kho */}
                     <div className="surface-card p-4 mb-4">
                         <BootstrapForm onSubmit={handleApplyFilter}>
