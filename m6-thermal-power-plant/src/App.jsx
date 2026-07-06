@@ -39,6 +39,8 @@ import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
 import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
+import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
+
 
 function App() {
   return (
@@ -97,7 +99,10 @@ function App() {
 
             {/* --- Vật tư --- */}
             <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
-            <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
+            <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
+            <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
+
+
 
             {/* --- CCDC --- */}
             <Route path="/ccdc/danh-sach" element={<ToolList />} />
