@@ -15,6 +15,7 @@ import ConsumableSearchForm from '../components/consumable/ConsumableSearchForm'
 import ConsumableFormModal from '../components/consumable/ConsumableFormModal';
 import SparePartSearchForm from '../components/spare_part/SparePartSearchForm';
 import SparePartFormModal from '../components/spare_part/SparePartFormModal';
+import MaterialDetailModal from '../components/consumable/MaterialDetailModal.jsx';
 
 export default function MaterialCatalogPage() {
     const [activeTab, setActiveTab] = useState('consumables');
@@ -47,6 +48,9 @@ export default function MaterialCatalogPage() {
     const [deletingItem, setDeletingItem] = useState(null);
     const [deletingLoading, setDeletingLoading] = useState(false);
 
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [viewingItem, setViewingItem] = useState(null);
+
     /* ============================================================
        1. TẢI DỮ LIỆU TỪ API (FETCH FUNCTIONS) - Nhận filters từ tham số truyền vào
        ============================================================ */
@@ -59,7 +63,8 @@ export default function MaterialCatalogPage() {
                 manufacturer: filters?.manufacturer?.trim() || undefined,
                 status: filters?.status || undefined,
                 page: 0,
-                size: 100
+                size: 100,
+                sort: 'id,desc'
             };
             const response = await consumableService.search(params);
             setConsumablesList(response.data.content || []);
@@ -80,7 +85,8 @@ export default function MaterialCatalogPage() {
                 manufacturer: filters?.manufacturer?.trim() || undefined,
                 status: filters?.status || undefined,
                 page: 0,
-                size: 100
+                size: 100,
+                sort: 'id,desc'
             };
             const response = await sparePartService.search(params);
             setSparePartsList(response.data.content || []);
@@ -174,15 +180,18 @@ export default function MaterialCatalogPage() {
             label: 'Hình ảnh',
             sortable: false,
             width: 90,
-            render: (val) => (
-                <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-sm)', background: 'var(--color-neutral-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {val ? (
-                        <img src={val} alt="vật tư" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '📷'; }} />
-                    ) : (
-                        <BsImage style={{ color: 'var(--text-tertiary)', fontSize: '1.2rem' }} />
-                    )}
-                </div>
-            )
+            render: (val) => {
+                const firstImg = val ? val.split('|').filter(Boolean)[0] : null;
+                return (
+                    <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-sm)', background: 'var(--color-neutral-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        {firstImg ? (
+                            <img src={firstImg} alt="vật tư" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '📷'; }} />
+                        ) : (
+                            <BsImage style={{ color: 'var(--text-tertiary)', fontSize: '1.2rem' }} />
+                        )}
+                    </div>
+                );
+            }
         },
         { key: 'consumableCode', label: 'Mã vật tư', mono: true, width: 150 },
         { key: 'name', label: 'Tên vật tư' },
@@ -211,15 +220,18 @@ export default function MaterialCatalogPage() {
             label: 'Hình ảnh',
             sortable: false,
             width: 90,
-            render: (val) => (
-                <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-sm)', background: 'var(--color-neutral-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {val ? (
-                        <img src={val} alt="vật tư" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '📷'; }} />
-                    ) : (
-                        <BsImage style={{ color: 'var(--text-tertiary)', fontSize: '1.2rem' }} />
-                    )}
-                </div>
-            )
+            render: (val) => {
+                const firstImg = val ? val.split('|').filter(Boolean)[0] : null;
+                return (
+                    <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-sm)', background: 'var(--color-neutral-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        {firstImg ? (
+                            <img src={firstImg} alt="vật tư" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '📷'; }} />
+                        ) : (
+                            <BsImage style={{ color: 'var(--text-tertiary)', fontSize: '1.2rem' }} />
+                        )}
+                    </div>
+                );
+            }
         },
         { key: 'sparePartCode', label: 'Mã vật tư', mono: true, width: 150 },
         { key: 'name', label: 'Tên vật tư' },
@@ -341,6 +353,10 @@ export default function MaterialCatalogPage() {
                         searchable={true}
                         searchPlaceholder="Tìm nhanh trong danh sách..."
                         pageSize={8}
+                        onView={(row) => {
+                            setViewingItem(row);
+                            setShowViewModal(true);
+                        }}
                         onEdit={(row) => {
                             setEditingItem(row);
                             setShowFormModal(true);
@@ -367,6 +383,10 @@ export default function MaterialCatalogPage() {
                         searchable={true}
                         searchPlaceholder="Tìm nhanh trong danh sách..."
                         pageSize={8}
+                        onView={(row) => {
+                            setViewingItem(row);
+                            setShowViewModal(true);
+                        }}
                         onEdit={(row) => {
                             setEditingItem(row);
                             setShowFormModal(true);
@@ -392,6 +412,13 @@ export default function MaterialCatalogPage() {
                     onSubmit={handleFormSubmit}
                 />
             )}
+
+            <MaterialDetailModal
+                show={showViewModal}
+                onHide={() => { setShowViewModal(false); setViewingItem(null); }}
+                item={viewingItem}
+                type={activeTab}
+            />
 
             {/* CONFIRM DELETE MODAL */}
             <ConfirmModal
