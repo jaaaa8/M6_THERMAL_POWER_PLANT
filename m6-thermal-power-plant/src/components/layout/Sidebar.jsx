@@ -73,7 +73,9 @@ const menuSections = [
         icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
           { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
-          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
+          { path: '/material/import-export/consumable', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Tiêu hao' },
+          { path: '/material/import-export/sparepart', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Thay thế' },
+
         ],
       },
       {
