@@ -137,6 +137,19 @@ export const workOrderService = {
   update: (id, data) => apiClient.patch(`${BASE}/${id}`, data),
 
   /**
+   * Cập nhật TRẠNG THÁI phiếu — endpoint duy nhất cho modal "Cập nhật trạng thái":
+   *   OPEN ─duyệt phiếu─► APPROVED ─bắt đầu─► IN_PROGRESS ─không kịp─► STOPPED
+   *   ─gửi duyệt lại─► WAITING_FOR_APPROVAL ─duyệt gia hạn─► APPROVED ─► ...
+   *   ─► COMPLETED; mọi trạng thái sống ─► CANCELLED.
+   * → PATCH /api/v1/work-orders/{id}/status
+   * @param {object} data
+   * @param {string} data.targetStatus   - Trạng thái đích (bắt buộc)
+   * @param {string} [data.reason]        - Bắt buộc khi target = WAITING_FOR_APPROVAL
+   * @param {string} [data.extendedUntil] - Bắt buộc khi target = WAITING_FOR_APPROVAL
+   */
+  updateStatus: (id, data) => apiClient.patch(`${BASE}/${id}/status`, data),
+
+  /**
    * Ghi nhận online việc Trưởng ca ĐÃ ký duyệt bản giấy (người bấm chịu trách
    * nhiệm nhập đúng theo bản giấy — tài khoản của họ được lưu vào approvedBy).
    * status → APPROVED.

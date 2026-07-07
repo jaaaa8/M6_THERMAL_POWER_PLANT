@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import {
   BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
-  BsHourglassSplit, BsCheckCircle, BsXCircle, BsPlayCircle,
-  BsEye, BsBoxSeam, BsPrinter,
+  BsHourglassSplit, BsCheckCircle, BsPlayCircle,
+  BsEye, BsBoxSeam, BsPrinter, BsPencilSquare, BsArrowRepeat,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -12,8 +12,11 @@ import SearchBox from '../common/SearchBox';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
 import WorkOrderDetailModal from './WorkOrderDetailModal';
+import WorkOrderEditModal from './WorkOrderEditModal';
+import WorkOrderStatusModal from './WorkOrderStatusModal';
 import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
+import { authService } from '../../services/authService';
 import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
@@ -22,10 +25,11 @@ import './WorkOrderList.css';
    MAP — Trạng thái PCT
    ============================================================ */
 const TRANG_THAI_MAP = {
-  OPEN: { label: 'Mới tạo', status: 'info' },
+  OPEN: { label: 'Chờ duyệt', status: 'info' },
   IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
-  WAITING_FOR_APPROVAL: { label: 'Chờ Trưởng ca duyệt', status: 'warning' },
-  APPROVED: { label: 'Đã duyệt — chờ làm tiếp', status: 'info' },
+  WAITING_FOR_APPROVAL: { label: 'Chờ duyệt gia hạn', status: 'warning' },
+  APPROVED: { label: 'Đã duyệt', status: 'info' },
+  STOPPED: { label: 'Tạm dừng', status: 'inactive' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
@@ -35,13 +39,22 @@ const TRANG_THAI_MAP = {
    ============================================================ */
 const FILTERS = [
   { key: 'ALL', label: 'Tất cả' },
-  { key: 'OPEN', label: 'Mới tạo' },
-  { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
-  { key: 'WAITING_FOR_APPROVAL', label: 'Chờ duyệt' },
+  { key: 'OPEN', label: 'Chờ duyệt' },
   { key: 'APPROVED', label: 'Đã duyệt' },
+  { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
+  { key: 'STOPPED', label: 'Tạm dừng' },
+  { key: 'WAITING_FOR_APPROVAL', label: 'Chờ duyệt gia hạn' },
   { key: 'COMPLETED', label: 'Hoàn thành' },
   { key: 'CANCELLED', label: 'Đã huỷ' },
 ];
+
+/**
+ * Gating vai trò (chỉ ở UI, backend không chặn — nhất quán các nút cũ):
+ * nút Sửa dành cho người vận hành; nút Trạng thái mở cho cả người vận hành
+ * lẫn người duyệt (modal tự lọc option theo vai trò).
+ */
+const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
+const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 
 /* ============================================================
    COMPONENT
@@ -57,7 +70,13 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
   const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
   const [printingIssueId, setPrintingIssueId] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);     // dòng đang sửa thông tin
+  const [statusTarget, setStatusTarget] = useState(null); // dòng đang đổi trạng thái
   const pageSize = 20;
+
+  const userRoles = authService.getCurrentUser()?.roles || [];
+  const canOperate = userRoles.some((r) => OPERATE_ROLES.includes(r));
+  const canChangeStatus = canOperate || userRoles.some((r) => APPROVE_ROLES.includes(r));
 
   /* --- Fetch dữ liệu --- */
   const fetchWorkOrders = useCallback(async () => {
@@ -89,7 +108,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     const cancelled = workOrders.filter((r) => r.status === 'CANCELLED').length;
     return [
       { key: 'total', label: 'Tổng PCT', value: totalElements, icon: <BsListUl />, color: 'var(--color-primary-500)' },
-      { key: 'open', label: 'Mới tạo', value: open, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
+      { key: 'open', label: 'Chờ duyệt', value: open, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
       { key: 'in_progress', label: 'Đang thực hiện', value: inProgress, icon: <BsPlayCircle />, color: 'var(--color-status-warning)' },
       { key: 'completed', label: 'Hoàn thành', value: completed, icon: <BsCheckCircle />, color: 'var(--color-status-normal)' },
     ];
@@ -168,6 +187,28 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         >
           <BsEye className="me-1" /> Xem
         </Button>
+        {canChangeStatus && (
+          <Button
+            variant="outline-warning"
+            size="sm"
+            title={finished ? 'Phiếu đã chốt — không thể chuyển trạng thái' : 'Cập nhật trạng thái phiếu (duyệt / bắt đầu / tạm dừng / hoàn thành / huỷ)'}
+            disabled={finished}
+            onClick={() => setStatusTarget(row)}
+          >
+            <BsArrowRepeat className="me-1" /> Trạng thái
+          </Button>
+        )}
+        {canOperate && (
+          <Button
+            variant="outline-info"
+            size="sm"
+            title={finished ? 'Phiếu đã chốt — không thể sửa' : 'Sửa thông tin phiếu (nhân sự, thời gian, mô tả)'}
+            disabled={finished}
+            onClick={() => setEditTarget(row)}
+          >
+            <BsPencilSquare className="me-1" /> Sửa
+          </Button>
+        )}
         <Button
           variant="outline-success"
           size="sm"
@@ -256,7 +297,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} renderActions={renderActions} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={550} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">
@@ -297,6 +338,25 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         show={!!suppliesIssueTarget}
         workOrder={suppliesIssueTarget}
         onClose={() => setSuppliesIssueTarget(null)}
+      />
+
+      {/* ===== MODAL: CẬP NHẬT TRẠNG THÁI PCT =====
+          key theo id → mỗi phiếu là một instance mới, state trong modal tự sạch */}
+      <WorkOrderStatusModal
+        key={`status-${statusTarget?.id ?? 'none'}`}
+        show={!!statusTarget}
+        workOrder={statusTarget}
+        onClose={() => setStatusTarget(null)}
+        onChanged={fetchWorkOrders}
+      />
+
+      {/* ===== MODAL: SỬA THÔNG TIN PCT ===== */}
+      <WorkOrderEditModal
+        key={`edit-${editTarget?.id ?? 'none'}`}
+        show={!!editTarget}
+        workOrder={editTarget}
+        onClose={() => setEditTarget(null)}
+        onChanged={fetchWorkOrders}
       />
     </div>
   );

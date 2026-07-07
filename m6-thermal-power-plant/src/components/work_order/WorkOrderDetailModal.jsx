@@ -4,8 +4,8 @@ import {
   BsXCircle, BsCpu, BsPeopleFill, BsClockHistory,
   BsBoxArrowInRight, BsBoxArrowLeft, BsPersonBadge,
   BsCircleFill, BsPersonPlus, BsSearch,
-  BsPlayCircle, BsPauseCircle, BsCheckCircle, BsPenFill, BsCalendarWeek,
-  BsPrinter, BsPencilSquare,
+  BsPauseCircle, BsPenFill, BsCalendarWeek,
+  BsPrinter,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import StatusBadge from '../common/StatusBadge';
@@ -18,22 +18,23 @@ import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 import './WorkOrderDetailModal.css';
 
 const STATUS_MAP = {
-  OPEN: { label: 'Mới tạo', status: 'info' },
+  OPEN: { label: 'Chờ duyệt', status: 'info' },
   IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
-  WAITING_FOR_APPROVAL: { label: 'Chờ Trưởng ca duyệt', status: 'warning' },
-  APPROVED: { label: 'Đã duyệt — chờ làm tiếp', status: 'info' },
+  WAITING_FOR_APPROVAL: { label: 'Chờ duyệt gia hạn', status: 'warning' },
+  APPROVED: { label: 'Đã duyệt', status: 'info' },
+  STOPPED: { label: 'Tạm dừng', status: 'inactive' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
 
 /**
  * Gating theo vai trò (chỉ ở UI — backend không chặn, nhất quán các endpoint cũ):
- * - OPERATE: Tổ trưởng bấm gửi duyệt / tạm dừng / mở lại / hoàn thành / chỉnh sửa.
- * - APPROVE: người xác nhận online việc Trưởng ca ĐÃ ký bản giấy (môi trường
- *   nguy hiểm nên bước duyệt là chữ ký thật trên giấy, đưa tận tay).
+ * - OPERATE: Tổ trưởng thao tác thành viên + gửi duyệt gia hạn.
+ * Các bước chuyển trạng thái khác (duyệt phiếu, bắt đầu, tạm dừng, hoàn thành,
+ * huỷ) và chỉnh sửa thông tin nằm ở DANH SÁCH PCT (WorkOrderStatusModal /
+ * WorkOrderEditModal) — modal chi tiết chỉ giữ nút GIA HẠN theo yêu cầu.
  */
 const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
-const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 
 /**
  * Lấy nguyên văn message lỗi backend trả về (GlobalExceptionHandler trả về
@@ -63,20 +64,12 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Chuyển trạng thái phiếu: 'start' | 'resume' | 'approve' | 'complete' (confirm)
-  // + form tạm dừng cuối ngày riêng (cần lý do + ngày).
-  const [confirmAction, setConfirmAction] = useState(null);
+  // Form GIA HẠN (dừng công việc + gửi Trưởng ca duyệt): lý do + ngày.
   const [actionLoading, setActionLoading] = useState(false);
   const [showStopForm, setShowStopForm] = useState(false);
   const [stopReason, setStopReason] = useState('');
   const [stopUntil, setStopUntil] = useState('');
   const [printing, setPrinting] = useState(false);
-
-  // Chỉnh sửa thông tin phiếu — hiện trường thay đổi liên tục nên mọi trường
-  // đều sửa được khi phiếu còn sống (backend chỉ chặn COMPLETED/CANCELLED).
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editForm, setEditForm] = useState(null);
-  const [savingEdit, setSavingEdit] = useState(false);
 
   // Quản lý thành viên (rời / thêm mới)
   const [memberTab, setMemberTab] = useState('members');
@@ -125,10 +118,10 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     loadDetail();
   }, [show, workOrderId, loadDetail]);
 
-  // Tải danh sách nhân viên khi mở tab "Thêm thành viên" HOẶC form chỉnh sửa
-  // lần đầu (backend không có endpoint search — tải hết rồi lọc phía client).
+  // Tải danh sách nhân viên khi mở tab "Thêm thành viên" lần đầu
+  // (backend không có endpoint search — tải hết rồi lọc phía client).
   useEffect(() => {
-    if (!show || (memberTab !== 'add' && !showEditForm) || employees !== null || employeesLoading) return;
+    if (!show || memberTab !== 'add' || employees !== null || employeesLoading) return;
     (async () => {
       setEmployeesLoading(true);
       try {
@@ -142,7 +135,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
         setEmployeesLoading(false);
       }
     })();
-  }, [show, memberTab, showEditForm, employees, employeesLoading]);
+  }, [show, memberTab, employees, employeesLoading]);
 
   // Nhân viên hiển thị trong tab thêm: loại người ĐANG trong khu vực làm việc
   // (người đã rời vẫn hiện — backend cho phép vào lại).
@@ -194,64 +187,6 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     }
   };
 
-  /* ============================================================
-     CHUYỂN TRẠNG THÁI PHIẾU (start / stop / approve / resume / complete)
-     ============================================================ */
-
-  // Nội dung confirm cho các hành động 1-click (tạm dừng có form riêng).
-  const ACTION_CONFIG = {
-    start: {
-      title: 'Bắt đầu làm việc',
-      message: `Bắt đầu thực hiện phiếu công tác ${detail?.orderCode}? Trạng thái chuyển sang "Đang thực hiện".`,
-      confirmText: 'Bắt đầu',
-      variant: 'primary',
-      run: () => workOrderService.reopen(workOrderId),
-      successMsg: 'Phiếu công tác đã chuyển sang Đang thực hiện',
-    },
-    resume: {
-      title: 'Tiếp tục làm việc',
-      message: `Gia hạn của phiếu ${detail?.orderCode} đã được duyệt. Mở lại để tiếp tục làm việc hôm nay?`,
-      confirmText: 'Tiếp tục làm việc',
-      variant: 'primary',
-      run: () => workOrderService.reopen(workOrderId),
-      successMsg: 'Phiếu công tác đã mở lại — Đang thực hiện',
-    },
-    approve: {
-      title: 'Xác nhận Trưởng ca đã duyệt',
-      message: `Chỉ bấm khi bạn ĐANG CẦM bản giấy phiếu ${detail?.orderCode} có chữ ký duyệt của Trưởng ca. `
-        + 'Tài khoản của bạn sẽ được ghi vào mục "Người cho phép" — bạn chịu trách nhiệm nhập đúng theo bản giấy.',
-      confirmText: 'Đã có chữ ký — xác nhận',
-      variant: 'warning',
-      run: () => workOrderService.approveExtension(workOrderId),
-      successMsg: 'Đã ghi nhận duyệt gia hạn — Tổ trưởng có thể mở lại phiếu',
-    },
-    complete: {
-      title: 'Hoàn thành phiếu công tác',
-      message: `Xác nhận toàn bộ công việc của phiếu ${detail?.orderCode} đã kết thúc? Phiếu hoàn thành không thể mở lại.`,
-      confirmText: 'Hoàn thành',
-      variant: 'success',
-      run: () => workOrderService.complete(workOrderId),
-      successMsg: 'Phiếu công tác đã hoàn thành',
-    },
-  };
-
-  const runConfirmAction = async () => {
-    const config = ACTION_CONFIG[confirmAction];
-    if (!config) return;
-    setActionLoading(true);
-    try {
-      await config.run();
-      toast.success(config.successMsg);
-      setConfirmAction(null);
-      await loadDetail(true);
-      onChanged?.();
-    } catch (err) {
-      toast.error(`Không thể thực hiện: ${extractErrorMessage(err)}`, { autoClose: 8000 });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   /**
    * In PCT: phiếu đã kết thúc → mở thẳng bản lưu đóng băng trên Cloudinary;
    * phiếu còn sống → backend render snapshot mới (kèm mọi thay đổi thành viên,
@@ -273,10 +208,11 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     }
   };
 
-  // Từ OPEN: Tổ trưởng GỬI DUYỆT phiếu xin Trưởng ca / Quản đốc cho phép làm
-  // việc; từ IN_PROGRESS/APPROVED: tạm dừng cuối ngày xin làm tiếp. Cùng một
-  // API stop — đều tạo dòng gia hạn in lên bản giấy để ký duyệt.
-  const stopIsRequest = detail?.status === 'OPEN';
+  /* ============================================================
+     GIA HẠN PHIẾU: dừng công việc hiện tại (nếu đang chạy) + gửi Trưởng ca
+     duyệt gia hạn — tạo dòng gia hạn (lý do + đến ngày) in lên bản giấy PCT.
+     Trạng thái chuyển sang WAITING_FOR_APPROVAL.
+     ============================================================ */
 
   const openStopForm = () => {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -298,9 +234,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     try {
       // Xin phép đến CUỐI ngày đã chọn (backend lưu LocalDateTime).
       await workOrderService.stop(workOrderId, stopReason.trim(), `${stopUntil}T23:59:59`);
-      toast.success(stopIsRequest
-        ? 'Đã gửi duyệt — in bản PCT và đưa Trưởng ca ký'
-        : 'Đã tạm dừng phiếu — in bản PCT mới và đưa Trưởng ca ký duyệt gia hạn');
+      toast.success('Đã gửi duyệt gia hạn — in bản PCT mới và đưa Trưởng ca ký');
       setShowStopForm(false);
       await loadDetail(true);
       onChanged?.();
@@ -308,49 +242,6 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
       toast.error(`Không thể gửi duyệt: ${extractErrorMessage(err)}`, { autoClose: 8000 });
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  /* ============================================================
-     CHỈNH SỬA THÔNG TIN PHIẾU (mọi trường — phiếu còn sống)
-     ============================================================ */
-
-  const toLocalInput = (iso) => (iso ? iso.slice(0, 16) : '');
-
-  const openEditForm = () => {
-    setEditForm({
-      leaderId: detail?.leaderId ?? '',
-      directSupervisorId: detail?.directSupervisorId ?? '',
-      safetySupervisorId: detail?.safetySupervisorId ?? '',
-      startTime: toLocalInput(detail?.startTime),
-      expectedEndTime: toLocalInput(detail?.expectedEndTime),
-      repairDescription: detail?.repairDescription || '',
-    });
-    setShowEditForm(true);
-  };
-
-  const setEditField = (field, value) => setEditForm((f) => ({ ...f, [field]: value }));
-
-  const submitEdit = async () => {
-    setSavingEdit(true);
-    try {
-      // Partial update: trường bỏ trống gửi null → backend giữ nguyên giá trị cũ.
-      await workOrderService.update(workOrderId, {
-        leaderId: editForm.leaderId ? Number(editForm.leaderId) : null,
-        directSupervisorId: editForm.directSupervisorId ? Number(editForm.directSupervisorId) : null,
-        safetySupervisorId: editForm.safetySupervisorId ? Number(editForm.safetySupervisorId) : null,
-        startTime: editForm.startTime ? `${editForm.startTime}:00` : null,
-        expectedEndTime: editForm.expectedEndTime ? `${editForm.expectedEndTime}:00` : null,
-        repairDescription: editForm.repairDescription?.trim() || null,
-      });
-      toast.success('Đã cập nhật phiếu công tác');
-      setShowEditForm(false);
-      await loadDetail(true);
-      onChanged?.();
-    } catch (err) {
-      toast.error(`Không thể cập nhật: ${extractErrorMessage(err)}`, { autoClose: 8000 });
-    } finally {
-      setSavingEdit(false);
     }
   };
 
@@ -363,7 +254,6 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   // Gating theo vai trò của tài khoản đang đăng nhập (chỉ ở UI).
   const userRoles = authService.getCurrentUser()?.roles || [];
   const canOperate = userRoles.some((r) => OPERATE_ROLES.includes(r));
-  const canApprove = userRoles.some((r) => APPROVE_ROLES.includes(r));
 
   const statusInfo = detail?.status ? STATUS_MAP[detail.status] || { label: detail.status, status: 'info' } : null;
 
@@ -627,45 +517,16 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
             <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In PCT'}
           </Button>
         )}
-        {/* Chỉnh sửa: mọi trường của phiếu còn sống (hiện trường thay đổi liên tục) */}
-        {detail && canOperate && canManage && (
-          <Button variant="outline-primary" size="sm" onClick={openEditForm}>
-            <BsPencilSquare className="me-1" /> Chỉnh sửa
-          </Button>
-        )}
-        {/* ===== HÀNH ĐỘNG THEO TRẠNG THÁI (gating vai trò ở UI) ===== */}
-        {detail && canOperate && detail.status === 'OPEN' && (
-          <Button variant="primary" size="sm" onClick={() => setConfirmAction('start')}>
-            <BsPlayCircle className="me-1" /> Bắt đầu làm việc
-          </Button>
-        )}
-        {detail && canOperate && ['OPEN', 'IN_PROGRESS', 'APPROVED'].includes(detail.status) && (
+        {/* ===== GIA HẠN (nút duy nhất của modal chi tiết — các bước chuyển
+             trạng thái khác nằm ở modal "Cập nhật trạng thái" ngoài danh sách) ===== */}
+        {detail && canOperate && ['IN_PROGRESS', 'APPROVED', 'STOPPED'].includes(detail.status) && (
           <Button
             variant="outline-warning"
             size="sm"
-            title={stopIsRequest
-              ? 'Gửi phiếu xin Trưởng ca / Quản đốc cho phép làm việc — ký duyệt trên bản giấy'
-              : 'Kết thúc công tác hôm nay, xin phép làm tiếp — chờ Trưởng ca ký duyệt bản giấy'}
+            title="Dừng công việc hiện tại (nếu đang chạy) và xin phép làm tiếp — chờ Trưởng ca ký duyệt bản giấy"
             onClick={openStopForm}
           >
-            {stopIsRequest
-              ? <><BsPenFill className="me-1" /> Gửi Trưởng ca duyệt</>
-              : <><BsPauseCircle className="me-1" /> Tạm dừng cuối ngày</>}
-          </Button>
-        )}
-        {detail && canOperate && detail.status === 'IN_PROGRESS' && (
-          <Button variant="success" size="sm" onClick={() => setConfirmAction('complete')}>
-            <BsCheckCircle className="me-1" /> Hoàn thành
-          </Button>
-        )}
-        {detail && canApprove && detail.status === 'WAITING_FOR_APPROVAL' && (
-          <Button variant="warning" size="sm" onClick={() => setConfirmAction('approve')}>
-            <BsPenFill className="me-1" /> Trưởng ca đã duyệt (bản giấy)
-          </Button>
-        )}
-        {detail && canOperate && detail.status === 'APPROVED' && (
-          <Button variant="primary" size="sm" onClick={() => setConfirmAction('resume')}>
-            <BsPlayCircle className="me-1" /> Tiếp tục làm việc
+            <BsPauseCircle className="me-1" /> Gia hạn phiếu
           </Button>
         )}
         <Button variant="outline-secondary" size="sm" onClick={onClose}>
@@ -686,44 +547,29 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
       loading={leaveLoading}
     />
 
-    {/* Xác nhận chuyển trạng thái (bắt đầu / tiếp tục / duyệt / hoàn thành) */}
-    <ConfirmModal
-      show={!!confirmAction}
-      onClose={() => setConfirmAction(null)}
-      onConfirm={runConfirmAction}
-      title={ACTION_CONFIG[confirmAction]?.title || ''}
-      message={ACTION_CONFIG[confirmAction]?.message || ''}
-      confirmText={ACTION_CONFIG[confirmAction]?.confirmText || 'Xác nhận'}
-      variant={ACTION_CONFIG[confirmAction]?.variant || 'primary'}
-      loading={actionLoading}
-    />
-
-    {/* Form gửi duyệt (phiếu OPEN) / tạm dừng cuối ngày: lý do + xin phép đến ngày */}
+    {/* Form gia hạn: lý do + xin phép làm việc đến ngày */}
     <Modal show={showStopForm} onHide={() => !actionLoading && setShowStopForm(false)} centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
           <BsPauseCircle className="me-2" style={{ color: 'var(--color-status-warning)' }} />
-          {stopIsRequest ? 'Gửi Trưởng ca duyệt' : 'Tạm dừng cuối ngày'} — {detail?.orderCode}
+          Gia hạn phiếu — {detail?.orderCode}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="alert alert-warning" style={{ fontSize: 'var(--text-sm)' }}>
-          Sau khi gửi, phiếu chuyển sang <strong>Chờ Trưởng ca duyệt</strong>.
+          Sau khi gửi, phiếu chuyển sang <strong>Chờ duyệt gia hạn</strong>.
           Việc duyệt được thực hiện <strong>bằng chữ ký thật trên bản giấy PCT</strong> (in
           bản PDF mới — lý do và ngày dưới đây được in vào mục "Cho phép làm việc và kết
           thúc công tác hàng ngày") rồi mới được xác nhận lại trên hệ thống.
         </div>
         <Form.Group className="mb-3">
           <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-            {stopIsRequest ? 'Lý do xin phép làm việc' : 'Lý do tạm dừng / xin làm tiếp'}{' '}
-            <span className="text-danger">*</span>
+            Lý do gia hạn / xin làm tiếp <span className="text-danger">*</span>
           </Form.Label>
           <Form.Control
             as="textarea"
             rows={2}
-            placeholder={stopIsRequest
-              ? 'VD: Xin phép thực hiện công tác sửa chữa theo phiếu...'
-              : 'VD: Hết giờ làm việc, khối lượng còn lại xin tiếp tục ngày mai...'}
+            placeholder="VD: Hết giờ làm việc, khối lượng còn lại xin tiếp tục ngày mai..."
             value={stopReason}
             onChange={(e) => setStopReason(e.target.value)}
           />
@@ -746,122 +592,11 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
         </Button>
         <Button variant="warning" size="sm" disabled={actionLoading} onClick={submitStop}>
           <BsPauseCircle className="me-1" />{' '}
-          {actionLoading ? 'Đang lưu...' : (stopIsRequest ? 'Gửi duyệt' : 'Tạm dừng phiếu')}
-        </Button>
-      </Modal.Footer>
-    </Modal>
-
-    {/* Form chỉnh sửa phiếu: mọi trường sửa được khi phiếu còn sống — hiện
-        trường không ổn định nên KHÔNG áp ràng buộc lúc tạo (trùng vai trò,
-        chồng lấn giờ). Trường bỏ trống giữ nguyên giá trị cũ. */}
-    <Modal show={showEditForm} onHide={() => !savingEdit && setShowEditForm(false)} centered>
-      <Modal.Header closeButton>
-        <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsPencilSquare className="me-2" style={{ color: 'var(--color-primary-500)' }} />
-          Chỉnh sửa phiếu — {detail?.orderCode}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {editForm && (
-          <>
-            <EmployeeSelect
-              label="Người lãnh đạo công việc"
-              value={editForm.leaderId}
-              onChange={(v) => setEditField('leaderId', v)}
-              employees={employees}
-              loading={employeesLoading}
-            />
-            <EmployeeSelect
-              label="Chỉ huy trực tiếp"
-              value={editForm.directSupervisorId}
-              onChange={(v) => setEditField('directSupervisorId', v)}
-              employees={employees}
-              loading={employeesLoading}
-            />
-            <EmployeeSelect
-              label="Người giám sát an toàn"
-              value={editForm.safetySupervisorId}
-              onChange={(v) => setEditField('safetySupervisorId', v)}
-              employees={employees}
-              loading={employeesLoading}
-            />
-            <div className="row">
-              <Form.Group className="mb-3 col-6">
-                <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                  Bắt đầu
-                </Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  size="sm"
-                  value={editForm.startTime}
-                  onChange={(e) => setEditField('startTime', e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3 col-6">
-                <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                  Dự kiến kết thúc
-                </Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  size="sm"
-                  value={editForm.expectedEndTime}
-                  onChange={(e) => setEditField('expectedEndTime', e.target.value)}
-                />
-              </Form.Group>
-            </div>
-            <Form.Group>
-              <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                Mô tả nội dung sửa chữa
-              </Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={editForm.repairDescription}
-                onChange={(e) => setEditField('repairDescription', e.target.value)}
-              />
-            </Form.Group>
-          </>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="outline-secondary" size="sm" disabled={savingEdit}
-                onClick={() => setShowEditForm(false)}>
-          <BsXCircle className="me-1" /> Huỷ
-        </Button>
-        <Button variant="primary" size="sm" disabled={savingEdit} onClick={submitEdit}>
-          <BsCheckCircle className="me-1" /> {savingEdit ? 'Đang lưu...' : 'Lưu thay đổi'}
+          {actionLoading ? 'Đang lưu...' : 'Gửi duyệt gia hạn'}
         </Button>
       </Modal.Footer>
     </Modal>
     </>
-  );
-}
-
-/** Select nhân viên cho form chỉnh sửa — dùng chung danh sách employees đã tải. */
-function EmployeeSelect({ label, value, onChange, employees, loading }) {
-  return (
-    <Form.Group className="mb-3">
-      <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-        {label}
-      </Form.Label>
-      <Form.Select
-        size="sm"
-        value={value ?? ''}
-        disabled={loading || employees === null}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">
-          {loading || employees === null ? 'Đang tải danh sách nhân viên...' : '— Giữ nguyên —'}
-        </option>
-        {(employees || [])
-          .filter((e) => e.isActive !== false)
-          .map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.fullName}{e.employeeCode ? ` (${e.employeeCode})` : ''}
-            </option>
-          ))}
-      </Form.Select>
-    </Form.Group>
   );
 }
 
