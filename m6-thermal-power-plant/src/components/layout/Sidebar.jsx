@@ -61,6 +61,7 @@ const menuSections = [
           { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
           { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
           { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư' },
+          { path: '/repair/history', icon: <BsClockHistory />, label: 'Lịch sử sửa chữa' },
         ],
       },
     ],

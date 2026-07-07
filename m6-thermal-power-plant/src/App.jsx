@@ -39,6 +39,7 @@ import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
 import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
+import RepairHistory from "./components/repair_history/RepairHistoryList.jsx";
 
 function App() {
   return (
@@ -94,6 +95,7 @@ function App() {
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
             <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
+            <Route path="/repair/history" element={<RepairHistory/>} />
 
             {/* --- Vật tư --- */}
             <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
@@ -110,7 +112,7 @@ function App() {
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
             <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
+            <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
             <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 

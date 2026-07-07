@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button, Badge } from "react-bootstrap";
 import {
     BsEye,
@@ -8,37 +9,112 @@ import { Link } from "react-router-dom";
 
 import DataTable from "../../components/common/DataTable";
 
-export default function SparePartsIssueList() {
+import sparePartIssueService from "../../services/sparePartIssueService";
+import { workOrderService } from "../../services/workOrderService";
+import { employeeService } from "../../services/hr/EmployeeService";
 
-    const data = [
-        {
-            id: 1,
-            sparePartCode: "PXVT-2026-001",
-            workOrderCode: "WO-2026-001",
-            technicalCode: "DGKT-2026-001",
-            issuedBy: "Nguyễn Văn A",
-            issuedAt: "26/06/2026 09:00",
-            status: "WAITING_PDF",
-        },
-        {
-            id: 2,
-            sparePartCode: "PXVT-2026-002",
-            workOrderCode: "WO-2026-002",
-            technicalCode: "DGKT-2026-002",
-            issuedBy: "Trần Văn B",
-            issuedAt: "26/06/2026 14:30",
-            status: "PDF_UPLOADED",
-        },
-    ];
+export default function SparePartsIssueList() {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const [
+                issues,
+                workOrderResponse,
+                employeeResponse,
+            ] = await Promise.all([
+                sparePartIssueService.getAll(),
+                workOrderService.getAll(),
+                employeeService.getAll(),
+            ]);
+            console.log(import.meta.env.VITE_API_URL);
+
+            const workOrderData = workOrderResponse?.data;
+
+            console.log("workOrderData:", workOrderData);
+
+            const workOrders = Array.isArray(workOrderData)
+                ? workOrderData
+                : Array.isArray(workOrderData?.content)
+                    ? workOrderData.content
+                    : [];
+
+            const employeeData = employeeResponse?.data;
+
+            const employees = Array.isArray(employeeData)
+                ? employeeData
+                : Array.isArray(employeeData?.content)
+                    ? employeeData.content
+                    : [];
+
+            const workOrderMap = {};
+            workOrders.forEach((item) => {
+                workOrderMap[item.id] =
+                    item.workOrderCode ||
+                    item.code ||
+                    item.orderCode ||
+                    `WO-${item.id}`;
+            });
+
+            const employeeMap = {};
+            employees.forEach((item) => {
+                employeeMap[item.id] =
+                    item.fullName ||
+                    item.employeeName ||
+                    item.name ||
+                    `EMP-${item.id}`;
+            });
+
+            console.log(issues);
+
+            const tableData = issues.map((item) => ({
+                id: item.id,
+
+                sparePartCode: item.issueCode,
+
+                workOrderCode:
+                    workOrderMap[item.workOrderId] || "-",
+
+                issuedBy:
+                    employeeMap[item.issuedById] || "-",
+
+                issuedAt: item.issuedAt
+                    ? new Date(item.issuedAt).toLocaleString(
+                        "vi-VN"
+                    )
+                    : "-",
+
+                detailCount:
+                    item.details?.length || 0,
+
+                status:
+                    item.details?.length > 0
+                        ? "COMPLETED"
+                        : "PENDING",
+
+                rawData: item,
+            }));
+
+            setData(tableData);
+        } catch (error) {
+            console.error(
+                "Load Spare Parts Issue Error:",
+                error
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const columns = [
         {
             key: "sparePartCode",
             label: "Mã phiếu",
-        },
-        {
-            key: "technicalCode",
-            label: "Phiếu đánh giá",
         },
         {
             key: "workOrderCode",
@@ -53,21 +129,25 @@ export default function SparePartsIssueList() {
             label: "Ngày cấp phát",
         },
         {
+            key: "detailCount",
+            label: "Số vật tư",
+        },
+        {
             key: "status",
             label: "Trạng thái",
             render: (value) => {
                 switch (value) {
-                    case "WAITING_PDF":
+                    case "COMPLETED":
                         return (
-                            <Badge bg="warning">
-                                Chờ upload PDF
+                            <Badge bg="success">
+                                Hoàn Thành
                             </Badge>
                         );
 
-                    case "PDF_UPLOADED":
+                    case "PENDING":
                         return (
-                            <Badge bg="success">
-                                Đã upload PDF
+                            <Badge bg="warning">
+                                Chưa upload Phiếu xuất vật tư
                             </Badge>
                         );
 
@@ -94,16 +174,14 @@ export default function SparePartsIssueList() {
 
     return (
         <div className="page-container">
-
             <div className="page-header d-flex justify-content-between align-items-center mb-3">
-
                 <div>
                     <h3 className="mb-1">
                         Danh sách phiếu xuất vật tư
                     </h3>
 
                     <p className="text-muted mb-0">
-                        Quản lý cấp phát vật tư theo phiếu đánh giá kỹ thuật
+                        Quản lý cấp phát vật tư theo phiếu xuất kho
                     </p>
                 </div>
 
@@ -115,16 +193,15 @@ export default function SparePartsIssueList() {
                     <BsPlusCircle className="me-1" />
                     Thêm mới
                 </Button>
-
             </div>
 
             <DataTable
+                loading={loading}
                 data={data}
                 columns={columns}
                 searchPlaceholder="Tìm kiếm phiếu xuất vật tư..."
                 renderActions={(row) => (
                     <div className="data-table-actions">
-
                         <Button
                             size="sm"
                             variant="outline-primary"
@@ -138,8 +215,8 @@ export default function SparePartsIssueList() {
 
                             <input
                                 type="file"
-                                accept=".pdf"
                                 hidden
+                                accept=".pdf"
                                 onChange={(e) =>
                                     handleUploadPdf(
                                         row.id,
@@ -148,11 +225,9 @@ export default function SparePartsIssueList() {
                                 }
                             />
                         </label>
-
                     </div>
                 )}
             />
-
         </div>
     );
 }
