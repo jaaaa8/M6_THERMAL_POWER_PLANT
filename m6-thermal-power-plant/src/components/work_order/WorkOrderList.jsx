@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import {
   BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsXCircle, BsPlayCircle,
-  BsEye,
+  BsEye, BsBoxSeam,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -11,6 +11,8 @@ import StatusBadge from '../common/StatusBadge';
 import SearchBox from '../common/SearchBox';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
+import WorkOrderDetailModal from './WorkOrderDetailModal';
+import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
@@ -47,6 +49,8 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
+  const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
   const pageSize = 20;
 
   /* --- Fetch dữ liệu --- */
@@ -129,15 +133,27 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
   /* --- Hành động dòng --- */
   function renderActions(row) {
+    const finished = row.status === 'COMPLETED' || row.status === 'CANCELLED';
     return (
-      <Button
-        variant="outline-primary"
-        size="sm"
-        title="Xem chi tiết"
-        onClick={() => toast.info(`Chi tiết PCT ${row.orderCode} — đang phát triển`)}
-      >
-        <BsEye className="me-1" /> Xem
-      </Button>
+      <div className="d-flex gap-1">
+        <Button
+          variant="outline-primary"
+          size="sm"
+          title="Xem chi tiết"
+          onClick={() => setSelectedWorkOrderId(row.id)}
+        >
+          <BsEye className="me-1" /> Xem
+        </Button>
+        <Button
+          variant="outline-success"
+          size="sm"
+          title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Cấp vật tư cho PCT'}
+          disabled={finished}
+          onClick={() => setSuppliesIssueTarget(row)}
+        >
+          <BsBoxSeam className="me-1" /> Cấp vật tư
+        </Button>
+      </div>
     );
   }
 
@@ -207,7 +223,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} actions={renderActions} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">
@@ -234,6 +250,20 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
           )}
         </>
       )}
+
+      {/* ===== MODAL: CHI TIẾT PCT ===== */}
+      <WorkOrderDetailModal
+        show={!!selectedWorkOrderId}
+        workOrderId={selectedWorkOrderId}
+        onClose={() => setSelectedWorkOrderId(null)}
+      />
+
+      {/* ===== MODAL: CẤP VẬT TƯ CHO PCT ===== */}
+      <SuppliesIssueModal
+        show={!!suppliesIssueTarget}
+        workOrder={suppliesIssueTarget}
+        onClose={() => setSuppliesIssueTarget(null)}
+      />
     </div>
   );
 }

@@ -28,6 +28,16 @@ export const workOrderService = {
     apiClient.get(`${BASE}`, { params: { search, page, size } }),
 
   /**
+   * Lấy chi tiết một phiếu công tác bao gồm:
+   * - Thông tin chung (mã PCT, thiết bị, leader, supervisors)
+   * - Danh sách thành viên hiện tại (leftAt = null)
+   * - Lịch sử timeline (JOINED/LEFT events sorted by time)
+   * → GET /api/v1/work-orders/{id}
+   * @param {number} id - ID phiếu công tác
+   */
+  getById: (id) => apiClient.get(`${BASE_URL}/api/v1/work-orders/${id}`),
+
+  /**
    * Tạo phiếu công tác từ một yêu cầu sửa chữa.
    * → POST /api/maintenance/work-orders
    * Body khớp với CreateWorkOrderRequest DTO:
@@ -47,4 +57,46 @@ export const workOrderService = {
    * → PATCH /api/maintenance/work-orders/{id}/cancel
    */
   cancel: (id) => apiClient.patch(`${BASE}/${id}/cancel`),
+
+  /**
+   * Thêm nhân viên vào phiếu đang chạy (join). Nhân viên từng rời có thể vào
+   * lại — backend tạo dòng member mới nên lịch sử giữ đủ cặp JOINED/LEFT.
+   * → POST /api/v1/work-orders/{id}/members
+   * @param {number} id - ID phiếu công tác
+   * @param {number} employeeId - ID nhân viên cần thêm
+   */
+  addMember: (id, employeeId) => apiClient.post(`${BASE}/${id}/members`, { employeeId }),
+
+  /**
+   * Đánh dấu thành viên rời khu vực làm việc (set leftAt = now, idempotent).
+   * → PATCH /api/v1/work-orders/{id}/members/{memberId}/leave
+   * @param {number} id - ID phiếu công tác
+   * @param {number} memberId - ID dòng member (KHÔNG phải employeeId)
+   */
+  leaveMember: (id, memberId) => apiClient.patch(`${BASE}/${id}/members/${memberId}/leave`),
+
+  /**
+   * Lịch sử phiếu cấp vật tư của một phiếu công tác.
+   * → GET /api/v1/work-orders/{workOrderId}/supplies-issues
+   * Trả về { sparePartsIssues: [...], consumableIssues: [...] }
+   */
+  getSuppliesIssues: (workOrderId) => apiClient.get(`${BASE}/${workOrderId}/supplies-issues`),
+
+  /**
+   * Tạo phiếu cấp vật tư GỘP (thay thế + tiêu hao) cho một phiếu công tác.
+   * issuedBy lấy từ JWT principal — client KHÔNG truyền.
+   * → POST /api/v1/work-orders/{workOrderId}/supplies-issues
+   * @param {object} data
+   * @param {Array<{sparePartId: number, quantity: number}>} [data.spareParts]
+   * @param {Array<{consumableId: number, quantity: number}>} [data.consumables]
+   *        Ít nhất một trong hai danh sách phải có dòng.
+   */
+  createSuppliesIssue: (workOrderId, data) =>
+    apiClient.post(`${BASE}/${workOrderId}/supplies-issues`, data),
+
+  /**
+   * Tải bản in PDF của phiếu công tác (backend đồng thời upload Cloudinary).
+   * → GET /api/v1/work-orders/{id}/pdf
+   */
+  exportPdf: (id) => apiClient.get(`${BASE}/${id}/pdf`, { responseType: 'blob' }),
 };
