@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import {
   BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsXCircle, BsPlayCircle,
-  BsEye, BsBoxSeam,
+  BsEye, BsBoxSeam, BsPrinter,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -14,6 +14,7 @@ import EmptyState from '../common/EmptyState';
 import WorkOrderDetailModal from './WorkOrderDetailModal';
 import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
+import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
 
@@ -23,6 +24,8 @@ import './WorkOrderList.css';
 const TRANG_THAI_MAP = {
   OPEN: { label: 'Mới tạo', status: 'info' },
   IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
+  WAITING_FOR_APPROVAL: { label: 'Chờ Trưởng ca duyệt', status: 'warning' },
+  APPROVED: { label: 'Đã duyệt — chờ làm tiếp', status: 'info' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
@@ -34,6 +37,8 @@ const FILTERS = [
   { key: 'ALL', label: 'Tất cả' },
   { key: 'OPEN', label: 'Mới tạo' },
   { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
+  { key: 'WAITING_FOR_APPROVAL', label: 'Chờ duyệt' },
+  { key: 'APPROVED', label: 'Đã duyệt' },
   { key: 'COMPLETED', label: 'Hoàn thành' },
   { key: 'CANCELLED', label: 'Đã huỷ' },
 ];
@@ -51,6 +56,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [totalElements, setTotalElements] = useState(0);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
   const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
+  const [printingIssueId, setPrintingIssueId] = useState(null);
   const pageSize = 20;
 
   /* --- Fetch dữ liệu --- */
@@ -131,6 +137,24 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     },
   ];
 
+  /* --- In phiếu đề nghị cấp phát vật tư (PDF, mở tab mới) --- */
+  const handlePrintSuppliesIssue = async (row) => {
+    // Phiếu đã kết thúc → mở thẳng bản lưu đóng băng, khỏi render lại.
+    if (isTerminalStatus(row.status) && row.suppliesPdfPath) {
+      window.open(row.suppliesPdfPath, '_blank');
+      return;
+    }
+    setPrintingIssueId(row.id);
+    try {
+      const res = await workOrderService.exportSuppliesIssuePdf(row.id);
+      openPdfBlob(res.data);
+    } catch (err) {
+      toast.error(`Không thể in phiếu cấp vật tư: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setPrintingIssueId(null);
+    }
+  };
+
   /* --- Hành động dòng --- */
   function renderActions(row) {
     const finished = row.status === 'COMPLETED' || row.status === 'CANCELLED';
@@ -152,6 +176,15 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
           onClick={() => setSuppliesIssueTarget(row)}
         >
           <BsBoxSeam className="me-1" /> Cấp vật tư
+        </Button>
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          title="In phiếu đề nghị cấp phát vật tư (PDF)"
+          disabled={printingIssueId === row.id}
+          onClick={() => handlePrintSuppliesIssue(row)}
+        >
+          <BsPrinter className="me-1" /> {printingIssueId === row.id ? 'Đang in...' : 'In VT'}
         </Button>
       </div>
     );
@@ -256,6 +289,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         show={!!selectedWorkOrderId}
         workOrderId={selectedWorkOrderId}
         onClose={() => setSelectedWorkOrderId(null)}
+        onChanged={fetchWorkOrders}
       />
 
       {/* ===== MODAL: CẤP VẬT TƯ CHO PCT ===== */}

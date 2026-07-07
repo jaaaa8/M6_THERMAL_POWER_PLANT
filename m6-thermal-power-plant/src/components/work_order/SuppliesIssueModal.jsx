@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Tabs, Tab, Table, Badge } from 'react-bootstrap';
 import {
   BsBoxSeam, BsSearch, BsTrash, BsSave, BsXCircle,
-  BsTools, BsDroplet, BsClockHistory, BsPlusLg,
+  BsTools, BsDroplet, BsClockHistory, BsPlusLg, BsPrinter,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -10,6 +10,7 @@ import EmptyState from '../common/EmptyState';
 import { workOrderService } from '../../services/workOrderService';
 import * as sparePartService from '../../services/sparePartService';
 import * as consumableService from '../../services/consumableService';
+import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 
 /**
  * Lấy nguyên văn message lỗi backend trả về (GlobalExceptionHandler trả về
@@ -43,6 +44,7 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
   // Lịch sử cấp phát
   const [history, setHistory] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   // Reset toàn bộ khi mở cho một PCT (mới)
   useEffect(() => {
@@ -123,6 +125,27 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
     }
   };
 
+  /**
+   * In "Phiếu đề nghị cấp phát vật tư" (PDF, mở tab mới) — MỘT file gom tất cả
+   * dòng vật tư đã cấp cho PCT này. Phiếu đã kết thúc → mở thẳng bản lưu đóng
+   * băng trên Cloudinary, khỏi render lại.
+   */
+  const handlePrint = async () => {
+    if (isTerminalStatus(workOrder.status) && workOrder.suppliesPdfPath) {
+      window.open(workOrder.suppliesPdfPath, '_blank');
+      return;
+    }
+    setPrinting(true);
+    try {
+      const res = await workOrderService.exportSuppliesIssuePdf(workOrder.id);
+      openPdfBlob(res.data);
+    } catch (err) {
+      toast.error(`Không thể in phiếu cấp vật tư: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   if (!workOrder) return null;
 
   return (
@@ -185,6 +208,19 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
         <Button variant="outline-secondary" size="sm" onClick={onClose} disabled={submitting}>
           <BsXCircle className="me-1" /> Đóng
         </Button>
+        {activeTab === 'history' && (
+          <Button
+            variant="outline-primary"
+            size="sm"
+            disabled={printing
+              || !history
+              || (history.sparePartsIssues.length === 0 && history.consumableIssues.length === 0)}
+            title="In phiếu đề nghị cấp phát vật tư (PDF) — gom mọi dòng vật tư đã cấp"
+            onClick={handlePrint}
+          >
+            <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In phiếu cấp vật tư'}
+          </Button>
+        )}
         {activeTab === 'create' && (
           <Button variant="primary" size="sm" onClick={handleSubmit} disabled={submitting || totalLines === 0}>
             <BsSave className="me-1" /> {submitting ? 'Đang lưu...' : 'Tạo phiếu cấp vật tư'}

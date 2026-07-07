@@ -99,4 +99,55 @@ export const workOrderService = {
    * → GET /api/v1/work-orders/{id}/pdf
    */
   exportPdf: (id) => apiClient.get(`${BASE}/${id}/pdf`, { responseType: 'blob' }),
+
+  /**
+   * Tải bản in PDF "Phiếu đề nghị cấp phát vật tư": MỘT file gom tất cả dòng
+   * vật tư (thay thế + tiêu hao) đã cấp cho phiếu công tác. Backend trả 409
+   * nếu PCT chưa được cấp vật tư lần nào.
+   * → GET /api/v1/work-orders/{workOrderId}/supplies-issues/pdf
+   */
+  exportSuppliesIssuePdf: (workOrderId) =>
+    apiClient.get(`${BASE}/${workOrderId}/supplies-issues/pdf`, { responseType: 'blob' }),
+
+  /**
+   * Hoàn thành phiếu công tác (chỉ đổi status → COMPLETED, không sửa gì khác).
+   * Idempotent nếu đã COMPLETED; 409 nếu CANCELLED / đang chờ duyệt gia hạn.
+   * → PATCH /api/v1/work-orders/{id}/complete
+   */
+  complete: (id) => apiClient.patch(`${BASE}/${id}/complete`),
+
+  /**
+   * Tổ trưởng GỬI DUYỆT / TẠM DỪNG phiếu (từ mọi trạng thái đang sống):
+   * status → WAITING_FOR_APPROVAL + tạo dòng gia hạn chờ Trưởng ca ký bản giấy.
+   * Dùng cho cả phiếu OPEN xin duyệt trước khi làm lẫn tạm dừng cuối ngày.
+   * → PATCH /api/v1/work-orders/{id}/stop
+   * @param {string} reason        - Lý do gửi duyệt / xin làm tiếp (bắt buộc)
+   * @param {string} extendedUntil - Xin phép đến ngày (ISO datetime, bắt buộc)
+   */
+  stop: (id, reason, extendedUntil) =>
+    apiClient.patch(`${BASE}/${id}/stop`, { reason, extendedUntil }),
+
+  /**
+   * Sửa thông tin phiếu đang sống (partial update — chỉ trường khác null được
+   * ghi đè): leaderId / directSupervisorId / safetySupervisorId / startTime /
+   * expectedEndTime / repairDescription. Backend KHÔNG áp ràng buộc lúc tạo
+   * (trùng vai trò, chồng lấn giờ); phiếu COMPLETED/CANCELLED trả 409.
+   * → PATCH /api/v1/work-orders/{id}
+   */
+  update: (id, data) => apiClient.patch(`${BASE}/${id}`, data),
+
+  /**
+   * Ghi nhận online việc Trưởng ca ĐÃ ký duyệt bản giấy (người bấm chịu trách
+   * nhiệm nhập đúng theo bản giấy — tài khoản của họ được lưu vào approvedBy).
+   * status → APPROVED.
+   * → PATCH /api/v1/work-orders/{id}/approve-extension
+   */
+  approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
+
+  /**
+   * Mở (lại) phiếu để làm việc: OPEN → IN_PROGRESS (bắt đầu lần đầu) hoặc
+   * APPROVED → IN_PROGRESS (bật lại nút đã tắt hôm trước, sau khi duyệt).
+   * → PATCH /api/v1/work-orders/{id}/reopen
+   */
+  reopen: (id) => apiClient.patch(`${BASE}/${id}/reopen`),
 };
