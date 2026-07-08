@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -7,25 +7,24 @@ import { BsTags, BsSave, BsXCircle } from 'react-icons/bs';
 import { toolCategoryService } from '../../services/toolService';
 
 const validationSchema = Yup.object({
-  categoryCode: Yup.string().required('Mã chủng loại không được để trống').max(50, 'Tối đa 50 ký tự'),
   categoryName: Yup.string().required('Tên chủng loại không được để trống').max(255, 'Tối đa 255 ký tự'),
   description: Yup.string().max(1000, 'Mô tả quá dài'),
 });
 
-/**
- * ToolCategoryFormModal — Thêm mới / cập nhật chủng loại CCDC.
- *
- * @param {boolean} props.show
- * @param {Function} props.onClose
- * @param {Function} props.onSaved - (category) => void
- * @param {object|null} [props.category] - dữ liệu khi sửa (null = thêm mới)
- */
 export default function ToolCategoryFormModal({ show, onClose, onSaved, category = null }) {
   const isEdit = !!category;
+  const [nextCode, setNextCode] = useState('...');
+
+  useEffect(() => {
+    if (show && !isEdit) {
+      toolCategoryService.getNextCode()
+        .then((res) => setNextCode(res.data?.data || 'TC???'))
+        .catch(() => setNextCode('TC???'));
+    }
+  }, [show, isEdit]);
 
   const initialValues = useMemo(
     () => ({
-      categoryCode: category?.categoryCode || '',
       categoryName: category?.categoryName || '',
       description: category?.description || '',
     }),
@@ -34,9 +33,12 @@ export default function ToolCategoryFormModal({ show, onClose, onSaved, category
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
+      const payload = isEdit
+        ? { categoryCode: category.categoryCode, ...values }
+        : values;
       const res = isEdit
-        ? await toolCategoryService.update(category.id, values)
-        : await toolCategoryService.create(values);
+        ? await toolCategoryService.update(category.id, payload)
+        : await toolCategoryService.create(payload);
       toast.success(isEdit ? 'Cập nhật chủng loại thành công' : 'Tạo chủng loại thành công');
       onSaved?.(res.data?.data);
       onClose?.();
@@ -65,17 +67,13 @@ export default function ToolCategoryFormModal({ show, onClose, onSaved, category
             </Modal.Header>
             <Modal.Body>
               <div className="mb-3">
-                <label htmlFor="cat-categoryCode" className="form-label">
-                  Mã chủng loại <span className="required-asterisk">*</span>
-                </label>
-                <Field
-                  id="cat-categoryCode"
-                  name="categoryCode"
+                <label className="form-label">Mã chủng loại</label>
+                <input
                   type="text"
-                  placeholder="TC001"
-                  className={`form-control font-mono ${touched.categoryCode && errors.categoryCode ? 'is-invalid' : ''}`}
+                  readOnly
+                  value={isEdit ? category.categoryCode : nextCode}
+                  className="form-control font-mono bg-light text-muted"
                 />
-                <ErrorMessage name="categoryCode" component="div" className="invalid-feedback" />
               </div>
               <div className="mb-3">
                 <label htmlFor="cat-categoryName" className="form-label">
