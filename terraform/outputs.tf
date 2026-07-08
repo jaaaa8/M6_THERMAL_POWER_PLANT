@@ -47,6 +47,11 @@ output "cloudfront_url" {
   description = "URL public của frontend"
 }
 
+output "alb_dns_name" {
+  value       = aws_lb.api.dns_name
+  description = "DNS name của ALB đứng trước ECS (chỉ dùng nội bộ để debug, frontend gọi qua CloudFront /api/*)"
+}
+
 # ── Jenkins ──────────────────────────────────────────────────────
 output "jenkins_url" {
   value       = "http://${aws_eip.jenkins.public_ip}:8080"

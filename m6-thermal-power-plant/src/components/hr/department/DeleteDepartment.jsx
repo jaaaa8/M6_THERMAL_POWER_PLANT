@@ -39,7 +39,7 @@ export default function DeleteDepartment({ data, onClose, onSuccess }) {
         
         <h4 className="mb-3">Xác nhận xóa phòng ban?</h4>
         <p className="text-secondary mb-4">
-          Bạn đang thao tác xóa phòng ban <strong>{data.name}</strong>. 
+          Bạn đang thao tác xóa phòng ban <strong>{data.tenPhongBan}</strong>. 
           Hành động này không thể hoàn tác. Các nhân sự thuộc phòng ban này có thể bị ảnh hưởng.
         </p>
 

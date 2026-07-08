@@ -36,7 +36,7 @@ export default function ListDepartment() {
       const res = await departmentService.getAll();
       const listPB = res.data?.data || res.data || [];
       setData(Array.isArray(listPB) ? listPB : []);
-    } catch (error) {
+    } catch {
       toast.error('Không kết nối được API.');
       setData([]);
     } finally {
