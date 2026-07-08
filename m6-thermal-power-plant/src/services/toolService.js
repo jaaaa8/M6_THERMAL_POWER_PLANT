@@ -82,7 +82,4 @@ export const toolBorrowLogService = {
       axios.patch(`${BORROW_URL}/${id}/reject`, payload, { params: { approvedByAccountId } }),
 
   returnTool: (id, payload) => axios.patch(`${BORROW_URL}/${id}/return`, payload),
-
-  /** Quét và gửi ngay email nhắc các phiếu quá hạn, không cần chờ job theo giờ */
-  notifyOverdueNow: () => axios.post(`${BORROW_URL}/notify-overdue`),
 };
