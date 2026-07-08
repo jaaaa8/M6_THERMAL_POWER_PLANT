@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button } from 'react-bootstrap';
-import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsTrash, BsKey, BsLock, BsUnlock } from 'react-icons/bs';
+import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsTrash, BsKey, BsLock, BsUnlock, BsArrowClockwise } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { employeeService } from '../../../services/hr/employeeService';
 import { accountService } from '../../../services/hr/accountService';
@@ -22,8 +22,17 @@ export default function ListEmployee() {
   // Lọc
   const [departments, setDepartments] = useState([]);
   const [searchName, setSearchName] = useState('');
+  const [searchPhone, setSearchPhone] = useState('');
+  const [searchGmail, setSearchGmail] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState({ name: '', department: '' });
+  const [filterIsActive, setFilterIsActive] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({
+    name: '',
+    phone: '',
+    gmail: '',
+    department: '',
+    isActive: ''
+  });
 
   // Modals
   const [detailModal, setDetailModal] = useState({ show: false, data: null });
@@ -32,18 +41,55 @@ export default function ListEmployee() {
   const [deleteAccountModal, setDeleteAccountModal] = useState({ show: false, data: null });
 
   const handleApplyFilter = () => {
-    setAppliedFilters({ name: searchName, department: filterDepartment });
+    setAppliedFilters({
+      name: searchName,
+      phone: searchPhone,
+      gmail: searchGmail,
+      department: filterDepartment,
+      isActive: filterIsActive
+    });
+  };
+
+  const handleClearFilters = () => {
+    setSearchName('');
+    setSearchPhone('');
+    setSearchGmail('');
+    setFilterDepartment('');
+    setFilterIsActive('');
+    setAppliedFilters({
+      name: '',
+      phone: '',
+      gmail: '',
+      department: '',
+      isActive: ''
+    });
   };
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      const searchParams = {
+        name: appliedFilters.name || undefined,
+        phone: appliedFilters.phone || undefined,
+        gmail: appliedFilters.gmail || undefined,
+        departmentId: appliedFilters.department || undefined,
+        isActive: appliedFilters.isActive !== '' ? appliedFilters.isActive === 'true' : undefined,
+        size: 1000
+      };
+
       const [resNhanSu, resPhongBan] = await Promise.all([
-        employeeService.getAllWithAccounts(),
+        employeeService.search(searchParams),
         employeeService.getDepartments()
       ]);
-      const listNhanSu = resNhanSu.data?.data || resNhanSu.data || [];
-      setData(Array.isArray(listNhanSu) ? listNhanSu : []);
+      
+      const listNhanSu = resNhanSu.data?.content || resNhanSu.data?.data?.content || resNhanSu.data || [];
+      const mappedList = (Array.isArray(listNhanSu) ? listNhanSu : []).map(emp => ({
+        ...emp,
+        username: emp.account?.username || null,
+        status: emp.account?.status || null,
+        roles: emp.account?.roles || null
+      }));
+      setData(mappedList);
 
       const listPB = resPhongBan.data?.data || resPhongBan.data || [];
       setDepartments(Array.isArray(listPB) ? listPB : []);
@@ -57,19 +103,12 @@ export default function ListEmployee() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [appliedFilters]);
 
 
   const filteredData = useMemo(() => {
-    if (!Array.isArray(data)) return [];
-    let result = data.filter(item => {
-      if (!item) return false;
-      const matchName = (item.fullName || '').toLowerCase().includes((appliedFilters.name || '').toLowerCase());
-      const matchPhongBan = appliedFilters.department ? String(item.department?.id) === String(appliedFilters.department) : true;
-      return matchName && matchPhongBan;
-    });
-    return result;
-  }, [data, appliedFilters]);
+    return data;
+  }, [data]);
 
   const columns = [
     { key: 'employeeCode', label: 'Mã NV', sortable: true },
@@ -96,50 +135,99 @@ export default function ListEmployee() {
       />
 
       <div className="surface-card p-4 mb-4 filter-container">
-        <Row className="align-items-end g-3">
-          <Col md={3}>
+        <Row className="g-2 align-items-end">
+          <Col lg={2} md={4} xs={6}>
             <Form.Group>
-              <Form.Label>Tìm theo tên</Form.Label>
+              <Form.Label className="fs-7 text-secondary mb-1">Họ và tên</Form.Label>
               <Form.Control 
                 type="text" 
-                placeholder="Nhập tên nhân viên..."
+                size="sm"
+                placeholder="Tên nhân viên..."
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
               />
             </Form.Group>
           </Col>
-          <Col md={3}>
+          <Col lg="auto" md={4} xs={6} style={{ width: '14%' }}>
             <Form.Group>
-              <Form.Label>Phòng ban</Form.Label>
+              <Form.Label className="fs-7 text-secondary mb-1">STĐ</Form.Label>
+              <Form.Control 
+                type="text" 
+                size="sm"
+                placeholder="SĐT..."
+                value={searchPhone}
+                onChange={(e) => setSearchPhone(e.target.value)}
+              />
+            </Form.Group>
+          </Col>
+          <Col lg={2} md={4} xs={6}>
+            <Form.Group>
+              <Form.Label className="fs-7 text-secondary mb-1">Email</Form.Label>
+              <Form.Control 
+                type="text" 
+                size="sm"
+                placeholder="Email..."
+                value={searchGmail}
+                onChange={(e) => setSearchGmail(e.target.value)}
+              />
+            </Form.Group>
+          </Col>
+          <Col lg="auto" md={4} xs={6} style={{ width: '12%' }}>
+            <Form.Group>
+              <Form.Label className="fs-7 text-secondary mb-1">Phòng ban</Form.Label>
               <Form.Select 
+                size="sm"
                 value={filterDepartment}
                 onChange={(e) => setFilterDepartment(e.target.value)}
               >
-                <option value="">Tất cả phòng ban</option>
+                <option value="">Tất cả</option>
                 {departments.map(pb => (
                   <option key={pb.id} value={pb.id}>{pb.name}</option>
                 ))}
               </Form.Select>
             </Form.Group>
           </Col>
-          <Col md={2}>
+          <Col lg="auto" md={4} xs={6} style={{ width: '11%' }}>
+            <Form.Group>
+              <Form.Label className="fs-7 text-secondary mb-1">Trạng thái</Form.Label>
+              <Form.Select 
+                size="sm"
+                value={filterIsActive}
+                onChange={(e) => setFilterIsActive(e.target.value)}
+              >
+                <option value="">Tất cả</option>
+                <option value="true">Làm việc</option>
+                <option value="false">Nghỉ việc</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col lg="auto" md={12} xs={12} className="flex-grow-1 d-flex gap-2 mt-2 mt-lg-0 align-items-end">
             <Button 
               variant="outline-primary" 
-              className="w-100 d-inline-flex align-items-center justify-content-center gap-2" 
+              size="sm"
+              className="flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1" 
               onClick={handleApplyFilter}
             >
               <BsFilter />
               Lọc
             </Button>
-          </Col>
-          <Col md={4} className="text-md-end text-start">
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              className="d-inline-flex align-items-center justify-content-center gap-1" 
+              onClick={handleClearFilters}
+            >
+              <BsArrowClockwise />
+              Bỏ lọc
+            </Button>
             <Button 
               variant="primary" 
+              size="sm"
+              className="flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1"
               onClick={() => navigate('/hr/employees/create')}
-              className="d-inline-flex align-items-center gap-2"
             >
               <BsPersonPlusFill />
-              Thêm Nhân sự
+              Thêm
             </Button>
           </Col>
         </Row>
@@ -168,7 +256,7 @@ export default function ListEmployee() {
             <button className="btn btn-sm btn-outline-primary" onClick={() => setDetailModal({ show: true, data: row })} title="Xem">
               <BsEye />
             </button>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(`/hr/employees/create?id=${row.id}`, { state: { initialData: row } })} title="Sửa">
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(`/hr/employees/edit/${row.id}`)} title="Sửa">
               <BsPencil />
             </button>
             <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteModal({ show: true, data: row })} title="Xoá">
@@ -193,6 +281,7 @@ export default function ListEmployee() {
         <DetailEmployee 
           data={detailModal.data} 
           onClose={() => setDetailModal({ show: false, data: null })} 
+          onRefreshList={fetchData}
         />
       )}
 

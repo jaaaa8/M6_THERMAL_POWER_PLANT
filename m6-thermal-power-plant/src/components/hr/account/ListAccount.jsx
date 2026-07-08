@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button } from 'react-bootstrap';
-import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsLock, BsUnlock } from 'react-icons/bs';
+import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsLock, BsUnlock, BsArrowClockwise } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { accountService } from '../../../services/hr/accountService';
 import PageHeader from '../../common/PageHeader';
@@ -17,27 +17,65 @@ export default function ListAccount() {
 
   // Lọc
   const [roles, setRoles] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchUsername, setSearchUsername] = useState('');
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searchEmployeeName, setSearchEmployeeName] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState({ query: '', role: '', status: '' });
+  const [appliedFilters, setAppliedFilters] = useState({
+    username: '',
+    email: '',
+    employeeName: '',
+    role: '',
+    status: ''
+  });
 
   // Modals
   const [detailModal, setDetailModal] = useState({ show: false, data: null });
   const [deleteModal, setDeleteModal] = useState({ show: false, data: null });
 
   const handleApplyFilter = () => {
-    setAppliedFilters({ query: searchQuery, role: filterRole, status: filterStatus });
+    setAppliedFilters({
+      username: searchUsername,
+      email: searchEmail,
+      employeeName: searchEmployeeName,
+      role: filterRole,
+      status: filterStatus
+    });
+  };
+
+  const handleClearFilters = () => {
+    setSearchUsername('');
+    setSearchEmail('');
+    setSearchEmployeeName('');
+    setFilterRole('');
+    setFilterStatus('');
+    setAppliedFilters({
+      username: '',
+      email: '',
+      employeeName: '',
+      role: '',
+      status: ''
+    });
   };
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      const searchParams = {
+        username: appliedFilters.username || undefined,
+        email: appliedFilters.email || undefined,
+        employeeName: appliedFilters.employeeName || undefined,
+        roleId: appliedFilters.role || undefined,
+        status: appliedFilters.status || undefined,
+        size: 1000
+      };
+
       const [res, rolesRes] = await Promise.all([
-        accountService.getAll(),
+        accountService.search(searchParams),
         accountService.getRoles()
       ]);
-      const listTK = res.data?.data || res.data || [];
+      const listTK = res.data?.content || res.data?.data || res.data || [];
       setData(Array.isArray(listTK) ? listTK : []);
 
       const rolesList = rolesRes.data?.data || rolesRes.data || [];
@@ -52,23 +90,12 @@ export default function ListAccount() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [appliedFilters]);
 
   const filteredData = useMemo(() => {
     if (!Array.isArray(data)) return [];
-    return data.filter(item => {
-      if (!item) return false;
-      const lowerQuery = (appliedFilters.query || '').toLowerCase();
-      const matchQuery =
-        (item.username || '').toLowerCase().includes(lowerQuery) ||
-        (item.employee?.fullName || '').toLowerCase().includes(lowerQuery);
-
-      const matchVaiTro = appliedFilters.role ? String(item.roles?.[0]?.id) === String(appliedFilters.role) : true;
-      const matchTrangThai = appliedFilters.status ? String(item.status) === String(appliedFilters.status) : true;
-
-      return matchQuery && matchVaiTro && matchTrangThai;
-    });
-  }, [data, appliedFilters]);
+    return data;
+  }, [data]);
 
   const columns = [
     { key: 'username', label: 'Tên đăng nhập', sortable: true },
@@ -110,22 +137,48 @@ export default function ListAccount() {
       />
 
       <div className="surface-card p-4 mb-4 filter-container">
-        <Row className="align-items-end g-3">
-          <Col md={3}>
+        <Row className="g-2 align-items-end">
+          <Col lg={2} md={4} xs={6}>
             <Form.Group>
-              <Form.Label>Tìm kiếm</Form.Label>
+              <Form.Label className="fs-7 text-secondary mb-1">Tên đăng nhập</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Nhập tên đăng nhập hoặc họ tên..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                size="sm"
+                placeholder="Username..."
+                value={searchUsername}
+                onChange={(e) => setSearchUsername(e.target.value)}
               />
             </Form.Group>
           </Col>
-          <Col md={2}>
+          <Col lg={2} md={4} xs={6}>
             <Form.Group>
-              <Form.Label>Vai trò</Form.Label>
+              <Form.Label className="fs-7 text-secondary mb-1">Họ và tên</Form.Label>
+              <Form.Control
+                type="text"
+                size="sm"
+                placeholder="Tên nhân viên..."
+                value={searchEmployeeName}
+                onChange={(e) => setSearchEmployeeName(e.target.value)}
+              />
+            </Form.Group>
+          </Col>
+          <Col lg={2} md={4} xs={6}>
+            <Form.Group>
+              <Form.Label className="fs-7 text-secondary mb-1">Email</Form.Label>
+              <Form.Control
+                type="text"
+                size="sm"
+                placeholder="Email..."
+                value={searchEmail}
+                onChange={(e) => setSearchEmail(e.target.value)}
+              />
+            </Form.Group>
+          </Col>
+          <Col lg="auto" md={4} xs={6} style={{ width: '12%' }}>
+            <Form.Group>
+              <Form.Label className="fs-7 text-secondary mb-1">Vai trò</Form.Label>
               <Form.Select
+                size="sm"
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
               >
@@ -136,10 +189,11 @@ export default function ListAccount() {
               </Form.Select>
             </Form.Group>
           </Col>
-          <Col md={2}>
+          <Col lg="auto" md={4} xs={6} style={{ width: '11%' }}>
             <Form.Group>
-              <Form.Label>Trạng thái</Form.Label>
+              <Form.Label className="fs-7 text-secondary mb-1">Trạng thái</Form.Label>
               <Form.Select
+                size="sm"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -149,24 +203,35 @@ export default function ListAccount() {
               </Form.Select>
             </Form.Group>
           </Col>
-          <Col md={2}>
+          <Col lg="auto" md={6} xs={12} className="d-flex gap-2 mt-2 mt-lg-0 align-items-end">
             <Button
               variant="outline-primary"
-              className="w-100 d-inline-flex align-items-center justify-content-center gap-2"
+              size="sm"
+              className="d-inline-flex align-items-center justify-content-center gap-1 px-3"
               onClick={handleApplyFilter}
             >
               <BsFilter />
               Lọc
             </Button>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="d-inline-flex align-items-center justify-content-center gap-1 px-3"
+              onClick={handleClearFilters}
+            >
+              <BsArrowClockwise />
+              Bỏ lọc
+            </Button>
           </Col>
-          <Col md={3} className="text-md-end text-start">
+          <Col className="ms-auto text-end mt-2 mt-lg-0 align-self-end">
             <Button
               variant="primary"
+              size="sm"
+              className="d-inline-flex align-items-center justify-content-center gap-1 px-3"
               onClick={() => navigate('/hr/accounts/create')}
-              className="d-inline-flex align-items-center gap-2"
             >
               <BsPersonPlusFill />
-              Thêm Tài khoản
+              Thêm
             </Button>
           </Col>
         </Row>
@@ -201,7 +266,6 @@ export default function ListAccount() {
       {detailModal.show && detailModal.data && (
         <DetailAccount
           data={detailModal.data}
-          mapVaiTro={{}}
           onClose={() => setDetailModal({ show: false, data: null })}
         />
       )}

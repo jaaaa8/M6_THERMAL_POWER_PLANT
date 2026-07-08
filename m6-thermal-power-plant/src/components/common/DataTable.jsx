@@ -24,7 +24,7 @@ export default function DataTable({
   data = [],
   searchable = true,
   searchPlaceholder = 'Tìm kiếm...',
-  pageSize = 10,
+  pageSize = 5,
   onView,
   onEdit,
   onDelete,

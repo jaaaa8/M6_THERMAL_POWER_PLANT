@@ -10,6 +10,7 @@ export const employeeService = {
   create: (data) => apiClient.post(API_URL, data),
   update: (id, data) => apiClient.put(`${API_URL}/${id}`, data),
   remove: (id) => apiClient.delete(`${API_URL}/${id}`),
+  search: (params = {}) => apiClient.get(`${API_URL}/search`, { params }),
   
   getDepartments: () => apiClient.get(`${BASE_URL}/api/v1/employees/departments`),
   getExpertises: () => apiClient.get(`${BASE_URL}/api/v1/employees/expertises`),
