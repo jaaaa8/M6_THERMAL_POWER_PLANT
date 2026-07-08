@@ -1,12 +1,12 @@
-import apiClient from "./apiClient";
+import apiClient from "../apiClient";
 
 const SYSTEM_URL = "/api/v1/systems";
 
-export const getAll = (
+export const getAllSystems = (
   name = "",
   status = "",
   page = 0,
-  size = 10
+  size = 5
 ) =>
   apiClient.get(SYSTEM_URL, {
     params: {

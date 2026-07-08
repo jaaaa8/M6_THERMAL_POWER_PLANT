@@ -5,22 +5,22 @@ import {
   BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX,
   BsGearWideConnected, BsFileEarmarkPdf, BsTag, BsPlus
 } from 'react-icons/bs';
-import * as equipmentService from "../../services/equipmentService";
+import * as equipmentService from "../../services/equipment/equipmentService";
 import PageHeader from '../common/PageHeader';
 import StatusBadge from '../common/StatusBadge';
 import ConfirmModal from '../common/ConfirmModal';
 import { toast } from 'react-toastify';
 import './style/ListEquipment.css';
+import PaginationPanel from "./PaginationPanel";
 
 export default function ListEquipment() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [systems, setSystems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Pagination state
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
@@ -265,7 +265,7 @@ export default function ListEquipment() {
           <div className="d-flex gap-2">
             <Button
               variant="outline-secondary"
-              onClick={() => setUnitModalShow(true)}
+              onClick={() => navigate("/equipment/equipments/units")}
               className="d-inline-flex align-items-center gap-2 px-3"
             >
               <BsTag />
@@ -461,80 +461,43 @@ export default function ListEquipment() {
           </div>
         )}
 
-        {/* Pagination Panel */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center p-3 border-top bg-light">
-            <span className="small text-secondary">
-              Hiển thị {page * size + 1} - {Math.min((page + 1) * size, totalElements)} của {totalElements} kết quả
-            </span>
-            <div className="d-flex align-items-center gap-3">
-              <Form.Select
-                size="sm"
-                value={size}
-                onChange={handleSizeChange}
-                style={{ width: '110px' }}
-              >
-                <option value={5}>5 / trang</option>
-                <option value={10}>10 / trang</option>
-                <option value={20}>20 / trang</option>
-                <option value={50}>50 / trang</option>
-              </Form.Select>
-              <div className="d-flex gap-1">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  disabled={page <= 0}
-                  onClick={() => fetchEquipments(page - 1)}
-                >
-                  Trước
-                </Button>
-                {[...Array(totalPages)].map((_, i) => (
-                  <Button
-                    key={i}
-                    variant={i === page ? 'primary' : 'outline-secondary'}
-                    size="sm"
-                    onClick={() => fetchEquipments(i)}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  disabled={page >= totalPages - 1}
-                  onClick={() => fetchEquipments(page + 1)}
-                >
-                  Sau
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        <PaginationPanel
+          page={page}
+          size={size}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          onPageChange={(newPage) => fetchEquipments(newPage)}
+          onSizeChange={(newSize) => {
+            setSize(newSize);
+            fetchEquipments(0, newSize);
+          }}
+        />
 
-      {/* Modal: Xác nhận xóa */}
-      <ConfirmModal
-        show={deleteModal.show}
-        onClose={() => setDeleteModal({ show: false, data: null })}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
-        title="Xóa thiết bị"
-        confirmText="Xóa"
-        cancelText="Hủy"
-        variant="danger"
-        message={
-          deleteModal.data ? (
-            <div>
-              <p className="mb-2">Bạn có chắc chắn muốn xóa thiết bị sau?</p>
-              <div className="p-3 bg-light rounded border mb-2 text-start">
-                <strong>KKS:</strong> {deleteModal.data.kksCode}<br />
-                <strong>Tên thiết bị:</strong> {deleteModal.data.name}
+        {/* Modal: Xác nhận xóa */}
+        <ConfirmModal
+          show={deleteModal.show}
+          onClose={() => setDeleteModal({ show: false, data: null })}
+          onConfirm={handleDeleteConfirm}
+          loading={deleting}
+          title="Xóa thiết bị"
+          confirmText="Xóa"
+          cancelText="Hủy"
+          variant="danger"
+          message={
+            deleteModal.data ? (
+              <div>
+                <p className="mb-2">Bạn có chắc chắn muốn xóa thiết bị sau?</p>
+                <div className="p-3 bg-light rounded border mb-2 text-start">
+                  <strong>KKS:</strong> {deleteModal.data.kksCode}<br />
+                  <strong>Tên thiết bị:</strong> {deleteModal.data.name}
+                </div>
+                <p className="text-danger small mb-0">Thiết bị sẽ được chuyển vào thùng rác.</p>
               </div>
-              <p className="text-danger small mb-0">Thiết bị sẽ được chuyển vào thùng rác.</p>
-            </div>
-          ) : ''
-        }
-      />
+            ) : ''
+          }
+        />
+      </div>
     </div>
   );
+
 }
