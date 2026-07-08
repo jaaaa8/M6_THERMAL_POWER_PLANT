@@ -1,3 +1,4 @@
+// Service phân quyền: role + permission (login production OK sau fix CORS backend 2026-07-06).
 import apiClient from './apiClient';
 
 const ROLE_URL = '/api/v1/roles';
