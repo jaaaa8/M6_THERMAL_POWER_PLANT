@@ -7,6 +7,8 @@ import {
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
 import { SYSTEM_ROLES } from '../../services/roleService';
+import ProfileDetail from '../profile/ProfileDetail';
+import ChangePasswordModal from '../profile/ChangePasswordModal';
 import './Header.css';
 
 export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
@@ -15,6 +17,8 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
     return localStorage.getItem('scms-theme') || 'light';
   });
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // User hiện tại
@@ -85,7 +89,17 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
         {/* User dropdown */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button className="header-user" onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <div className="header-user-avatar">{userInitials || 'U'}</div>
+            <div className="header-user-avatar">
+              {currentUser?.avatarUrl ? (
+                <img 
+                  src={currentUser.avatarUrl.startsWith('http') ? currentUser.avatarUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${currentUser.avatarUrl}`} 
+                  alt={userName} 
+                  className="w-100 h-100 rounded-circle object-fit-cover"
+                />
+              ) : (
+                userInitials || 'U'
+              )}
+            </div>
             <div className="header-user-info">
               <div className="name">{userName}</div>
               <div className="role">{roleLabel}</div>
@@ -95,10 +109,16 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
 
           {dropdownOpen && (
             <div className="header-dropdown">
-              <button className="header-dropdown-item">
+              <button 
+                className="header-dropdown-item"
+                onClick={() => { setProfileOpen(true); setDropdownOpen(false); }}
+              >
                 <BsPerson /> Thông tin cá nhân
               </button>
-              <button className="header-dropdown-item">
+              <button 
+                className="header-dropdown-item"
+                onClick={() => { setChangePasswordOpen(true); setDropdownOpen(false); }}
+              >
                 <BsKey /> Đổi mật khẩu
               </button>
               <div className="header-dropdown-divider" />
@@ -109,6 +129,17 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
           )}
         </div>
       </div>
+
+      <ProfileDetail 
+        show={profileOpen} 
+        onClose={() => setProfileOpen(false)} 
+        onChangePasswordClick={() => setChangePasswordOpen(true)}
+      />
+
+      <ChangePasswordModal 
+        show={changePasswordOpen} 
+        onClose={() => setChangePasswordOpen(false)} 
+      />
     </header>
   );
 }

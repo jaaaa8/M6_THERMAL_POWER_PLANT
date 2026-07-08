@@ -80,4 +80,8 @@ export const authService = {
     });
     return res.data;
   },
+
+  changePassword: async (oldPassword, newPassword) => {
+    return apiClient.post(`${AUTH_URL}/change-password`, { oldPassword, newPassword });
+  },
 };
