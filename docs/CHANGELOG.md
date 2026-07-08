@@ -1,5 +1,75 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-07-06] — Ghi nhận: login production đã chạy (fix CORS phía backend)
+
+Login trên `cloudfront.net` từng lỗi "Đăng nhập thất bại" dù API trả 200 khi test bằng curl.
+Gốc rễ nằm ở backend: `CorsConfig` chỉ cho phép `localhost`, trình duyệt gửi Origin CloudFront
+→ Spring Security chặn 403 → CloudFront biến 403 thành index.html → frontend nhận HTML, không
+parse được token. Đã fix ở repo backend (`CorsConfig` dùng `AllowedOriginPatterns` + domain
+CloudFront). Frontend không đổi gì về logic — entry này chỉ để ghi nhận mốc login production OK.
+
+## [2026-07-06] — Đồng bộ bộ role theo main sau merge (bỏ bộ 9 role dev tự đặt)
+
+### Bối cảnh
+Merge `main` về phát hiện main đã seed bộ **10 role chuẩn** (Flyway `V3__seed_sample_data.sql`) khác hẳn bộ 9 role dev tự đặt. Chủ dự án/team dùng bộ main → dev đồng bộ theo main để tránh loạn DB (role trùng ý nghĩa khác tên).
+
+### Bộ role chuẩn (main, id theo V3)
+`WORKER`(1), `MATERIALS_STOREKEEPER`(2), `TOOLS_STOREKEEPER`(3), `WORKSHOP_FOREMAN`(4), `SHIFT_LEADER`(5), `CREW_LEADER`(6), `MAINTENANCE_FOREMAN`(7), `TEAM_LEADER`(8), `SAFETY_SUPERVISOR`(9), `ADMIN`(10).
+
+### Đổi tên (dev cũ → main)
+`MATERIAL_WAREHOUSE_KEEPER→MATERIALS_STOREKEEPER`, `TOOL_WAREHOUSE_KEEPER→TOOLS_STOREKEEPER`, `OPERATIONS_WORKSHOP_MANAGER→WORKSHOP_FOREMAN`, `MAINTENANCE_WORKSHOP_MANAGER→MAINTENANCE_FOREMAN`. Bỏ `HR` (main không có — menu Nhân sự tạm gán ADMIN). Thêm `WORKER`, `SAFETY_SUPERVISOR`.
+
+### Các file đã sửa
+| File | Mô tả |
+|---|---|
+| `src/services/roleService.js` | `SYSTEM_ROLES` → 10 role của main |
+| `src/pages/LoginPage.jsx` | `ROLE_REDIRECT` theo tên main |
+| `src/pages/RepairRequestPage.jsx` | `APPROVER_ROLES`/`PCT_CREATOR_ROLES`: `MAINTENANCE_FOREMAN` |
+| `src/components/layout/Sidebar.jsx` | Menu Nhân sự → `ADMIN`; CCDC → `TOOLS_STOREKEEPER` |
+| `docs/ROLE_CODES.md` | Viết lại theo 10 role main |
+
+### Backend đi kèm (repo API)
+- Flyway `V4__permission_based_rbac.sql`: tạo bảng `permissions`, `role_permissions`, cột `accounts.permission_version` (bắt buộc vì main chuyển sang `ddl-auto=validate`).
+- Flyway `V5__seed_permissions.sql`: seed 44 permission. KHÔNG seed role (V3 đã có), KHÔNG seed role_permissions (gán qua UI).
+- Resolve conflict `Jenkinsfile`/`Jenkinsfile.ci` theo main (bỏ Unit Test khỏi CI/CD).
+
+### Lưu ý
+- DB dev cần drop + để Flyway chạy lại V1→V5 (vì chuyển sang Flyway validate).
+- Gán role_permissions cho từng role qua `/admin/roles`. ADMIN full quyền sẵn qua code check.
+
+---
+
+## [2026-07-05] — Phân quyền permission-based: FE gọi API thật, đồng bộ role code với BE
+
+### Bối cảnh
+Backend đã triển khai permission-based RBAC (bảng `permissions`, `role_permissions`, cơ chế permission_version) và seed 9 role theo bộ tên mới. FE chuyển từ ma trận phân quyền mock sang dùng permission thật do BE trả về khi login/me.
+
+### Bộ role code chính thức (khớp DB backend — thay bộ cũ trong ROLE_CODES.md)
+`ADMIN`, `HR`, `MATERIAL_WAREHOUSE_KEEPER`, `TOOL_WAREHOUSE_KEEPER`, `OPERATIONS_WORKSHOP_MANAGER`, `SHIFT_LEADER`, `CREW_LEADER`, `MAINTENANCE_WORKSHOP_MANAGER`, `TEAM_LEADER`.
+Mapping đổi tên: `HR_STAFF→HR`, `MATERIAL_KEEPER→MATERIAL_WAREHOUSE_KEEPER`, `TOOL_KEEPER→TOOL_WAREHOUSE_KEEPER`, `OPERATIONS_MANAGER→OPERATIONS_WORKSHOP_MANAGER`, `WATCH_LEADER→CREW_LEADER`, `REPAIR_MANAGER→MAINTENANCE_WORKSHOP_MANAGER`.
+
+### Các file đã sửa
+| File | Mô tả |
+|---|---|
+| `src/services/roleService.js` | Bỏ toàn bộ mock (SYSTEM_FUNCTIONS, PERMISSION_ACTIONS, mockPermissions). `SYSTEM_ROLES` đổi sang role code mới. `canAccess(user, featureCode)` đọc `user.permissions` thật (map featureCode → permission `*_VIEW`). Thêm `hasPermission(user, code)`. API thật: `getRoles`, `getAllPermissions`, `getRolePermissions(roleId)`, `updateRolePermissions(roleId, permissionIds)` |
+| `src/services/authService.js` | `normalizeUser` giữ `permissions` từ BE; xoá `LEGACY_ROLE_MAP` (BE đã seed EN) |
+| `src/pages/RoleManagementPage.jsx` | Viết lại: chọn role (pills) → checklist permission thật nhóm theo domain, lưu qua `PUT /api/v1/roles/{id}/permissions`. Bỏ ma trận role × chức năng × action cũ (không khớp cấu trúc permission phẳng của BE) |
+| `src/pages/RoleManagementPage.css` | Thêm style cho layout checklist mới (giữ nguyên class cũ) |
+| `src/components/common/ProtectedRoute.jsx` | `canAccess(currentUser, requireFunction)` — signature mới |
+| `src/components/layout/Sidebar.jsx` | Role hardcode `NHAN_SU→HR`, `THU_KHO_CCDC→TOOL_WAREHOUSE_KEEPER`; `canSee` truyền user object |
+| `src/pages/LoginPage.jsx` | `ROLE_REDIRECT` cập nhật 6 role code mới |
+| `src/pages/RepairRequestPage.jsx` | `APPROVER_ROLES`/`PCT_CREATOR_ROLES`: `REPAIR_MANAGER→MAINTENANCE_WORKSHOP_MANAGER` |
+
+### Backend đi kèm (repo M6_THERMAL_POWER_PLANT_API)
+- `UserInfoDTO` thêm field `permissions` (List<String>) — trả về trong login/me.
+- `AuthService.toUserInfo` populate permissions qua `PermissionService.resolvePermissionCodes`.
+
+### Lưu ý
+- Ẩn/hiện menu ở FE chỉ là lớp UX — chặn thật nằm ở BE (`@PreAuthorize`). Khi admin đổi quyền, user đang online nhận quyền mới ở request kế tiếp (cơ chế permission_version buộc refresh token).
+- `docs/ROLE_CODES.md` cần cập nhật theo bộ role mới (chưa làm trong đợt này).
+
+---
+
 ## [2026-06-27] — Chốt lại bộ 9 role thực tế của nhà máy
 
 ### Bối cảnh

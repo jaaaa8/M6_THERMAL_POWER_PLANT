@@ -4,7 +4,6 @@ import {
   BsGearFill,
   BsDropletFill,
   BsSearch,
-  BsSave,
   BsFileEarmarkCheck,
 } from "react-icons/bs";
 
@@ -153,12 +152,6 @@ export default function LubricationPlanForm() {
     alert(
       `Xuất checklist cho ${selectedEquipments.length} thiết bị`
     );
-  };
-
-  const handleSave = () => {
-    console.log(selectedEquipments);
-
-    alert("Lưu kế hoạch thành công");
   };
 
   return (

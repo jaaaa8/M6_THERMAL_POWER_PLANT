@@ -5,7 +5,7 @@ import { BsArrowLeft, BsGearWideConnected } from 'react-icons/bs';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import * as systemService from "../../services/systemService";
+import * as systemService from "../../services/equipment/systemService";
 import PageHeader from '../common/PageHeader';
 import './style/EditSystem.css';
 
@@ -19,7 +19,7 @@ export default function EditSystem() {
     description: "",
     status: "ACTIVE"
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSystem = async () => {

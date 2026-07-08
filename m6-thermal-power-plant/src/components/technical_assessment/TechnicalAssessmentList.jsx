@@ -4,6 +4,8 @@ import {
     Pagination,
 } from "react-bootstrap";
 
+import { toast } from "react-toastify";
+
 import {
     BsEye,
     BsPlusCircle,
@@ -23,10 +25,6 @@ export default function TechnicalAssessmentList() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
     const loadData = async () => {
         try {
             setLoading(true);
@@ -37,52 +35,49 @@ export default function TechnicalAssessmentList() {
             setData(result);
         } catch (error) {
             console.error(error);
-            alert(error.message);
-        } finally {
+
+            toast.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Không thể tải dữ liệu"
+            );
+        }
+        finally {
             setLoading(false);
         }
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "WAITING_PDF":
-                return (
-                    <span className="badge bg-warning">
-          Chờ upload PDF
-        </span>
-                );
+    useEffect(() => {
+        loadData();
+    }, []);
 
-            case "COMPLETED":
-                return (
-                    <span className="badge bg-success">
-          Hoàn Thành
-        </span>
-                );
 
-            default:
-                return (
-                    <span className="badge bg-secondary">
-          Không xác định
-        </span>
-                );
-        }
-    };
+
+
 
     const handleUploadPdf = async (item, file) => {
         if (!file) return;
 
         try {
+            console.log(item.id);
             const payload = {
                 id: item.id, // hoặc item.id
             };
 
             await uploadPdf(payload, file);
 
-            alert("Upload PDF thành công");
+            toast.success(
+                "Upload file PDF thành công"
+            );
             loadData();
         } catch (error) {
             console.error(error);
-            alert(error.message);
+
+            toast.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Upload PDF thất bại"
+            );
         }
     };
 
@@ -126,8 +121,8 @@ export default function TechnicalAssessmentList() {
                         </thead>
 
                         <tbody>
-                        {data.map((item, index) => (
-                            <tr key={`${item.id}-${index}`}>
+                        {data.map((item) => (
+                            <tr key={item.id}>
                                 <td>
                                     <strong>
                                         {item.technicalCode}
@@ -137,8 +132,7 @@ export default function TechnicalAssessmentList() {
                                 <td>{item.description}</td>
 
                                 <td>
-                                    {item.assessor?.employee?.fullName ||
-                                        item.assessor?.username ||
+                                    {item.assessor.name ||
                                         "-"}
                                 </td>
 

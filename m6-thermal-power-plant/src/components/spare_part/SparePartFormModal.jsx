@@ -1,23 +1,13 @@
-import { useMemo } from 'react'; // Thêm useMemo ở đây
+import {useEffect, useMemo, useState} from 'react'; // Thêm useMemo ở đây
 import { Modal, Button, Row, Col } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { BsTags, BsInfoCircle, BsImage } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-
-const STATIC_UNITS = [
-    { id: 1, name: 'kW' },
-    { id: 2, name: 'A' },
-    { id: 3, name: 'V' },
-    { id: 4, name: 'bar' },
-    { id: 5, name: 'm3/h' },
-    { id: 6, name: 'rpm' },
-    { id: 7, name: 'degC' }
-];
+import * as unitService from '../../services/unitService.js'
 
 const validationSchema = Yup.object().shape({
-    code: Yup.string()
-        .required('Mã vật tư không được để trống'),
+    code: Yup.string().nullable(),
     name: Yup.string()
         .required('Tên vật tư không được để trống')
         .max(255, 'Tên vật tư không vượt quá 255 ký tự'),
@@ -37,13 +27,24 @@ const validationSchema = Yup.object().shape({
 });
 
 export default function SparePartFormModal({ show, onHide, editingItem, onSubmit }) {
-    // Sinh mã tự động VTTT-... khi mở modal thêm mới (chỉ chạy 1 lần)
-    const autoCode = useMemo(() => {
-        if (show && !editingItem) {
-            return `VTTT-${Date.now()}`;
+
+    const [units, setUnits] = useState([]);
+
+    useEffect(() => {
+        if(show){
+            const fetchUnits = async () => {
+                try{
+                    const response = await unitService.getAll();
+                    setUnits(response.data?.content || []);
+                }catch (err){
+                    console.error('Lỗi khi tải đơn vị: ', err);
+                }
+            };
+            fetchUnits();
         }
-        return '';
-    }, [show, editingItem]);
+    }, [show])
+
+
 
     const getInitialValues = () => {
         if (editingItem) {
@@ -58,7 +59,7 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
             };
         }
         return {
-            code: autoCode,
+            code: '',
             name: '',
             price: 0,
             manufacturer: '',
@@ -96,14 +97,14 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
                             <Row className="mb-3">
                                 <Col md={6}>
                                     <label className="form-label">
-                                        Mã vật tư <span className="text-danger">*</span>
+                                        Mã vật tư
                                     </label>
                                     <Field
                                         name="code"
                                         type="text"
                                         className={`form-control font-mono ${touched.code && errors.code ? 'is-invalid' : ''}`}
                                         placeholder="Mã tự động sinh"
-                                        disabled={true} // Bị vô hiệu hóa để không cho nhập tay
+                                        disabled={true}
                                     />
                                     <ErrorMessage name="code" component="div" className="invalid-feedback" />
                                 </Col>
@@ -143,9 +144,9 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
                                         className={`form-select ${touched.unitId && errors.unitId ? 'is-invalid' : ''}`}
                                     >
                                         <option value="">— Chọn đơn vị tính mẫu —</option>
-                                        {STATIC_UNITS.map(u => (
+                                        {units.map(u => (
                                             <option key={u.id} value={String(u.id)}>
-                                                {u.name} (Đơn vị mẫu #{u.id})
+                                                {u.name}
                                             </option>
                                         ))}
                                     </Field>
@@ -182,50 +183,65 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
 
                             <div className="mb-3">
                                 <label className="form-label">
-                                    Ảnh vật tư <span className="text-danger">*</span>
+                                    Ảnh vật tư (Tối đa 3 ảnh) <span className="text-danger">*</span>
                                 </label>
-                                <div
-                                    className="border rounded p-3 d-flex flex-column align-items-center justify-content-center bg-light cursor-pointer position-relative"
-                                    style={{ minHeight: '160px', borderStyle: 'dashed', borderColor: errors.imgPath && touched.imgPath ? 'var(--color-danger-500)' : '#dee2e6' }}
-                                    onClick={() => document.getElementById('sparepart-image-upload').click()}
-                                >
-                                    {values.imgPath ? (
-                                        <div className="position-relative text-center w-100">
+                                <div className="d-flex flex-wrap gap-2 mb-2">
+                                    {(values.imgPath ? values.imgPath.split('|').filter(Boolean) : []).map((img, index) => (
+                                        <div key={index} className="position-relative border rounded p-1" style={{ width: '100px', height: '100px', backgroundColor: '#f8f9fa' }}>
                                             <img
-                                                src={values.imgPath}
-                                                alt="Preview"
-                                                style={{ maxHeight: '120px', maxWidth: '100%', objectFit: 'contain', borderRadius: 'var(--radius-sm)' }}
+                                                src={img}
+                                                alt={`Preview ${index + 1}`}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
                                             />
-                                            <div className="mt-2 text-muted small">Nhấp để thay đổi ảnh</div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-danger btn-sm position-absolute d-flex align-items-center justify-content-center"
+                                                style={{ top: '-8px', right: '-8px', borderRadius: '50%', width: '20px', height: '20px', padding: 0, fontSize: '12px', lineHeight: 1 }}
+                                                onClick={() => {
+                                                    const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
+                                                    const updatedList = currentImgs.filter((_, i) => i !== index);
+                                                    setFieldValue('imgPath', updatedList.join('|'));
+                                                }}
+                                            >
+                                                &times;
+                                            </button>
                                         </div>
-                                    ) : (
-                                        <div className="text-center text-muted">
-                                            <BsImage style={{ fontSize: '2rem' }} className="mb-2 text-secondary" />
-                                            <div>Nhấp để chọn ảnh tải lên (JPG, PNG)</div>
-                                            <div className="small text-secondary">Hỗ trợ tối đa 2MB</div>
+                                    ))}
+
+                                    {(values.imgPath ? values.imgPath.split('|').filter(Boolean) : []).length < 3 && (
+                                        <div
+                                            className="border rounded d-flex flex-column align-items-center justify-content-center bg-light cursor-pointer"
+                                            style={{ width: '100px', height: '100px', borderStyle: 'dashed', borderColor: errors.imgPath && touched.imgPath ? 'var(--color-danger-500)' : '#dee2e6' }}
+                                            onClick={() => document.getElementById('sparepart-image-upload').click()}
+                                        >
+                                            <BsImage style={{ fontSize: '1.2rem', color: '#6c757d' }} />
+                                            <span style={{ fontSize: '10px', color: '#6c757d', marginTop: '4px' }}>Thêm ảnh</span>
                                         </div>
                                     )}
-                                    <input
-                                        id="sparepart-image-upload"
-                                        type="file"
-                                        accept="image/*"
-                                        className="d-none"
-                                        onChange={(event) => {
-                                            const file = event.currentTarget.files[0];
-                                            if (file) {
-                                                if (file.size > 2 * 1024 * 1024) {
-                                                    toast.error("Kích thước ảnh không vượt quá 2MB");
-                                                    return;
-                                                }
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => {
-                                                    setFieldValue('imgPath', reader.result);
-                                                };
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }}
-                                    />
                                 </div>
+                                <input
+                                    id="sparepart-image-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="d-none"
+                                    onChange={(event) => {
+                                        const file = event.currentTarget.files[0];
+                                        if (file) {
+                                            if (file.size > 2 * 1024 * 1024) {
+                                                toast.error("Kích thước ảnh không vượt quá 2MB");
+                                                return;
+                                            }
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
+                                                const updatedList = [...currentImgs, reader.result];
+                                                setFieldValue('imgPath', updatedList.join('|'));
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                        event.target.value = '';
+                                    }}
+                                />
                                 {errors.imgPath && touched.imgPath && (
                                     <div className="text-danger small mt-1">{errors.imgPath}</div>
                                 )}

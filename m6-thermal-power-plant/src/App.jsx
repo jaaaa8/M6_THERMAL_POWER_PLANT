@@ -31,6 +31,11 @@ import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanFor
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
+import ListEquipment from './components/equipment/ListEquipment';
+import AddEquipment from './components/equipment/AddEquipment';
+import UpdateEquipment from './components/equipment/UpdateEquipment';
+import DetailEquipment from './components/equipment/DetailEquipment';
+import ManageUnits from './components/equipment/ManageUnits';
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 import RoleManagementPage from "./pages/RoleManagementPage.jsx";
 import CreateAccountPage from "./pages/CreateAccountPage.jsx";
@@ -44,6 +49,7 @@ import EmployeeLayout from './layouts/EmployeeLayout.jsx';
 import EmployeePage from './pages/employee/EmployeePage.jsx';
 import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
 import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
+import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
 
 function App() {
   return (
@@ -90,19 +96,26 @@ function App() {
             <Route path="/equipment/system" element={<ListSystem />} />
             <Route path="/equipment/system/add" element={<AddSystem />} />
             <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
-            <Route path="/equipment/listsystem" element={<PlaceholderPage title="Danh sách Thiết bị" />} />
+            <Route path="/equipment/equipments" element={<ListEquipment />} />
+            <Route path="/equipment/equipments/add" element={<AddEquipment />} />
+            <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
+            <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
+            <Route path="/equipment/equipments/units" element={<ManageUnits />} />
 
             {/* --- Sửa chữa --- */}
             <Route path="/repair/yeu-cau" element={<RepairRequest />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
-            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
-            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
-            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
-            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
+            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
+            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
+            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList />} />
+            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
 
             {/* --- Vật tư --- */}
             <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
-            <Route path="/vat-tu/nhap-xuat" element={<PlaceholderPage title="Nhập / Xuất kho" />} />
+            <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
+            <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
+
+
 
             {/* --- CCDC --- */}
             <Route path="/ccdc/danh-sach" element={<ToolList />} />

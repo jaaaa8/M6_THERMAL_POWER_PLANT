@@ -1,130 +1,95 @@
+// Service phân quyền: role + permission (login production OK sau fix CORS backend 2026-07-06).
 import apiClient from './apiClient';
 
-const API_URL = '/api/v1/roles';
+const ROLE_URL = '/api/v1/roles';
+const PERMISSION_URL = '/api/v1/permissions';
 
 /**
- * Danh sách vai trò trong hệ thống (mã EN, label VN).
- * Đồng bộ với docs/ROLE_CODES.md — BE phải seed cùng bộ này.
+ * Danh sách vai trò trong hệ thống (mã EN khớp DB, label VN).
+ * roleCode PHẢI trùng cột roles.name trong DB backend — nếu backend seed
+ * thêm role mới, bổ sung label ở đây để sidebar hiển thị tên tiếng Việt.
  */
 export const SYSTEM_ROLES = [
-  { id: 1, roleCode: 'ADMIN', roleName: 'Quản trị viên' },
-  { id: 2, roleCode: 'HR_STAFF', roleName: 'Nhân sự' },
-  { id: 3, roleCode: 'MATERIAL_KEEPER', roleName: 'Thủ kho Vật tư' },
-  { id: 4, roleCode: 'TOOL_KEEPER', roleName: 'Thủ kho CCDC' },
-  { id: 5, roleCode: 'OPERATIONS_MANAGER', roleName: 'Quản đốc PX Vận hành' },
-  { id: 6, roleCode: 'SHIFT_LEADER', roleName: 'Trưởng ca' },
-  { id: 7, roleCode: 'WATCH_LEADER', roleName: 'Trưởng kíp' },
-  { id: 8, roleCode: 'REPAIR_MANAGER', roleName: 'Quản đốc sửa chữa' },
-  { id: 9, roleCode: 'TEAM_LEADER', roleName: 'Tổ trưởng' },
+  { id: 1, roleCode: 'WORKER', roleName: 'Công nhân' },
+  { id: 2, roleCode: 'MATERIALS_STOREKEEPER', roleName: 'Thủ kho Vật tư' },
+  { id: 3, roleCode: 'TOOLS_STOREKEEPER', roleName: 'Thủ kho CCDC' },
+  { id: 4, roleCode: 'WORKSHOP_FOREMAN', roleName: 'Quản đốc PX Vận hành' },
+  { id: 5, roleCode: 'SHIFT_LEADER', roleName: 'Trưởng ca' },
+  { id: 6, roleCode: 'CREW_LEADER', roleName: 'Trưởng kíp' },
+  { id: 7, roleCode: 'MAINTENANCE_FOREMAN', roleName: 'Quản đốc Sửa chữa' },
+  { id: 8, roleCode: 'TEAM_LEADER', roleName: 'Tổ trưởng' },
+  { id: 9, roleCode: 'SAFETY_SUPERVISOR', roleName: 'Giám sát An toàn' },
+  { id: 10, roleCode: 'ADMIN', roleName: 'Quản trị viên' },
 ];
 
 /**
- * Danh sách chức năng (featureCode EN, name VN).
+ * Map mã chức năng (dùng ở Sidebar/ProtectedRoute qua prop `func`/`requireFunction`)
+ * → permission code cần có để XEM chức năng đó (khớp bảng permissions trong DB).
+ * Một chức năng có thể chấp nhận nhiều permission (có 1 trong số đó là đủ).
  */
-export const SYSTEM_FUNCTIONS = [
-  { id: 1, featureCode: 'EMPLOYEE', featureName: 'Quản lý Nhân sự', groupName: 'Nhân sự' },
-  { id: 2, featureCode: 'DEPARTMENT', featureName: 'Quản lý Phòng ban', groupName: 'Nhân sự' },
-  { id: 3, featureCode: 'ACCOUNT', featureName: 'Quản lý Tài khoản', groupName: 'Nhân sự' },
-  { id: 4, featureCode: 'EQUIPMENT_SYSTEM', featureName: 'Quản lý Hệ thống', groupName: 'Thiết bị' },
-  { id: 5, featureCode: 'EQUIPMENT', featureName: 'Quản lý Thiết bị', groupName: 'Thiết bị' },
-  { id: 6, featureCode: 'REPAIR_REQUEST', featureName: 'Yêu cầu Sửa chữa', groupName: 'Sửa chữa' },
-  { id: 7, featureCode: 'WORK_ORDER', featureName: 'Phiếu Công tác', groupName: 'Sửa chữa' },
-  { id: 8, featureCode: 'TECHNICAL_ASSESSMENT', featureName: 'Đánh giá Kỹ thuật', groupName: 'Sửa chữa' },
-  { id: 9, featureCode: 'MATERIAL', featureName: 'Quản lý Vật tư', groupName: 'Kho' },
-  { id: 10, featureCode: 'TOOL', featureName: 'Công cụ Dụng cụ', groupName: 'Kho' },
-  { id: 11, featureCode: 'MAINTENANCE', featureName: 'Bảo dưỡng Định kỳ', groupName: 'Bảo dưỡng' },
-];
-
-export const PERMISSION_ACTIONS = ['VIEW', 'CREATE', 'UPDATE', 'DELETE'];
-
-export const PERMISSION_LABELS = {
-  VIEW: 'Xem',
-  CREATE: 'Thêm',
-  UPDATE: 'Sửa',
-  DELETE: 'Xoá',
+const FEATURE_VIEW_PERMISSIONS = {
+  EMPLOYEE: ['EMPLOYEE_VIEW'],
+  DEPARTMENT: ['DEPARTMENT_VIEW'],
+  ACCOUNT: ['ACCOUNT_VIEW'],
+  EQUIPMENT_SYSTEM: ['EQUIPMENT_SYSTEM_VIEW'],
+  EQUIPMENT: ['EQUIPMENT_VIEW'],
+  REPAIR_REQUEST: ['REPAIR_REQUEST_VIEW'],
+  WORK_ORDER: ['WORK_ORDER_VIEW'],
+  TECHNICAL_ASSESSMENT: ['TECHNICAL_ASSESSMENT_VIEW'],
+  MATERIAL: ['CONSUMABLE_CATALOG_VIEW', 'SPARE_PART_CATALOG_VIEW', 'INVENTORY_VIEW'],
+  TOOL: ['TOOL_VIEW'],
+  MAINTENANCE: ['LUBRICATION_PLAN_VIEW', 'LUBRICATION_HISTORY_VIEW'],
 };
 
 /**
- * Ma trận phân quyền — mock. Key: `${roleCode}_${featureCode}_${action}`.
+ * Kiểm tra user hiện tại có quyền XEM một chức năng hay không.
+ * Đọc từ user.permissions (backend trả về trong login/me) — KHÔNG còn mock.
+ *
+ * Lưu ý: đây chỉ là lớp UX (ẩn/hiện menu). Chặn thật sự nằm ở backend
+ * (@PreAuthorize) — user sửa localStorage cũng chỉ thấy nút, bấm vào vẫn 401/403.
  */
-let mockPermissions = {};
-
-function initPermissions() {
-  const rules = {
-    HR_STAFF: ['EMPLOYEE', 'DEPARTMENT', 'ACCOUNT'],
-    MATERIAL_KEEPER: ['MATERIAL'],
-    TOOL_KEEPER: ['TOOL'],
-    OPERATIONS_MANAGER: ['EQUIPMENT_SYSTEM', 'EQUIPMENT', 'REPAIR_REQUEST'],
-    SHIFT_LEADER: ['REPAIR_REQUEST', 'WORK_ORDER'],
-    WATCH_LEADER: ['REPAIR_REQUEST'],
-    REPAIR_MANAGER: ['REPAIR_REQUEST', 'WORK_ORDER', 'TECHNICAL_ASSESSMENT', 'MATERIAL', 'TOOL'],
-    TEAM_LEADER: ['WORK_ORDER', 'TECHNICAL_ASSESSMENT', 'MAINTENANCE'],
-  };
-
-  // Một số role chỉ có quyền VIEW + CREATE (không UPDATE/DELETE).
-  const readCreateOnly = new Set(['SHIFT_LEADER', 'WATCH_LEADER']);
-
-  SYSTEM_ROLES.forEach((role) => {
-    SYSTEM_FUNCTIONS.forEach((func) => {
-      PERMISSION_ACTIONS.forEach((action) => {
-        const key = `${role.roleCode}_${func.featureCode}_${action}`;
-        if (role.roleCode === 'ADMIN') {
-          mockPermissions[key] = true;
-        } else if (rules[role.roleCode]?.includes(func.featureCode)) {
-          mockPermissions[key] = readCreateOnly.has(role.roleCode)
-            ? action === 'VIEW' || action === 'CREATE'
-            : true;
-        } else {
-          mockPermissions[key] = false;
-        }
-      });
-    });
-  });
+export function canAccess(user, featureCode) {
+  if (!user || !featureCode) return false;
+  if ((user.roles || []).includes('ADMIN')) return true;
+  const required = FEATURE_VIEW_PERMISSIONS[featureCode];
+  if (!required) return false;
+  const owned = user.permissions || [];
+  return required.some((p) => owned.includes(p));
 }
 
-initPermissions();
-
-/**
- * Kiểm tra một Role có quyền XEM một chức năng hay không.
- */
-export function canAccess(role, featureCode) {
-  if (!role || !featureCode) return false;
-  if (role === 'ADMIN') return true;
-  return !!mockPermissions[`${role}_${featureCode}_VIEW`];
-}
-
-export function getAccessibleFunctions(role) {
-  if (!role) return [];
-  if (role === 'ADMIN') return SYSTEM_FUNCTIONS.map((f) => f.featureCode);
-  return SYSTEM_FUNCTIONS
-    .filter((f) => mockPermissions[`${role}_${f.featureCode}_VIEW`])
-    .map((f) => f.featureCode);
+/** Kiểm tra user có 1 permission code cụ thể (dùng để ẩn/hiện nút hành động). */
+export function hasPermission(user, permissionCode) {
+  if (!user || !permissionCode) return false;
+  if ((user.roles || []).includes('ADMIN')) return true;
+  return (user.permissions || []).includes(permissionCode);
 }
 
 export const roleService = {
-  getRolePermissions: () => {
-    // TODO: return apiClient.get(`${API_URL}/permissions`);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            roles: SYSTEM_ROLES,
-            functions: SYSTEM_FUNCTIONS,
-            actions: PERMISSION_ACTIONS,
-            permissions: { ...mockPermissions },
-          },
-        });
-      }, 300);
-    });
+  /** GET /api/v1/roles → [{id, name}] */
+  getRoles: async () => {
+    const res = await apiClient.get(ROLE_URL);
+    return res.data;
   },
 
-  updatePermissions: (updatedPermissions) => {
-    // TODO: return apiClient.put(`${API_URL}/permissions`, updatedPermissions);
-    return new Promise((resolve) => {
-      mockPermissions = { ...updatedPermissions };
-      setTimeout(() => {
-        resolve({ data: { message: 'Cập nhật phân quyền thành công' } });
-      }, 400);
-    });
+  /** GET /api/v1/permissions → [{id, code, description}] */
+  getAllPermissions: async () => {
+    const res = await apiClient.get(PERMISSION_URL);
+    return res.data;
+  },
+
+  /** GET /api/v1/roles/{roleId}/permissions → [{id, code, description}] */
+  getRolePermissions: async (roleId) => {
+    const res = await apiClient.get(`${ROLE_URL}/${roleId}/permissions`);
+    return res.data;
+  },
+
+  /**
+   * PUT /api/v1/roles/{roleId}/permissions — thay TOÀN BỘ permission của role.
+   * Backend sẽ bump permission_version cho mọi account giữ role này →
+   * token cũ của họ tự vô hiệu ở request kế tiếp (buộc refresh lấy quyền mới).
+   */
+  updateRolePermissions: async (roleId, permissionIds) => {
+    const res = await apiClient.put(`${ROLE_URL}/${roleId}/permissions`, { permissionIds });
+    return res.data;
   },
 };

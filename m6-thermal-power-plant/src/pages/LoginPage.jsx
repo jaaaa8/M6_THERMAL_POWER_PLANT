@@ -26,14 +26,14 @@ const loginSchema = Yup.object({
 const ROLE_REDIRECT = {
   ADMIN: '/',
   WORKER: '/employee',
-  HR_STAFF: '/hr/employees',
-  MATERIAL_KEEPER: '/materials',
-  TOOL_KEEPER: '/tools',
-  OPERATIONS_MANAGER: '/equipment',
+  MATERIALS_STOREKEEPER: '/materials',
+  TOOLS_STOREKEEPER: '/tools',
+  WORKSHOP_FOREMAN: '/equipment',
   SHIFT_LEADER: '/repair/requests',
-  WATCH_LEADER: '/repair/requests',
-  REPAIR_MANAGER: '/repair/work-orders',
+  CREW_LEADER: '/repair/requests',
+  MAINTENANCE_FOREMAN: '/repair/work-orders',
   TEAM_LEADER: '/repair/work-orders',
+  SAFETY_SUPERVISOR: '/repair/work-orders',
 };
 
 export default function LoginPage() {

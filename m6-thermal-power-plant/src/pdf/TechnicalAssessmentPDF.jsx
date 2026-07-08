@@ -191,7 +191,7 @@ export default function TechnicalAssessmentPDF({
 
     const assessor =
         assessors.find(
-            (a) => a.id.toString() === data.assessorId
+            (a) => a.username.toString() === data.username
         )?.fullName || "";
 
     const system =
