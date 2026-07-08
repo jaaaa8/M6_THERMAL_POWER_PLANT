@@ -1,0 +1,69 @@
+.emp-layout {
+  min-height: 100vh;
+  background: var(--bg-body);
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-header {
+  height: 56px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.emp-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-md);
+  font-weight: var(--font-bold);
+  color: var(--color-primary-600);
+}
+
+.emp-header-icon { font-size: 1.3rem; }
+
+.emp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emp-header-name {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+.emp-logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--text-tertiary);
+  padding: 6px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.emp-logout-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--color-status-danger);
+}
+
+.emp-main {
+  flex: 1;
+  padding: 32px 24px;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+}

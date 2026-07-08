@@ -10,6 +10,7 @@ import {
   BsSave,
   BsXCircle,
   BsArrowClockwise,
+  BsCamera,
 } from 'react-icons/bs';
 import { employeeService } from '../../../services/hr/employeeService';
 import './style/AddEmployee.css';
@@ -42,11 +43,13 @@ const validationSchema = Yup.object({
 
   positionId: Yup.string()
     .required('Vui lòng chọn chức vụ'),
+
 });
 
 const INITIAL_VALUES = {
   fullName: '',
   gmail: '',
+  imgPath: '',
   phone: '',
   departmentId: '',
   expertiseId: '',
@@ -85,6 +88,7 @@ export default function AddEmployee({
       const payload = {
         fullName: values.fullName,
         gmail: values.gmail,
+        imgPath: values.imgPath || '',
         phone: values.phone,
         departmentId: parseInt(values.departmentId),
         expertiseId: parseInt(values.expertiseId),
@@ -116,6 +120,7 @@ export default function AddEmployee({
     ? {
         fullName: initialData.fullName || '',
         gmail: initialData.gmail || '',
+        imgPath: initialData.imgPath || '',
         phone: initialData.phone || '',
         departmentId: initialData.department?.id || '',
         expertiseId: initialData.expertise?.id || '',
@@ -124,12 +129,12 @@ export default function AddEmployee({
     : INITIAL_VALUES;
 
   return (
-    <div className="nhansu-form-card animate-fade-in">
-      <div className="nhansu-form-header">
-        <div className="nhansu-form-header-icon">
+    <div className="employee-form-card nhansu-form-card animate-fade-in">
+      <div className="employee-form-header nhansu-form-header">
+        <div className="employee-form-header-icon nhansu-form-header-icon">
           <BsPersonPlusFill />
         </div>
-        <div className="nhansu-form-header-text">
+        <div className="employee-form-header-text nhansu-form-header-text">
           <h2>{isEdit ? 'Cập nhật Nhân sự' : 'Thêm mới Nhân sự'}</h2>
           <p>
             {isEdit
@@ -145,12 +150,55 @@ export default function AddEmployee({
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {({ isSubmitting, touched, errors, resetForm }) => (
+        {({ isSubmitting, touched, errors, resetForm, setFieldValue, values }) => (
           <Form noValidate>
-            <div className="nhansu-form-body">
+            <div className="employee-form-body nhansu-form-body">
               <div className="form-section-title">
                 <BsPersonBadge />
                 Thông tin cơ bản
+              </div>
+
+              {/* Avatar Upload Zone */}
+              <div className="avatar-upload-zone" onClick={() => document.getElementById('employee-avatar-upload').click()}>
+                <div className={`avatar-upload-circle ${values.imgPath ? 'has-image' : ''}`}>
+                  {values.imgPath ? (
+                    <>
+                      <img src={values.imgPath} alt="Avatar Preview" className="avatar-preview-img" />
+                      <div className="avatar-overlay">
+                        <BsCamera className="avatar-overlay-icon" />
+                        <span className="avatar-overlay-text">Thay đổi</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <BsCamera className="avatar-upload-icon" />
+                      <span className="avatar-upload-hint">Tải ảnh<br />đại diện</span>
+                    </>
+                  )}
+                </div>
+                <input
+                  id="employee-avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="avatar-upload-input"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files[0];
+                    if (file) {
+                      if (file.size > 2 * 1024 * 1024) {
+                        toast.error("Kích thước ảnh không vượt quá 2MB");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFieldValue('imgPath', reader.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                {errors.imgPath && touched.imgPath && (
+                  <div className="avatar-error">{errors.imgPath}</div>
+                )}
               </div>
 
               <Row className="mb-3">
@@ -315,7 +363,7 @@ export default function AddEmployee({
 
             </div>
 
-            <div className="nhansu-form-footer">
+            <div className="employee-form-footer nhansu-form-footer">
               {onCancel && (
                 <Button
                   variant="outline-secondary"

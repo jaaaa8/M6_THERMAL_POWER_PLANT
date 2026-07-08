@@ -117,7 +117,7 @@ export default function ToolCategory() {
                 data={categories}
                 loading={loading}
                 searchable={false}
-                pageSize={10}
+                pageSize={5}
                 renderActions={(row) => (
                     <div className="data-table-actions">
                         <button className="btn btn-sm btn-outline-secondary" onClick={() => setFormCategory(row)} title="Sửa">

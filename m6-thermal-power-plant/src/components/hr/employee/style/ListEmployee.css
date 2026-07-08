@@ -13,3 +13,12 @@
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
+
+.filter-container .form-control,
+.filter-container .form-select,
+.filter-container .btn {
+  height: 31px;
+  line-height: 1.5;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}

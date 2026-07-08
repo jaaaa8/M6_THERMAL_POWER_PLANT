@@ -4,14 +4,14 @@ import { Row, Col, Button } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { BsTools, BsSave, BsXCircle, BsInfoCircle, BsImage, BsUpload, BsTrash } from 'react-icons/bs';
+import { BsTools, BsSave, BsXCircle, BsInfoCircle, BsImage, BsUpload, BsTrash, BsFileEarmarkExcel } from 'react-icons/bs';
 import PageHeader from '../../components/common/PageHeader';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ToolImportModal from '../../components/ccdc/ToolImportModal';
 import { toolService, toolCategoryService } from '../../services/toolService';
 import './CcdcForm.css';
 
 const validationSchema = Yup.object({
-    toolCode: Yup.string().required('Mã CCDC không được để trống').max(50, 'Tối đa 50 ký tự'),
     name: Yup.string().required('Tên CCDC không được để trống').max(255, 'Tối đa 255 ký tự'),
     toolCategoryId: Yup.string().required('Vui lòng chọn chủng loại'),
     unit: Yup.string().required('Đơn vị tính không được để trống').max(50, 'Tối đa 50 ký tự'),
@@ -34,6 +34,8 @@ export default function ToolForm() {
     const [tool, setTool] = useState(null);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [nextCode, setNextCode] = useState('...');
+    const [showImport, setShowImport] = useState(false);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -42,11 +44,13 @@ export default function ToolForm() {
         Promise.all([
             toolCategoryService.getAll(),
             isEdit ? toolService.getById(id) : Promise.resolve(null),
+            !isEdit ? toolService.getNextCode() : Promise.resolve(null),
         ])
-            .then(([categoriesRes, toolRes]) => {
+            .then(([categoriesRes, toolRes, nextCodeRes]) => {
                 if (!active) return;
                 setCategories(categoriesRes.data?.data ?? []);
                 if (toolRes) setTool(toolRes.data?.data ?? null);
+                if (nextCodeRes) setNextCode(nextCodeRes.data?.data || 'MCCDC-????');
             })
             .catch((err) => {
                 if (!active) return;
@@ -101,6 +105,12 @@ export default function ToolForm() {
                 icon={<BsTools />}
             />
 
+            <ToolImportModal
+                show={showImport}
+                onClose={() => setShowImport(false)}
+                onImported={goBack}
+            />
+
             <Formik
                 initialValues={initialValues}
                 validationSchema={validationSchema}
@@ -116,6 +126,17 @@ export default function ToolForm() {
                                     <h2>{isEdit ? 'Cập nhật thông tin CCDC' : 'Thông tin CCDC mới'}</h2>
                                     <p>{isEdit ? 'Mã CCDC và số lượng chỉ thay đổi qua chức năng Nhập kho' : 'Điền đầy đủ thông tin để thêm vào danh mục kho'}</p>
                                 </div>
+                                {!isEdit && (
+                                    <Button
+                                        type="button"
+                                        variant="outline-success"
+                                        size="sm"
+                                        className="ms-auto"
+                                        onClick={() => setShowImport(true)}
+                                    >
+                                        <BsFileEarmarkExcel className="me-1" /> Nhập từ Excel
+                                    </Button>
+                                )}
                             </div>
 
                             <div className="ccdc-form-body">
@@ -175,17 +196,13 @@ export default function ToolForm() {
 
                                 <Row className="mb-3">
                                     <Col md={6}>
-                                        <label htmlFor="tool-toolCode" className="form-label">
-                                            Mã CCDC <span className="required-asterisk">*</span>
-                                        </label>
-                                        <Field
-                                            id="tool-toolCode"
-                                            name="toolCode"
+                                        <label className="form-label">Mã CCDC</label>
+                                        <input
                                             type="text"
-                                            placeholder="MCCDC-0001"
-                                            className={`form-control font-mono ${touched.toolCode && errors.toolCode ? 'is-invalid' : ''}`}
+                                            readOnly
+                                            value={isEdit ? (tool?.toolCode || '') : nextCode}
+                                            className="form-control font-mono bg-light text-muted"
                                         />
-                                        <ErrorMessage name="toolCode" component="div" className="invalid-feedback" />
                                     </Col>
                                     <Col md={6}>
                                         <label htmlFor="tool-name" className="form-label">
