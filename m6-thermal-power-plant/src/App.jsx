@@ -41,12 +41,16 @@ import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 import RoleManagementPage from "./pages/RoleManagementPage.jsx";
 import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 import ToolList from './pages/ccdc/ToolList.jsx';
+import CreateWorkerAccountPage from './pages/ccdc/CreateWorkerAccountPage.jsx';
 import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
 import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
+import EmployeeLayout from './layouts/EmployeeLayout.jsx';
+import EmployeePage from './pages/employee/EmployeePage.jsx';
+import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
+import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
-
 
 function App() {
   return (
@@ -122,12 +126,24 @@ function App() {
             <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
             <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
+            <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
             <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
             <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
             <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+          </Route>
+
+          {/* ======= Employee Portal ======= */}
+          <Route element={
+            <ProtectedRoute>
+              <EmployeeLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="/employee" element={<EmployeePage />} />
+            <Route path="/employee/muon-ccdc" element={<EmployeeBorrowForm />} />
+            <Route path="/employee/lich-su" element={<EmployeeBorrowHistory />} />
           </Route>
 
           {/* 404 */}
