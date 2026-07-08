@@ -1,23 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner, Row, Col } from 'react-bootstrap';
-import { BsX, BsShieldLock } from 'react-icons/bs';
-import { accountService } from '../../../services/hr/accountService';
-import { employeeService } from '../../../services/hr/employeeService';
+import { BsX, BsShieldLock, BsKey } from 'react-icons/bs';
+import { authService } from '../../services/authService';
+import { accountService } from '../../services/hr/accountService';
+import { employeeService } from '../../services/hr/employeeService';
 import { toast } from 'react-toastify';
-import StatusBadge from '../../common/StatusBadge';
-import './style/DetailAccount.css';
+import StatusBadge from '../common/StatusBadge';
+import './ProfileDetail.css';
 
-export default function DetailAccount({ data, onClose }) {
+export default function ProfileDetail({ show, onClose, onChangePasswordClick }) {
   const [account, setAccount] = useState(null);
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const currentUser = authService.getCurrentUser();
+  const accountId = currentUser?.accountId;
+
   useEffect(() => {
-    if (!data?.id) return;
+    if (!show || !accountId) return;
     const fetchDetail = async () => {
       setLoading(true);
       try {
-        const accRes = await accountService.getById(data.id);
+        const accRes = await accountService.getById(accountId);
         const accountData = accRes.data?.data || accRes.data || null;
         setAccount(accountData);
         
@@ -26,26 +30,27 @@ export default function DetailAccount({ data, onClose }) {
           setEmployee(empRes.data?.data || empRes.data || null);
         }
       } catch (err) {
-        toast.error('Không tải được thông tin chi tiết.');
+        toast.error('Không tải được thông tin cá nhân.');
         onClose();
       } finally {
         setLoading(false);
       }
     };
     fetchDetail();
-  }, [data?.id]);
+  }, [accountId, show]);
 
-  if (!data) return null;
+  if (!show) return null;
 
   return (
     <Modal 
-      show={true} 
+      show={show} 
       onHide={onClose}
       size="lg"
       centered
-      className="detail-account-modal"
+      className="profile-detail-modal"
     >
       <Modal.Header className="border-0 pb-0">
+        <h5 className="modal-title ms-3 mt-2 text-primary fw-bold">Thông tin cá nhân</h5>
         <Button 
           variant="light" 
           className="btn-close-custom ms-auto" 
@@ -59,7 +64,7 @@ export default function DetailAccount({ data, onClose }) {
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
-            <p className="text-muted mt-2 fs-7">Đang tải chi tiết tài khoản...</p>
+            <p className="text-muted mt-2 fs-7">Đang tải thông tin cá nhân...</p>
           </div>
         ) : account ? (
           <Row>
@@ -95,7 +100,7 @@ export default function DetailAccount({ data, onClose }) {
                     <span className="info-value">{account.email || 'Chưa thiết lập'}</span>
                   </div>
                   
-                  <div className="info-item">
+                  <div className="info-item mb-3">
                     <span className="info-label">Vai trò hệ thống</span>
                     {account.roles && account.roles.length > 0 ? (
                       <div className="d-flex flex-wrap gap-1 mt-1.5">
@@ -110,6 +115,19 @@ export default function DetailAccount({ data, onClose }) {
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className="d-grid gap-2 px-2 mt-4">
+                <Button 
+                  variant="primary" 
+                  className="d-flex align-items-center justify-content-center gap-2 py-2"
+                  onClick={() => {
+                    onClose();
+                    onChangePasswordClick();
+                  }}
+                >
+                  <BsKey size={18} /> Đổi mật khẩu
+                </Button>
               </div>
             </Col>
 
