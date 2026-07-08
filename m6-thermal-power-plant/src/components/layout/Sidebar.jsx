@@ -32,9 +32,9 @@ const menuSections = [
       {
         icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['ADMIN'],
         children: [
-          { path: '/nhan-su/phong-ban', icon: <BsBuilding />, label: 'Phòng ban' },
-          { path: '/nhan-su/nhan-vien', icon: <BsPersonBadge />, label: 'Nhân viên' },
-          { path: '/nhan-su/tai-khoan', icon: <BsShieldLock />, label: 'Tài khoản & Quyền' },
+          { path: '/hr/departments', icon: <BsBuilding />, label: 'Phòng ban' },
+          { path: '/hr/employees', icon: <BsPersonBadge />, label: 'Nhân viên' },
+          { path: '/hr/accounts', icon: <BsShieldLock />, label: 'Tài khoản & Quyền' },
         ],
       },
     ],
@@ -72,7 +72,9 @@ const menuSections = [
         icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
           { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
-          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
+          { path: '/material/import-export/consumable', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Tiêu hao' },
+          { path: '/material/import-export/sparepart', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Thay thế' },
+
         ],
       },
       {

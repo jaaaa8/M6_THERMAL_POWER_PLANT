@@ -1,58 +1,33 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API_URL = "http://localhost:8080/api/v1/systems";
-const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImFjY291bnRJZCI6MSwicm9sZXMiOlsiQURNSU4iXSwiaWF0IjoxNzgyNzM5Nzg4LCJleHAiOjE3ODI3NDA2ODh9.vBvm1UV1oV4O5ACB-nYTONWFPwVx2c14wbIOTm1hlq8"
+const SYSTEM_URL = "/api/v1/systems";
 
-export const systemService = {
+export const getAll = (
+  name = "",
+  status = "",
+  page = 0,
+  size = 10
+) =>
+  apiClient.get(SYSTEM_URL, {
+    params: {
+      name,
+      status,
+      page,
+      size,
+    },
+  });
 
-  getAll(name = "", status = "", page = 0, size = 10) {
-    return axios.get(API_URL, {
-      params: {
-        name,
-        status,
-        page,
-        size
-      },
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+export const getById = (id) =>
+  apiClient.get(`${SYSTEM_URL}/${id}`);
 
-  },
+export const create = (data) =>
+  apiClient.post(SYSTEM_URL, data);
 
+export const update = (id, data) =>
+  apiClient.put(`${SYSTEM_URL}/${id}`, data);
 
-  getById(id) {
-    return axios.get(`${API_URL}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  },
+export const remove = (id) =>
+  apiClient.delete(`${SYSTEM_URL}/${id}`);
 
-  create(data) {
-    return axios.post(API_URL, data, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  },
+export { remove as delete };
 
-  update(id, data) {
-    return axios.put(`${API_URL}/${id}`, data, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  },
-
-  remove(id) {
-    return axios.delete(`${API_URL}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  }
-
-};
-
-export const heThongService = systemService;

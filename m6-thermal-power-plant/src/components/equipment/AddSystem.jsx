@@ -4,7 +4,7 @@ import { BsArrowLeft, BsGearWideConnected } from 'react-icons/bs';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { systemService } from '../../services/systemService';
+import * as systemService from "../../services/systemService";
 import PageHeader from '../common/PageHeader';
 import './style/AddSystem.css';
 
@@ -14,11 +14,16 @@ export default function AddSystem() {
   // Validation Schema với Yup
   const systemSchema = Yup.object().shape({
     name: Yup.string()
-      .required('Vui lòng nhập tên hệ thống')
-      .matches(
-        /^[A-Za-zÀ-ỹ].*$/,
-        "Tên hệ thống phải bắt đầu bằng chữ cái.")
-      .min(3, 'Tên hệ thống phải có tối thiểu 3 ký tự'),
+      .required("Vui lòng nhập tên hệ thống")
+      .test(
+        "first-uppercase",
+        "Tên hệ thống phải bắt đầu bằng chữ cái viết hoa",
+        (value) => {
+          if (!value) return true;
+          return value[0] === value[0].toLocaleUpperCase("vi-VN");
+        }
+      )
+      .min(3, "Tên hệ thống phải có tối thiểu 3 ký tự"),
 
     status: Yup.string()
       .required('Vui lòng chọn trạng thái hoạt động'),
