@@ -177,7 +177,6 @@ export default function AddAccount({ onCancel }) {
             handleChange,
             handleBlur,
             handleSubmit,
-            setFieldValue,
             isSubmitting,
           }) => (
             <FormikForm onSubmit={handleSubmit} className="account-form">

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Form, Button, Modal, Spinner } from 'react-bootstrap';
+import { Row, Col, Form, Button, Modal } from 'react-bootstrap';
 import { BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX, BsGearWideConnected } from 'react-icons/bs';
 import * as systemService from "../../services/systemService";
 import PageHeader from '../common/PageHeader';
@@ -18,17 +18,11 @@ export default function ListSystem() {
 
   const [page, setPage] = useState(0);
   const [size] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
+  const [, setTotalPages] = useState(0);
 
   // Bộ lọc tìm kiếm
   const [searchName, setSearchName] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-
-  // Trạng thái bộ lọc áp dụng thực tế sau khi nhấn button Tìm kiếm
-  const [appliedFilters, setAppliedFilters] = useState({
-    name: '',
-    status: '',
-  });
 
   const fetchData = async (
     keyword = "",

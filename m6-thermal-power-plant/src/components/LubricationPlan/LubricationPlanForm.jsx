@@ -8,7 +8,6 @@ import {
     BsGearFill,
     BsTools,
     BsDropletFill,
-    BsCalendarCheck,
     BsSave,
     BsArrowClockwise,
     BsXCircle,
@@ -146,7 +145,7 @@ export default function LubricationPlanForm({
 
             resetForm();
             onSuccess?.();
-        } catch (error) {
+        } catch {
             toast.error(
                 "Có lỗi xảy ra khi lưu dữ liệu"
             );
