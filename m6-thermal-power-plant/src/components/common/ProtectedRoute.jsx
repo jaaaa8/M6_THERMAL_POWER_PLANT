@@ -50,7 +50,8 @@ export default function ProtectedRoute({ children, allowedRoles, requireFunction
     return <Navigate to="/unauthorized" replace />;
   }
 
-  if (requireFunction && !canAccess(userRole, requireFunction)) {
+  // canAccess đọc user.permissions (BE trả về khi login/me), không còn ma trận mock
+  if (requireFunction && !canAccess(currentUser, requireFunction)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

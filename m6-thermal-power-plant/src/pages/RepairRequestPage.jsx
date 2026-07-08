@@ -37,9 +37,9 @@ const FILTER_PILLS = [
 ];
 
 // Vai trò được duyệt/từ chối yêu cầu sửa chữa
-const APPROVER_ROLES = ['ADMIN', 'REPAIR_MANAGER'];
+const APPROVER_ROLES = ['ADMIN', 'MAINTENANCE_FOREMAN'];
 // Vai trò được tạo PCT từ yêu cầu đã duyệt
-const PCT_CREATOR_ROLES = ['ADMIN', 'REPAIR_MANAGER', 'TEAM_LEADER'];
+const PCT_CREATOR_ROLES = ['ADMIN', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER'];
 
 export default function RepairRequestPage() {
   const currentUser = authService.getCurrentUser();
