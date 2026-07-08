@@ -15,9 +15,7 @@ const DepartmentSchema = Yup.object().shape({
     .min(3, 'Tên quá ngắn, ít nhất 3 ký tự')
     .max(100, 'Tên quá dài, tối đa 100 ký tự'),
   moTa: Yup.string()
-    .max(500, 'Mô tả quá dài, tối đa 500 ký tự'),
-  trangThai: Yup.string()
-    .required('Vui lòng chọn trạng thái')
+    .max(500, 'Mô tả quá dài, tối đa 500 ký tự')
 });
 
 export default function AddDepartment({ onCancel }) {
@@ -30,8 +28,7 @@ export default function AddDepartment({ onCancel }) {
   const [loading, setLoading] = useState(false);
   const [initialValues, setInitialValues] = useState({
     tenPhongBan: '',
-    moTa: '',
-    trangThai: 'HOAT_DONG'
+    moTa: ''
   });
 
   useEffect(() => {
@@ -40,8 +37,7 @@ export default function AddDepartment({ onCancel }) {
         const data = location.state.initialData;
         setInitialValues({
           tenPhongBan: data.tenPhongBan || '',
-          moTa: data.moTa || '',
-          trangThai: data.trangThai || 'HOAT_DONG'
+          moTa: data.moTa || ''
         });
       } else {
         // Fallback: Fetch từ API nếu không có data truyền sang
@@ -52,8 +48,7 @@ export default function AddDepartment({ onCancel }) {
             if (data) {
               setInitialValues({
                 tenPhongBan: data.tenPhongBan || '',
-                moTa: data.moTa || '',
-                trangThai: data.trangThai || 'HOAT_DONG'
+                moTa: data.moTa || ''
               });
             }
           })
@@ -180,28 +175,6 @@ export default function AddDepartment({ onCancel }) {
                     />
                     <Form.Control.Feedback type="invalid">
                       {errors.moTa}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="trangThai" className="required">
-                      Trạng thái
-                    </Form.Label>
-                    <Form.Select
-                      id="trangThai"
-                      name="trangThai"
-                      value={values.trangThai}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      isInvalid={touched.trangThai && errors.trangThai}
-                    >
-                      <option value="HOAT_DONG">Đang hoạt động</option>
-                      <option value="NGUNG_HOAT_DONG">Ngừng hoạt động</option>
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.trangThai}
                     </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
