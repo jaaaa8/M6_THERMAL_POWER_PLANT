@@ -4,32 +4,20 @@ const AUTH_URL = '/api/v1/auth';
 const ACCOUNT_URL = '/api/v1/accounts';
 
 /**
- * Bridge giai đoạn chuyển đổi: BE hiện trả role VN, FE đã dùng EN.
- * Sau khi BE cập nhật seed sang EN (xem docs/ROLE_CODES.md), xoá map này.
- */
-const LEGACY_ROLE_MAP = {
-  TRUONG_CA: 'SHIFT_LEADER',
-  // Các role cũ khác (NHAN_VIEN, KY_THUAT_VIEN, GIAM_SAT, TRUONG_PHONG, GIAM_DOC)
-  // không còn tồn tại trong bộ 9 role mới — xem docs/ROLE_CODES.md.
-  // 'ADMIN' giữ nguyên.
-};
-
-function normalizeRoles(roles = []) {
-  return roles.map((r) => LEGACY_ROLE_MAP[r] || r);
-}
-
-/**
  * Chuẩn hoá user từ BE.
+ * (BE đã seed role theo mã EN — xem docs/ROLE_CODES.md — nên không cần map chuyển đổi nữa.)
  */
 function normalizeUser(beUser) {
   if (!beUser) return null;
-  const roles = normalizeRoles(beUser.roles || []);
+  const roles = beUser.roles || [];
   return {
     accountId: beUser.accountId,
     username: beUser.username,
     fullName: beUser.fullName || beUser.username,
     roles,
     role: roles[0] || null, // tiện cho check role chính
+    // Permission code thật từ BE — nguồn dữ liệu cho canAccess/hasPermission (roleService)
+    permissions: beUser.permissions || [],
     employeeCode: beUser.employeeCode,
     departmentName: beUser.departmentName,
     position: beUser.position,

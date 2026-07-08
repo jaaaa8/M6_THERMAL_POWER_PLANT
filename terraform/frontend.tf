@@ -12,22 +12,27 @@ resource "aws_s3_bucket" "frontend" {
   tags   = { Name = "${var.project_name}-frontend" }
 }
 
+# Chặn TOÀN BỘ truy cập public — bucket giờ hoàn toàn riêng tư, chỉ CloudFront đọc được
 resource "aws_s3_bucket_public_access_block" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_website_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-
-  index_document { suffix = "index.html" }
-  error_document { key    = "index.html" }  # React Router SPA fallback
+# Origin Access Control — "chứng minh thư" để CloudFront tự xác thực với S3
+# (thay cho cách cũ: bucket bật "website hosting" + policy public "*" đọc được từ bất kỳ đâu)
+resource "aws_cloudfront_origin_access_control" "frontend" {
+  name                              = "${var.project_name}-frontend-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
+# Bucket policy: CHỈ cho phép chính CloudFront distribution này đọc object,
+# và chỉ khi request thực sự đến từ distribution đó (điều kiện SourceArn — chặn distribution khác "mượn" quyền)
 resource "aws_s3_bucket_policy" "frontend" {
   bucket     = aws_s3_bucket.frontend.id
   depends_on = [aws_s3_bucket_public_access_block.frontend]
@@ -35,11 +40,16 @@ resource "aws_s3_bucket_policy" "frontend" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid       = "PublicReadGetObject"
+      Sid       = "AllowCloudFrontServicePrincipalReadOnly"
       Effect    = "Allow"
-      Principal = "*"
+      Principal = { Service = "cloudfront.amazonaws.com" }
       Action    = "s3:GetObject"
       Resource  = "${aws_s3_bucket.frontend.arn}/*"
+      Condition = {
+        StringEquals = {
+          "AWS:SourceArn" = aws_cloudfront_distribution.frontend.arn
+        }
+      }
     }]
   })
 }
@@ -53,8 +63,19 @@ resource "aws_cloudfront_distribution" "frontend" {
   comment             = "${var.project_name} frontend"
 
   origin {
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
-    origin_id   = "S3-${local.bucket_name}"
+    # Dùng REST API endpoint của S3 (bucket_regional_domain_name), KHÔNG dùng website endpoint nữa
+    # vì website endpoint không hỗ trợ OAC/HTTPS tới origin
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "S3-${local.bucket_name}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
+  }
+
+  # Origin thứ 2 — trỏ tới ALB đứng trước ECS backend. Nhờ route "/api/*" bên dưới,
+  # frontend gọi API bằng đường dẫn tương đối cùng domain, trình duyệt luôn thấy HTTPS
+  # (viewer -> CloudFront), còn CloudFront -> ALB là HTTP nội bộ (không cần ACM riêng)
+  origin {
+    domain_name = aws_lb.api.dns_name
+    origin_id    = "ALB-api"
 
     custom_origin_config {
       http_port              = 80
@@ -79,6 +100,27 @@ resource "aws_cloudfront_distribution" "frontend" {
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
+  }
+
+  # Mọi request /api/* đi thẳng tới backend qua ALB — không cache (dữ liệu động),
+  # forward đủ method/header/cookie/query string vì đây là API thật, không phải static file
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    allowed_methods         = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods          = ["GET", "HEAD"]
+    target_origin_id        = "ALB-api"
+    viewer_protocol_policy  = "redirect-to-https"
+    compress                = true
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Accept"]
+      cookies { forward = "all" }
+    }
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
   }
 
   # React Router — 403/404 fallback về index.html

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Row, Col, Form, Button, Modal } from 'react-bootstrap';
 import { Row, Col, Form, Button, Modal } from 'react-bootstrap';
 import { BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX, BsGearWideConnected } from 'react-icons/bs';
 import * as systemService from "../../services/equipment/systemService";

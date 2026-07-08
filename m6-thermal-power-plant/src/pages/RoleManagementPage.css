@@ -206,3 +206,56 @@
     gap: var(--space-2);
   }
 }
+
+/* ============================================================
+   Layout mới: chọn role → checklist permission nhóm theo domain
+   (thay ma trận mock role × chức năng × action cũ)
+   ============================================================ */
+.role-permission-panel {
+  padding: 16px;
+}
+
+.role-pills {
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  padding-bottom: 12px;
+}
+
+.role-permission-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.role-permission-group {
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.role-permission-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-subtle, #f8f9fa);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.role-permission-group-body {
+  padding: 8px 12px;
+}
+
+.role-permission-item {
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.role-permission-code {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #6c757d);
+  background: var(--bg-subtle, #f1f3f5);
+  padding: 1px 5px;
+  border-radius: 4px;
+}

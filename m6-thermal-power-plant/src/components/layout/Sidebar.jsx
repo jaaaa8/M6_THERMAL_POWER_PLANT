@@ -30,7 +30,7 @@ const menuSections = [
     heading: 'Nhân sự',
     items: [
       {
-        icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['ADMIN', 'NHAN_SU'],
+        icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['ADMIN'],
         children: [
           { path: '/hr/departments', icon: <BsBuilding />, label: 'Phòng ban' },
           { path: '/hr/employees', icon: <BsPersonBadge />, label: 'Nhân viên' },
@@ -72,11 +72,13 @@ const menuSections = [
         icon: <BsBoxSeam />, label: 'Kho Vật tư',
         children: [
           { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
-          { path: '/vat-tu/nhap-xuat', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất kho' },
+          { path: '/material/import-export/consumable', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Tiêu hao' },
+          { path: '/material/import-export/sparepart', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Thay thế' },
+
         ],
       },
       {
-        icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'THU_KHO_CCDC'],
+        icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'TOOLS_STOREKEEPER'],
         children: [
           { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC' },
           { path: '/ccdc/chung-loai', icon: <BsTags />, label: 'Chủng loại CCDC' },
@@ -143,7 +145,8 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
   // Quyền xem một mục (item hoặc child)
   const canSee = (node) => {
     if (node.roles && node.roles.length > 0) return node.roles.includes(userRole);
-    if (node.func) return canAccess(userRole, node.func);
+    // canAccess đọc user.permissions thật từ BE (không còn ma trận mock)
+    if (node.func) return canAccess(currentUser, node.func);
     return true;
   };
 
