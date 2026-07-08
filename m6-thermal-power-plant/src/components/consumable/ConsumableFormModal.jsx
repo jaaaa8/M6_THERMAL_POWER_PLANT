@@ -36,7 +36,7 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
             const fetchUnits = async () => {
                 try {
                     const response = await unitService.getAll();
-                    setUnits(response.data || []);
+                    setUnits(response.data?.content || []);
                 } catch (error) {
                     console.error('Lỗi khi tải đơn vị tính:', error);
 
@@ -45,7 +45,6 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
             fetchUnits();
         }
     }, [show]);
-
 
 
     const getInitialValues = () => {
