@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
-  BsList, BsBell, BsMoonStars, BsSun,
+  BsList, BsMoonStars, BsSun,
   BsPerson, BsKey, BsBoxArrowRight, BsChevronDown
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
 import { SYSTEM_ROLES } from '../../services/roleService';
+import NotificationBell from '../common/NotificationBell';
 import './Header.css';
 
 export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
@@ -77,10 +78,7 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
         </button>
 
         {/* Notifications */}
-        <button className="header-icon-btn" aria-label="Thông báo">
-          <BsBell />
-          <span className="notification-dot" />
-        </button>
+        <NotificationBell accountId={currentUser?.accountId} />
 
         {/* User dropdown */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>

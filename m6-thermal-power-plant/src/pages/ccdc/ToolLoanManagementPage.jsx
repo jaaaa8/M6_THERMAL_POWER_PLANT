@@ -84,7 +84,21 @@ export default function ToolLoanManagementPage() {
     { key: 'id', label: 'Mã mượn', width: 90, render: (val) => <span className="font-mono">PM-{val}</span> },
     { key: 'toolCode', label: 'Mã CCDC', mono: true, width: 120 },
     { key: 'toolName', label: 'Tên CCDC' },
-    { key: 'quantity', label: 'SL', width: 60 },
+    {
+      key: 'quantity', label: 'SL', width: 90,
+      render: (val, row) => {
+        const returned = row.returnedQuantity || 0;
+        // Đang mượn mà đã trả một phần → hiện "còn/tổng"
+        if (row.status === 'APPROVED' && returned > 0) {
+          return (
+            <span title={`Đã trả ${returned}/${val}`}>
+              {val - returned}<span className="text-muted">/{val}</span>
+            </span>
+          );
+        }
+        return val;
+      },
+    },
     { key: 'accountName', label: 'Người mượn' },
     { key: 'transactionDate', label: 'Ngày mượn', width: 150 },
     {
@@ -196,7 +210,7 @@ export default function ToolLoanManagementPage() {
             data={filtered}
             loading={loading}
             searchPlaceholder="Tìm theo mã CCDC, tên CCDC, người mượn..."
-            pageSize={10}
+            pageSize={5}
             renderActions={(row) => (
                 <div className="data-table-actions">
                   {row.status === 'PENDING' && (

@@ -25,6 +25,7 @@ const loginSchema = Yup.object({
  */
 const ROLE_REDIRECT = {
   ADMIN: '/',
+  WORKER: '/employee',
   HR_STAFF: '/hr/employees',
   MATERIAL_KEEPER: '/materials',
   TOOL_KEEPER: '/tools',
