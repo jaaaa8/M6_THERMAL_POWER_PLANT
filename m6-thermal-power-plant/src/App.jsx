@@ -20,6 +20,7 @@ import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
 import ListEmployee from './components/hr/employee/ListEmployee';
 import AddEmployee from './components/hr/employee/AddEmployee';
+import UpdateEmployee from './components/hr/employee/UpdateEmployee';
 import ListAccount from './components/hr/account/ListAccount';
 import AddAccount from './components/hr/account/AddAccount';
 import TechnicalAssessmentList from "./components/technical_assessment/TechnicalAssessmentList.jsx";
@@ -77,6 +78,7 @@ function App() {
             <Route path="/hr/departments/create" element={<AddDepartment />} />
             <Route path="/hr/employees" element={<ListEmployee />} />
             <Route path="/hr/employees/create" element={<AddEmployee onCancel={() => window.history.back()} />} />
+            <Route path="/hr/employees/edit/:id" element={<UpdateEmployee />} />
             <Route path="/hr/accounts" element={<ListAccount />} />
             <Route path="/hr/accounts/create" element={<AddAccount />} />
             <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />

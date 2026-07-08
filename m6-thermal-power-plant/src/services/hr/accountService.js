@@ -11,5 +11,7 @@ export const accountService = {
   remove: (id) => apiClient.delete(`${API_URL}/${id}`),
   grantRole: (data) => apiClient.post(`${API_URL}/grant`, data),
   updateStatus: (data) => apiClient.patch(`${API_URL}/status`, data),
-  getRoles: () => apiClient.get(`${BASE_URL}/api/v1/roles`)
+  getRoles: () => apiClient.get(`${BASE_URL}/api/v1/roles`),
+  search: (params) => apiClient.get(`${API_URL}/search`, { params }),
+  resetPassword: (id) => apiClient.post(`${API_URL}/${id}/reset-password`)
 };

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { Form, Button, Row, Col, Spinner } from 'react-bootstrap';
-import { BsArrowLeft, BsSave, BsShieldLock } from 'react-icons/bs';
+import { BsArrowLeft, BsSave, BsShieldLock, BsArrowClockwise } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { accountService } from '../../../services/hr/accountService';
 import { employeeService } from '../../../services/hr/employeeService';
@@ -42,6 +42,23 @@ export default function AddAccount({ onCancel }) {
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!idParam) return;
+    if (!window.confirm("Bạn có chắc chắn muốn cấp lại mật khẩu cho tài khoản này không? Mật khẩu mới sẽ được gửi về email đăng ký.")) {
+      return;
+    }
+    setResetting(true);
+    try {
+      await accountService.resetPassword(idParam);
+      toast.success("Cấp lại mật khẩu thành công! Mật khẩu mới đã được gửi tới email của tài khoản.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Cấp lại mật khẩu thất bại");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const [initialValues, setInitialValues] = useState({
     username: '',
@@ -248,6 +265,7 @@ export default function AddAccount({ onCancel }) {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         isInvalid={touched.employeeId && errors.employeeId}
+                        disabled={isEditMode}
                         >
                         <option value="">— Chọn nhân viên —</option>
                         {employees.map(emp => (
@@ -312,10 +330,31 @@ export default function AddAccount({ onCancel }) {
               <hr className="my-5 opacity-25" />
 
               <div className="d-flex justify-content-end gap-3 mt-4">
+                {isEditMode && (
+                  <Button
+                    variant="outline-warning"
+                    type="button"
+                    onClick={handleResetPassword}
+                    disabled={isSubmitting || resetting}
+                    className="me-auto d-inline-flex align-items-center gap-2"
+                  >
+                    {resetting ? (
+                      <>
+                        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                        Đang cấp lại...
+                      </>
+                    ) : (
+                      <>
+                        <BsArrowClockwise />
+                        Cấp lại mật khẩu
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button 
                   variant="light" 
                   onClick={handleCancelClick}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || resetting}
                 >
                   Hủy bỏ
                 </Button>

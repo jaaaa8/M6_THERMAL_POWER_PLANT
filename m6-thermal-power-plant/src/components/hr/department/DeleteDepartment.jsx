@@ -15,9 +15,8 @@ export default function DeleteDepartment({ data, onClose, onSuccess }) {
       toast.success('Đã xóa phòng ban thành công');
       if (onSuccess) onSuccess();
     } catch (error) {
-      // Mock delete for demo if API fails
-      toast.success('(Mock) Đã xóa phòng ban thành công');
-      if (onSuccess) onSuccess();
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa phòng ban');
     } finally {
       setLoading(false);
     }
@@ -40,7 +39,7 @@ export default function DeleteDepartment({ data, onClose, onSuccess }) {
         
         <h4 className="mb-3">Xác nhận xóa phòng ban?</h4>
         <p className="text-secondary mb-4">
-          Bạn đang thao tác xóa phòng ban <strong>{data.tenPhongBan}</strong>. 
+          Bạn đang thao tác xóa phòng ban <strong>{data.name}</strong>. 
           Hành động này không thể hoàn tác. Các nhân sự thuộc phòng ban này có thể bị ảnh hưởng.
         </p>
 
