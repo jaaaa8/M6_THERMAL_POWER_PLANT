@@ -214,7 +214,7 @@ export default function ToolList() {
                 columns={columns}
                 data={tools}
                 loading={loading}
-                pageSize={10}
+                pageSize={5}
                 searchable={false}
                 renderActions={(row) => (
                     <div className="data-table-actions">
