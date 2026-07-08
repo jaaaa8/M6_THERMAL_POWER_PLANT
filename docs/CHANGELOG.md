@@ -1,5 +1,13 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-07-06] — Ghi nhận: login production đã chạy (fix CORS phía backend)
+
+Login trên `cloudfront.net` từng lỗi "Đăng nhập thất bại" dù API trả 200 khi test bằng curl.
+Gốc rễ nằm ở backend: `CorsConfig` chỉ cho phép `localhost`, trình duyệt gửi Origin CloudFront
+→ Spring Security chặn 403 → CloudFront biến 403 thành index.html → frontend nhận HTML, không
+parse được token. Đã fix ở repo backend (`CorsConfig` dùng `AllowedOriginPatterns` + domain
+CloudFront). Frontend không đổi gì về logic — entry này chỉ để ghi nhận mốc login production OK.
+
 ## [2026-07-06] — Đồng bộ bộ role theo main sau merge (bỏ bộ 9 role dev tự đặt)
 
 ### Bối cảnh
