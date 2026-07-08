@@ -1,9 +1,21 @@
-import apiClient from "./apiClient";
+import apiClient from "../apiClient";
 
 const SYSTEM_URL = "/api/v1/systems";
 
-export const getAll = (params) =>
-  apiClient.get(SYSTEM_URL, { params });
+export const getAllSystems = (
+  name = "",
+  status = "",
+  page = 0,
+  size = 5
+) =>
+  apiClient.get(SYSTEM_URL, {
+    params: {
+      name,
+      status,
+      page,
+      size,
+    },
+  });
 
 export const getById = (id) =>
   apiClient.get(`${SYSTEM_URL}/${id}`);
@@ -19,6 +31,3 @@ export const remove = (id) =>
 
 export { remove as delete };
 
-// Tìm kiếm (nếu cần đặt tên riêng)
-export const search = (params) =>
-  apiClient.get(SYSTEM_URL, { params });

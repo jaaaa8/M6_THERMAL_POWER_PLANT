@@ -14,7 +14,7 @@ export default function DeleteDepartment({ data, onClose, onSuccess }) {
       await departmentService.remove(data.id);
       toast.success('Đã xóa phòng ban thành công');
       if (onSuccess) onSuccess();
-    } catch (error) {
+    } catch {
       // Mock delete for demo if API fails
       toast.success('(Mock) Đã xóa phòng ban thành công');
       if (onSuccess) onSuccess();
