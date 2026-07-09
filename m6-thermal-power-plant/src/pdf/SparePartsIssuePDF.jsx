@@ -149,13 +149,13 @@ export default function SparePartsIssuePDF({
 
     const workOrder =
         workOrders.find(
-            w => w.id.toString() === data.workOrderId
-        )?.code || "";
+            w => w.id.toString() === data.workOrderId.toString()
+        )?.workOrderCode || "";
 
     const issuedBy =
         employees.find(
-            e => e.id.toString() === data.issuedBy
-        )?.fullName || "";
+            e => e.username === data.issueUsername
+        )?.username || "";
 
     return (
         <Document>
@@ -246,8 +246,8 @@ export default function SparePartsIssuePDF({
                             const sparePart =
                                 spareParts.find(
                                     sp =>
-                                        sp.id.toString() ===
-                                        item.sparePartId
+                                        sp.id?.toString() ===
+                                        item.sparePartId?.toString()
                                 );
 
                             return (

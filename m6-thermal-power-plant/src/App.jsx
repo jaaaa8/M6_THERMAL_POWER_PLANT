@@ -108,10 +108,10 @@ function App() {
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
             <Route path="/repair/history" element={<RepairHistory/>} />
 
-            {/* --- Vật tư --- */}
-            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
-            <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
-            <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
+            {/*/!* --- Vật tư --- *!/*/}
+            {/*<Route path="/material/catalog" element={<MaterialCatalogPage/>} />*/}
+            {/*<Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />*/}
+            {/*<Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />*/}
 
 
 

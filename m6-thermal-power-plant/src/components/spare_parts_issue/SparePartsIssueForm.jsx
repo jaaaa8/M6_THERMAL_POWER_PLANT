@@ -9,7 +9,6 @@ import { toast } from "react-toastify";
 import SparePartsIssuePDF from "../../pdf/SparePartsIssuePDF";
 import sparePartIssueService from "../../services/sparePartIssueService";
 import { workOrderService } from "../../services/workOrderService";
-import { employeeService } from "../../services/hr/employeeService";
 import * as sparePartService from "../../services/sparePartService";
 
 import {
@@ -22,6 +21,7 @@ import {
 } from "react-icons/bs";
 
 import "./SparePartsIssueForm.css";
+import {accountService} from "../../services/hr/accountService.js";
 
 const validationSchema = Yup.object({
 
@@ -29,7 +29,7 @@ const validationSchema = Yup.object({
       "Vui lòng chọn lệnh công việc"
   ),
 
-    issuedById: Yup.string().required(
+    issueUsername: Yup.string().required(
       "Vui lòng chọn người cấp phát"
   ),
 
@@ -48,7 +48,7 @@ const INITIAL_VALUES = {
 
   workOrderId: "1",
 
-    issuedById: "",
+    issueUsername: "",
 
   issuedAt: "",
 
@@ -65,7 +65,7 @@ export default function SparePartsIssueForm({
 
     const [workOrders, setWorkOrders] = useState([]);
     const [spareParts, setSpareParts] = useState([]);
-    const [employees, setEmployees] = useState([]);
+    const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -78,13 +78,13 @@ export default function SparePartsIssueForm({
 
             const [
                 workOrderRes,
-                employeeRes,
                 sparePartRes
             ] = await Promise.all([
                 workOrderService.getAll(),
-                employeeService.getAll(),
                 sparePartService.getAll(),
             ]);
+            const accountRes = await accountService.getAll();
+            setAccounts(accountRes.data);
 
 
 
@@ -93,10 +93,6 @@ export default function SparePartsIssueForm({
                 workOrderRes.data
             );
 
-            console.log(
-                "Employees:",
-                employeeRes.data
-            );
 
             console.log(
                 "Spare Parts:",
@@ -108,9 +104,9 @@ export default function SparePartsIssueForm({
                 workOrderRes?.data ??
                 [];
 
-            const employeeData =
-                employeeRes?.data?.content ??
-                employeeRes?.data ??
+            const accountData =
+                accountRes?.data?.content ??
+                accountRes?.data ??
                 [];
 
             const sparePartData =
@@ -124,9 +120,9 @@ export default function SparePartsIssueForm({
                     : []
             );
 
-            setEmployees(
-                Array.isArray(employeeData)
-                    ? employeeData
+            setAccounts(
+                Array.isArray(accountData)
+                    ? accountData
                     : []
             );
 
@@ -135,6 +131,11 @@ export default function SparePartsIssueForm({
                     ? sparePartData
                     : []
             );
+
+            console.log("ACCOUNT RESPONSE", accountRes);
+            console.log("ACCOUNT DATA", accountRes.data);
+            console.log("FIRST ACCOUNT", accountRes.data[0]);
+            console.table(accountRes.data);
         } catch (error) {
             console.error(error);
             toast.error("Không thể tải dữ liệu");
@@ -169,7 +170,7 @@ export default function SparePartsIssueForm({
                 data={values}
                 workOrders={workOrders}
                 spareParts={spareParts}
-                employees={employees}
+                employees={accounts}
             />
         ).toBlob();
 
@@ -191,16 +192,20 @@ export default function SparePartsIssueForm({
         values,
         { setSubmitting }
     ) => {
+        console.log("FORM VALUES", values);
         try {
             const payload = {
                 workOrderId: Number(values.workOrderId),
-                issuedById: Number(values.issuedById),
+                issueUsername: values.issueUsername,
                 issuedAt: values.issuedAt,
-                details: values.items.map((item) => ({
+                details: values.items.map(item => ({
                     sparePartId: Number(item.sparePartId),
                     quantity: Number(item.quantity),
                 })),
             };
+
+            console.table(payload);
+
 
             const savedIssue =
                 await sparePartIssueService.create(payload);
@@ -535,29 +540,25 @@ export default function SparePartsIssueForm({
 
                           <Field
                               as="select"
-                              name="issuedById"
+                              name="issueUsername"
                               className="form-select"
                           >
                               <option value="">
                                   Chọn người yêu cầu
                               </option>
 
-                              {employees.map((employee) => (
+                              {accounts.map(account => (
                                   <option
-                                      key={employee.id}
-                                      value={employee.id}
+                                      key={account.username}
+                                      value={account.username}
                                   >
-                                      {
-                                          employee.fullName ||
-                                          employee.name ||
-                                          employee.employeeName
-                                      }
+                                      {account.username}
                                   </option>
                               ))}
                           </Field>
 
                           <ErrorMessage
-                              name="issuedById"
+                              name="issueUsername"
                               component="div"
                               className="text-danger mt-1"
                           />
