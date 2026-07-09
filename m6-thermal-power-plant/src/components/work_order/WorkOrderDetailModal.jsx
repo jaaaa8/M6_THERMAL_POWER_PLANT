@@ -79,6 +79,9 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [empSearch, setEmpSearch] = useState('');
   const [addingEmployeeId, setAddingEmployeeId] = useState(null);
+  // Id nhân viên đang bận ở phiếu công tác sống KHÁC (vai trò phụ trách hoặc
+  // thành viên chưa rời) — ẩn khỏi gợi ý thêm. null = chưa tải.
+  const [busyIds, setBusyIds] = useState(null);
 
   /**
    * Tải chi tiết PCT. silent = true → không bật spinner toàn thân modal
@@ -115,6 +118,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     if (!show || !workOrderId) return;
     setMemberTab('members');
     setEmpSearch('');
+    setBusyIds(null); // tải lại mỗi lần mở — trạng thái bận đổi liên tục
     loadDetail();
   }, [show, workOrderId, loadDetail]);
 
@@ -137,16 +141,33 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     })();
   }, [show, memberTab, employees, employeesLoading]);
 
+  // Tải danh sách nhân viên ĐANG BẬN ở phiếu sống KHÁC khi mở tab thêm (mỗi
+  // lần mở modal tải lại — busyIds reset về null lúc mở). Lỗi thì coi như
+  // không ai bận (bộ lọc gợi ý thôi, backend không chặn).
+  useEffect(() => {
+    if (!show || memberTab !== 'add' || busyIds !== null || !workOrderId) return;
+    (async () => {
+      try {
+        const res = await workOrderService.getBusyEmployees(workOrderId);
+        setBusyIds(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setBusyIds([]);
+      }
+    })();
+  }, [show, memberTab, busyIds, workOrderId]);
+
   // Nhân viên hiển thị trong tab thêm: loại người ĐANG trong khu vực làm việc
-  // (người đã rời vẫn hiện — backend cho phép vào lại).
+  // (người đã rời vẫn hiện — backend cho phép vào lại) và người ĐANG BẬN ở
+  // phiếu công tác sống khác.
   const filteredEmployees = useMemo(() => {
     if (!employees) return [];
     const activeIds = new Set(
       (detail?.currentMembers || []).filter((m) => !m.leftAt).map((m) => m.employeeId)
     );
+    const busy = new Set(busyIds || []);
     const q = empSearch.trim().toLowerCase();
     return employees
-      .filter((e) => e.isActive !== false && !activeIds.has(e.id))
+      .filter((e) => e.isActive !== false && !activeIds.has(e.id) && !busy.has(e.id))
       .filter((e) => {
         if (!q) return true;
         return (
@@ -157,7 +178,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
         );
       })
       .slice(0, 30);
-  }, [employees, detail, empSearch]);
+  }, [employees, detail, empSearch, busyIds]);
 
   const confirmLeave = async () => {
     if (!leaveTarget) return;

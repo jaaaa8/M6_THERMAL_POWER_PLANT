@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal, Button, Tabs, Tab, Table, Badge } from 'react-bootstrap';
 import {
   BsBoxSeam, BsSearch, BsTrash, BsSave, BsXCircle,
   BsTools, BsDroplet, BsClockHistory, BsPlusLg, BsPrinter,
+  BsChevronDown, BsChevronUp,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -41,19 +42,32 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
   const [consumableLines, setConsumableLines] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Lịch sử cấp phát
+  // Lịch sử cấp phát — history.issues: các LẦN cấp (gom thay thế + tiêu hao
+  // của cùng một hành động tạo), đánh số #1, #2... theo thời gian.
   const [history, setHistory] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [printingIssueId, setPrintingIssueId] = useState(null);
+  const [expandedIssueIds, setExpandedIssueIds] = useState([]);
 
-  // Reset toàn bộ khi mở cho một PCT (mới)
+  // Cache URL blob PDF theo LẦN cấp — chỉ render khi bấm LẦN ĐẦU (lần cấp bất
+  // biến sau khi tạo nên cache an toàn); bấm lại mở thẳng URL, khỏi gọi API.
+  const instancePdfUrlsRef = useRef({});
+
+  // Reset toàn bộ khi mở cho một PCT (mới); thu hồi các URL blob đã cache khi
+  // đóng modal / đổi PCT (cleanup chạy trước lượt mở kế tiếp và lúc unmount).
   useEffect(() => {
     if (show) {
       setActiveTab('create');
       setSparePartLines([]);
       setConsumableLines([]);
       setHistory(null);
+      setExpandedIssueIds([]);
     }
+    return () => {
+      Object.values(instancePdfUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+      instancePdfUrlsRef.current = {};
+    };
   }, [show, workOrder?.id]);
 
   const loadHistory = useCallback(async () => {
@@ -64,10 +78,11 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
       setHistory({
         sparePartsIssues: res.data?.sparePartsIssues || [],
         consumableIssues: res.data?.consumableIssues || [],
+        issues: res.data?.issues || [],
       });
     } catch (err) {
       toast.error(`Không thể tải lịch sử cấp phát: ${extractErrorMessage(err)}`);
-      setHistory({ sparePartsIssues: [], consumableIssues: [] });
+      setHistory({ sparePartsIssues: [], consumableIssues: [], issues: [] });
     } finally {
       setHistoryLoading(false);
     }
@@ -126,12 +141,14 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
   };
 
   /**
-   * In "Phiếu đề nghị cấp phát vật tư" (PDF, mở tab mới) — MỘT file gom tất cả
-   * dòng vật tư đã cấp cho PCT này. Phiếu đã kết thúc → mở thẳng bản lưu đóng
-   * băng trên Cloudinary, khỏi render lại.
+   * Mở bản GỘP "Phiếu đề nghị cấp phát vật tư" — MỘT file gom tất cả dòng vật
+   * tư đã cấp cho PCT. Nút chỉ hiện khi phiếu ĐÃ KẾT THÚC (bản lưu đóng băng
+   * trên Cloudinary); phiếu còn sống dùng nút xuất PDF theo TỪNG lần cấp.
+   * Fallback render qua API nếu bản lưu chưa có (VD upload Cloudinary lỗi lúc
+   * đóng phiếu).
    */
   const handlePrint = async () => {
-    if (isTerminalStatus(workOrder.status) && workOrder.suppliesPdfPath) {
+    if (workOrder.suppliesPdfPath) {
       window.open(workOrder.suppliesPdfPath, '_blank');
       return;
     }
@@ -144,6 +161,35 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
     } finally {
       setPrinting(false);
     }
+  };
+
+  /**
+   * Xuất PDF của MỘT LẦN cấp — lazy: chỉ render khi bấm lần đầu, sau đó cache
+   * URL blob (không render nền / không lưu URL trước khi người dùng bấm).
+   */
+  const handlePrintInstance = async (issue) => {
+    const cached = instancePdfUrlsRef.current[issue.id];
+    if (cached) {
+      window.open(cached, '_blank');
+      return;
+    }
+    setPrintingIssueId(issue.id);
+    try {
+      const res = await workOrderService.exportSuppliesIssueInstancePdf(workOrder.id, issue.id);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      instancePdfUrlsRef.current[issue.id] = url;
+      window.open(url, '_blank');
+    } catch (err) {
+      toast.error(`Không thể in lần cấp #${issue.seq}: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setPrintingIssueId(null);
+    }
+  };
+
+  const toggleExpanded = (issueKey) => {
+    setExpandedIssueIds((prev) => (prev.includes(issueKey)
+      ? prev.filter((k) => k !== issueKey)
+      : [...prev, issueKey]));
   };
 
   if (!workOrder) return null;
@@ -184,21 +230,27 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
           <Tab eventKey="history" title={<span><BsClockHistory className="me-1" />Lịch sử cấp phát</span>}>
             {historyLoading || history === null ? (
               <LoadingSpinner />
-            ) : history.sparePartsIssues.length === 0 && history.consumableIssues.length === 0 ? (
+            ) : history.issues.length === 0 ? (
               <EmptyState
                 icon={<BsBoxSeam />}
                 title="Chưa có phiếu cấp vật tư"
                 description="PCT này chưa được cấp vật tư lần nào."
               />
             ) : (
-              <>
-                {history.sparePartsIssues.map((issue) => (
-                  <IssueCard key={`sp-${issue.id}`} issue={issue} typeLabel="Thay thế" codeKey="sparePartCode" nameKey="sparePartName" />
-                ))}
-                {history.consumableIssues.map((issue) => (
-                  <IssueCard key={`cs-${issue.id}`} issue={issue} typeLabel="Tiêu hao" codeKey="consumableCode" nameKey="consumableName" />
-                ))}
-              </>
+              // Mới nhất lên trước; số #seq cố định theo thời gian tạo.
+              [...history.issues].reverse().map((issue) => {
+                const issueKey = issue.id ?? `orphan-${issue.seq}`;
+                return (
+                  <SuppliesIssueInstanceCard
+                    key={issueKey}
+                    issue={issue}
+                    expanded={expandedIssueIds.includes(issueKey)}
+                    onToggle={() => toggleExpanded(issueKey)}
+                    printing={printingIssueId === issue.id}
+                    onPrint={issue.id != null ? () => handlePrintInstance(issue) : undefined}
+                  />
+                );
+              })
             )}
           </Tab>
         </Tabs>
@@ -208,17 +260,17 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
         <Button variant="outline-secondary" size="sm" onClick={onClose} disabled={submitting}>
           <BsXCircle className="me-1" /> Đóng
         </Button>
-        {activeTab === 'history' && (
+        {/* Bản GỘP chỉ hiện khi phiếu đã kết thúc — mở bản lưu chốt sổ trên
+            Cloudinary; phiếu còn sống xuất PDF theo TỪNG lần cấp ở mỗi thẻ. */}
+        {activeTab === 'history' && isTerminalStatus(workOrder.status) && (
           <Button
             variant="outline-primary"
             size="sm"
-            disabled={printing
-              || !history
-              || (history.sparePartsIssues.length === 0 && history.consumableIssues.length === 0)}
-            title="In phiếu đề nghị cấp phát vật tư (PDF) — gom mọi dòng vật tư đã cấp"
+            disabled={printing || !history || history.issues.length === 0}
+            title="Mở bản lưu chốt sổ (PDF gộp mọi dòng vật tư đã cấp — phiếu đã kết thúc)"
             onClick={handlePrint}
           >
-            <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In phiếu cấp vật tư'}
+            <BsPrinter className="me-1" /> {printing ? 'Đang mở...' : 'In phiếu cấp vật tư (bản gộp)'}
           </Button>
         )}
         {activeTab === 'create' && (
@@ -370,6 +422,57 @@ function SupplyLinePicker({ title, icon, searchFn, codeKey, lines, setLines }) {
             ))}
           </tbody>
         </Table>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   CARD — MỘT LẦN cấp vật tư trong lịch sử: "Phiếu cấp vật tư #N — thời điểm —
+   người cấp" + nút xem chi tiết (mặc định thu gọn) + nút xuất PDF đúng lần đó
+   (lazy — chỉ render khi bấm lần đầu; onPrint = undefined với dữ liệu mồ côi
+   trước V9, không xuất riêng được).
+   ============================================================ */
+function SuppliesIssueInstanceCard({ issue, expanded, onToggle, printing, onPrint }) {
+  return (
+    <div className="border rounded p-2 mb-2">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-1">
+        <span>
+          <span style={{ fontWeight: 'var(--font-semibold)' }}>
+            Phiếu cấp vật tư <span className="font-mono">#{issue.seq}</span>
+          </span>
+          <span className="text-muted small ms-2">
+            {issue.issuedAt ? new Date(issue.issuedAt).toLocaleString('vi-VN') : '—'}
+            {' · '}{issue.issuedByName || '—'}
+          </span>
+        </span>
+        <span className="d-flex gap-1">
+          <Button variant="outline-secondary" size="sm" onClick={onToggle}>
+            {expanded ? <BsChevronUp className="me-1" /> : <BsChevronDown className="me-1" />}
+            {expanded ? 'Thu gọn' : 'Chi tiết'}
+          </Button>
+          {onPrint && (
+            <Button
+              variant="outline-primary"
+              size="sm"
+              disabled={printing}
+              title="Xuất PDF đúng lần cấp này (render khi bấm lần đầu, lần sau mở lại bản đã tải)"
+              onClick={onPrint}
+            >
+              <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'Xuất PDF'}
+            </Button>
+          )}
+        </span>
+      </div>
+      {expanded && (
+        <div className="mt-2">
+          {issue.sparePartsIssue && (
+            <IssueCard issue={issue.sparePartsIssue} typeLabel="Thay thế" codeKey="sparePartCode" nameKey="sparePartName" />
+          )}
+          {issue.consumableIssue && (
+            <IssueCard issue={issue.consumableIssue} typeLabel="Tiêu hao" codeKey="consumableCode" nameKey="consumableName" />
+          )}
+        </div>
       )}
     </div>
   );

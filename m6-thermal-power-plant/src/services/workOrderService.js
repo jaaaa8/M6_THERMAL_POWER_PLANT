@@ -78,9 +78,20 @@ export const workOrderService = {
   /**
    * Lịch sử phiếu cấp vật tư của một phiếu công tác.
    * → GET /api/v1/work-orders/{workOrderId}/supplies-issues
-   * Trả về { sparePartsIssues: [...], consumableIssues: [...] }
+   * Trả về { sparePartsIssues: [...], consumableIssues: [...], issues: [...] }
+   * — issues: các LẦN cấp (gom thay thế + tiêu hao của cùng một hành động tạo),
+   * đánh số seq #1, #2... theo thời gian; id = null với dữ liệu mồ côi cũ.
    */
   getSuppliesIssues: (workOrderId) => apiClient.get(`${BASE}/${workOrderId}/supplies-issues`),
+
+  /**
+   * Id nhân viên ĐANG BẬN ở một phiếu công tác sống bất kỳ (giữ vai trò phụ
+   * trách hoặc là thành viên chưa rời) — dùng để ẩn khỏi gợi ý khi thêm nhân sự.
+   * → GET /api/v1/work-orders/busy-employees
+   * @param {number} [excludeWorkOrderId] - Bỏ qua phiếu này khi xét (thao tác trên chính nó)
+   */
+  getBusyEmployees: (excludeWorkOrderId) =>
+    apiClient.get(`${BASE}/busy-employees`, { params: { excludeWorkOrderId } }),
 
   /**
    * Tạo phiếu cấp vật tư GỘP (thay thế + tiêu hao) cho một phiếu công tác.
@@ -108,6 +119,15 @@ export const workOrderService = {
    */
   exportSuppliesIssuePdf: (workOrderId) =>
     apiClient.get(`${BASE}/${workOrderId}/supplies-issues/pdf`, { responseType: 'blob' }),
+
+  /**
+   * Tải bản in PDF của MỘT LẦN cấp vật tư (dòng supplies_issues) — chỉ gồm các
+   * dòng vật tư của đúng lần đó. Lần cấp bất biến sau khi tạo nên client cache
+   * được kết quả theo id. 404 nếu lần cấp không thuộc phiếu công tác.
+   * → GET /api/v1/work-orders/{workOrderId}/supplies-issues/{suppliesIssueId}/pdf
+   */
+  exportSuppliesIssueInstancePdf: (workOrderId, suppliesIssueId) =>
+    apiClient.get(`${BASE}/${workOrderId}/supplies-issues/${suppliesIssueId}/pdf`, { responseType: 'blob' }),
 
   /**
    * Hoàn thành phiếu công tác (chỉ đổi status → COMPLETED, không sửa gì khác).
