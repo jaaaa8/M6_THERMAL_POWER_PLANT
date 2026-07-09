@@ -51,6 +51,7 @@ import EmployeePage from './pages/employee/EmployeePage.jsx';
 import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
 import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
+import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
 
 function App() {
   return (
@@ -111,14 +112,12 @@ function App() {
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
             <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
-            <Route path="/repair/history" element={<RepairHistory/>} />
+            <Route path="/repair/history" element={<RepairHistoryList/>} />
 
-            {/*/!* --- Vật tư --- *!/*/}
-            {/*<Route path="/material/catalog" element={<MaterialCatalogPage/>} />*/}
-            {/*<Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />*/}
-            {/*<Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />*/}
-
-
+            {/* --- Vật tư --- */}
+            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
+            <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
+            <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
 
             {/* --- CCDC --- */}
             <Route path="/ccdc/danh-sach" element={<ToolList />} />
