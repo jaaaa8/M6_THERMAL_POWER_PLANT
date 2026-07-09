@@ -2,13 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
-  BsList, BsBell, BsMoonStars, BsSun,
+  BsList, BsMoonStars, BsSun,
   BsPerson, BsKey, BsBoxArrowRight, BsChevronDown
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
 import { SYSTEM_ROLES } from '../../services/roleService';
 import ProfileDetail from '../profile/ProfileDetail';
 import ChangePasswordModal from '../profile/ChangePasswordModal';
+import NotificationBell from '../common/NotificationBell';
 import './Header.css';
 
 export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
@@ -81,19 +82,16 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
         </button>
 
         {/* Notifications */}
-        <button className="header-icon-btn" aria-label="Thông báo">
-          <BsBell />
-          <span className="notification-dot" />
-        </button>
+        <NotificationBell accountId={currentUser?.accountId} />
 
         {/* User dropdown */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button className="header-user" onClick={() => setDropdownOpen(!dropdownOpen)}>
             <div className="header-user-avatar">
               {currentUser?.avatarUrl ? (
-                <img 
-                  src={currentUser.avatarUrl.startsWith('http') ? currentUser.avatarUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${currentUser.avatarUrl}`} 
-                  alt={userName} 
+                <img
+                  src={currentUser.avatarUrl.startsWith('http') ? currentUser.avatarUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${currentUser.avatarUrl}`}
+                  alt={userName}
                   className="w-100 h-100 rounded-circle object-fit-cover"
                 />
               ) : (
@@ -109,13 +107,13 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
 
           {dropdownOpen && (
             <div className="header-dropdown">
-              <button 
+              <button
                 className="header-dropdown-item"
                 onClick={() => { setProfileOpen(true); setDropdownOpen(false); }}
               >
                 <BsPerson /> Thông tin cá nhân
               </button>
-              <button 
+              <button
                 className="header-dropdown-item"
                 onClick={() => { setChangePasswordOpen(true); setDropdownOpen(false); }}
               >
@@ -130,15 +128,15 @@ export default function Header({ collapsed, onToggleSidebar, onToggleMobile }) {
         </div>
       </div>
 
-      <ProfileDetail 
-        show={profileOpen} 
-        onClose={() => setProfileOpen(false)} 
+      <ProfileDetail
+        show={profileOpen}
+        onClose={() => setProfileOpen(false)}
         onChangePasswordClick={() => setChangePasswordOpen(true)}
       />
 
-      <ChangePasswordModal 
-        show={changePasswordOpen} 
-        onClose={() => setChangePasswordOpen(false)} 
+      <ChangePasswordModal
+        show={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
       />
     </header>
   );
