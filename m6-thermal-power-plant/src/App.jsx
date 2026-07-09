@@ -124,7 +124,6 @@ function App() {
             <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
             <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
-            <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
@@ -136,12 +135,11 @@ function App() {
           {/* ======= Employee Portal ======= */}
           <Route element={
             <ProtectedRoute>
-              <EmployeeLayout />
             </ProtectedRoute>
           }>
-            <Route path="/employee" element={<EmployeePage />} />
-            <Route path="/employee/muon-ccdc" element={<EmployeeBorrowForm />} />
-            <Route path="/employee/lich-su" element={<EmployeeBorrowHistory />} />
+            {/*<Route path="/employee" element={<EmployeePage />} />*/}
+            {/*<Route path="/employee/muon-ccdc" element={<EmployeeBorrowForm />} />*/}
+            {/*<Route path="/employee/lich-su" element={<EmployeeBorrowHistory />} />*/}
           </Route>
 
           {/* 404 */}
