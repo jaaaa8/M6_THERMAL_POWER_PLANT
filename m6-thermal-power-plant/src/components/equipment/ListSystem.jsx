@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button, Modal } from 'react-bootstrap';
 import { BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX, BsGearWideConnected } from 'react-icons/bs';
-import * as systemService from "../../services/systemService";
+import * as systemService from "../../services/equipment/systemService";
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
 import StatusBadge from '../common/StatusBadge';
 import './style/ListSystem.css';
 import ConfirmModal from '../common/ConfirmModal';
 import { toast } from 'react-toastify';
-
+import PaginationPanel from "./PaginationPanel";
 
 export default function ListSystem() {
   const navigate = useNavigate();
@@ -17,8 +17,9 @@ export default function ListSystem() {
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(0);
-  const [size] = useState(10);
-  const [, setTotalPages] = useState(0);
+  const [size, setSize] = useState(5);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // Bộ lọc tìm kiếm
   const [searchName, setSearchName] = useState('');
@@ -27,36 +28,33 @@ export default function ListSystem() {
   const fetchData = async (
     keyword = "",
     status = "",
-    page = 0
+    pageNumber = 0,
+    pageSize = size
   ) => {
     setLoading(true);
 
     try {
-      const res = await systemService.getAll(
+      const res = await systemService.getAllSystems(
         keyword,
         status,
-        page,
-        size
+        pageNumber,
+        pageSize
       );
-      console.log("Response:", res);
-      console.log("Content:", res.data.content);
 
       setData(res.data.content);
-      console.log(res.data.content);
+      setTotalElements(res.data.totalElements);
       setTotalPages(res.data.totalPages);
       setPage(res.data.number);
+      setSize(res.data.size);
 
-    } catch (e) {
-      console.log(e);
-      setData([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
 
   useEffect(() => {
-    fetchData("", "", 0);
+    fetchData("", "", 0, size);
   }, []);
 
 
@@ -246,7 +244,6 @@ export default function ListSystem() {
         data={data}
         loading={loading}
         searchable={false}
-        pageSize={10}
         renderActions={(row) => (
           <div className="d-flex align-items-center gap-2 justify-content-start">
             <button
@@ -277,6 +274,19 @@ export default function ListSystem() {
             </button>
           </div>
         )}
+      />
+      <PaginationPanel
+        page={page}
+        size={size}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onPageChange={(newPage) =>
+          fetchData(searchName, filterStatus, newPage)
+        }
+        onSizeChange={(newSize) => {
+          setSize(newSize);
+          fetchData(searchName, filterStatus, 0, newSize);
+        }}
       />
 
       {/* Modal Xem Chi Tiết */}

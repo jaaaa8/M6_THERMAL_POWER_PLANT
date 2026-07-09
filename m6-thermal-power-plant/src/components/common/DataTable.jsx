@@ -17,6 +17,7 @@ import './DataTable.css';
  * @param {Function} [props.onEdit] - Callback sửa (row) => void
  * @param {Function} [props.onDelete] - Callback xoá (row) => void
  * @param {Function} [props.renderActions] - Custom render cột actions
+ * @param {number} [props.actionColumnWidth=200] - Độ rộng cột actions (px)
  * @param {boolean} [props.loading=false]
  */
 export default function DataTable({
@@ -24,11 +25,12 @@ export default function DataTable({
   data = [],
   searchable = true,
   searchPlaceholder = 'Tìm kiếm...',
-  pageSize = 10,
+  pageSize = 5,
   onView,
   onEdit,
   onDelete,
   renderActions,
+  actionColumnWidth = 200,
   loading = false,
 }) {
   const [search, setSearch] = useState('');
@@ -138,7 +140,7 @@ export default function DataTable({
                     </span>
                   </th>
                 ))}
-                {hasActions && <th style={{ width: 120 }}>Thao tác</th>}
+                {hasActions && <th style={{ width: actionColumnWidth }}>Thao tác</th>}
               </tr>
             </thead>
             <tbody>

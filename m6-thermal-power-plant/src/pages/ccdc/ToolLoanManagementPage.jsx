@@ -4,7 +4,7 @@ import { Button } from 'react-bootstrap';
 import {
   BsArrowLeftRight, BsClipboardPlus, BsArrowClockwise, BsCheckLg, BsXLg,
   BsBoxArrowInLeft, BsHourglassSplit, BsExclamationTriangle, BsCheckCircle,
-  BsClockHistory, BsEnvelopeExclamation,
+  BsClockHistory,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -33,6 +33,15 @@ const FILTERS = [
   { key: 'REJECTED', label: 'Từ chối' },
 ];
 
+/** Định dạng ngày giờ ISO → "dd/MM/yyyy HH:mm" cho dễ nhìn */
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function ToolLoanManagementPage() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
@@ -42,7 +51,6 @@ export default function ToolLoanManagementPage() {
   const [rejectLog, setRejectLog] = useState(null);
   const [returnLog, setReturnLog] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
-  const [notifying, setNotifying] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -84,14 +92,28 @@ export default function ToolLoanManagementPage() {
     { key: 'id', label: 'Mã mượn', width: 90, render: (val) => <span className="font-mono">PM-{val}</span> },
     { key: 'toolCode', label: 'Mã CCDC', mono: true, width: 120 },
     { key: 'toolName', label: 'Tên CCDC' },
-    { key: 'quantity', label: 'SL', width: 60 },
+    {
+      key: 'quantity', label: 'SL', width: 90,
+      render: (val, row) => {
+        const returned = row.returnedQuantity || 0;
+        // Đang mượn mà đã trả một phần → hiện "còn/tổng"
+        if (row.status === 'APPROVED' && returned > 0) {
+          return (
+            <span title={`Đã trả ${returned}/${val}`}>
+              {val - returned}<span className="text-muted">/{val}</span>
+            </span>
+          );
+        }
+        return val;
+      },
+    },
     { key: 'accountName', label: 'Người mượn' },
-    { key: 'transactionDate', label: 'Ngày mượn', width: 150 },
+    { key: 'transactionDate', label: 'Ngày mượn', width: 150, render: (val) => fmtDateTime(val) },
     {
       key: 'dueDate', label: 'Hạn trả', width: 150,
       render: (val, row) => (
           <span style={row.overdue ? { color: 'var(--color-status-danger)', fontWeight: 'var(--font-semibold)' } : undefined}>
-          {val}
+          {fmtDateTime(val)}
         </span>
       ),
     },
@@ -125,20 +147,6 @@ export default function ToolLoanManagementPage() {
     }
   };
 
-  /* --- Gửi thủ công ngay email nhắc quá hạn (không cần chờ job theo giờ) --- */
-  const handleNotifyOverdue = async () => {
-    setNotifying(true);
-    try {
-      const res = await toolBorrowLogService.notifyOverdueNow();
-      toast.success(res.data?.message || 'Đã gửi email nhắc quá hạn');
-      loadData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể gửi email nhắc quá hạn');
-    } finally {
-      setNotifying(false);
-    }
-  };
-
   return (
       <div className="animate-fade-in">
         <PageHeader
@@ -149,9 +157,6 @@ export default function ToolLoanManagementPage() {
               <>
                 <Button variant="outline-secondary" size="sm" onClick={loadData}>
                   <BsArrowClockwise className="me-1" /> Làm mới
-                </Button>
-                <Button variant="outline-warning" size="sm" onClick={handleNotifyOverdue} disabled={notifying}>
-                  <BsEnvelopeExclamation className="me-1" /> {notifying ? 'Đang gửi...' : 'Gửi nhắc quá hạn ngay'}
                 </Button>
                 <Button variant="primary" size="sm" onClick={() => navigate('/ccdc/muon-tra/lap-phieu')}>
                   <BsClipboardPlus className="me-1" /> Lập phiếu mượn
@@ -196,7 +201,7 @@ export default function ToolLoanManagementPage() {
             data={filtered}
             loading={loading}
             searchPlaceholder="Tìm theo mã CCDC, tên CCDC, người mượn..."
-            pageSize={10}
+            pageSize={5}
             renderActions={(row) => (
                 <div className="data-table-actions">
                   {row.status === 'PENDING' && (

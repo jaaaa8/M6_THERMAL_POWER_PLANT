@@ -3,12 +3,13 @@ import { Modal, Button } from 'react-bootstrap';
 import {
   BsExclamationTriangle, BsEye, BsFileEarmarkPlus, BsArrowClockwise,
   BsListUl, BsHourglassSplit, BsFileEarmarkCheck, BsLightningChargeFill,
-  BsCpu,
+  BsCpu, BsClipboardCheck,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader.jsx';
 import DataTable from '../common/DataTable.jsx';
 import StatusBadge from '../common/StatusBadge.jsx';
 import ModalCreateWorkOrder from './CreateWorkOrderModal.jsx'
+import WorkOrderDetailModal from '../work_order/WorkOrderDetailModal.jsx';
 import { workOrderService } from '../../services/workOrderService.js';
 import { employeeService } from '../../services/hr/employeeService.js';
 import './RepairRequest.css';
@@ -54,6 +55,7 @@ export default function RepairRequest() {
   const [filter, setFilter]           = useState('PENDING');
   const [pctRequest, setPctRequest]   = useState(null);
   const [detailRequest, setDetailRequest] = useState(null);
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
 
   /* --- Fetch pending requests from backend --- */
   const fetchRequests = useCallback(async () => {
@@ -131,9 +133,9 @@ export default function RepairRequest() {
   ];
 
   /* --- Khi tạo PCT thành công: đánh dấu request là IN_PROGRESS trên UI --- */
-  const handlePCTCreated = (request) => {
+  const handlePCTCreated = (request, createdWorkOrder) => {
     setRequests((prev) =>
-      prev.map((r) => (r.id === request.id ? { ...r, status: 'IN_PROGRESS' } : r))
+      prev.map((r) => (r.id === request.id ? { ...r, status: 'IN_PROGRESS', workOrderId: createdWorkOrder.id } : r))
     );
   };
 
@@ -201,7 +203,7 @@ export default function RepairRequest() {
             <button
               className="btn btn-sm btn-outline-secondary"
               onClick={() => setDetailRequest(row)}
-              title="Xem chi tiết"
+              title="Xem chi tiết yêu cầu"
             >
               <BsEye />
             </button>
@@ -212,6 +214,14 @@ export default function RepairRequest() {
                 title="Tạo phiếu công tác"
               >
                 <BsFileEarmarkPlus /> Tạo PCT
+              </button>
+            ) : row.status === 'IN_PROGRESS' || row.status === 'COMPLETED' ? (
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => setSelectedWorkOrderId(row.workOrderId)}
+                title="Xem phiếu công tác"
+              >
+                <BsClipboardCheck /> Xem PCT
               </button>
             ) : (
               <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>—</span>
@@ -232,6 +242,13 @@ export default function RepairRequest() {
 
       {/* ===== MODAL: CHI TIẾT REQUEST ===== */}
       <RequestDetailModal request={detailRequest} onClose={() => setDetailRequest(null)} />
+
+      {/* ===== MODAL: CHI TIẾT PHIẾU CÔNG TÁC ===== */}
+      <WorkOrderDetailModal
+        show={!!selectedWorkOrderId}
+        workOrderId={selectedWorkOrderId}
+        onClose={() => setSelectedWorkOrderId(null)}
+      />
     </div>
   );
 }

@@ -20,6 +20,7 @@ import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
 import ListEmployee from './components/hr/employee/ListEmployee';
 import AddEmployee from './components/hr/employee/AddEmployee';
+import UpdateEmployee from './components/hr/employee/UpdateEmployee';
 import ListAccount from './components/hr/account/ListAccount';
 import AddAccount from './components/hr/account/AddAccount';
 import TechnicalAssessmentList from "./components/technical_assessment/TechnicalAssessmentList.jsx";
@@ -40,12 +41,17 @@ import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 import RoleManagementPage from "./pages/RoleManagementPage.jsx";
 import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 import ToolList from './pages/ccdc/ToolList.jsx';
+import CreateWorkerAccountPage from './pages/ccdc/CreateWorkerAccountPage.jsx';
 import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
 import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
+import EmployeeLayout from './layouts/EmployeeLayout.jsx';
+import EmployeePage from './pages/employee/EmployeePage.jsx';
+import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
+import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
-
+import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
 
 function App() {
   return (
@@ -84,6 +90,7 @@ function App() {
             <Route path="/hr/departments/create" element={<AddDepartment />} />
             <Route path="/hr/employees" element={<ListEmployee />} />
             <Route path="/hr/employees/create" element={<AddEmployee onCancel={() => window.history.back()} />} />
+            <Route path="/hr/employees/edit/:id" element={<UpdateEmployee />} />
             <Route path="/hr/accounts" element={<ListAccount />} />
             <Route path="/hr/accounts/create" element={<AddAccount />} />
             <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
@@ -101,17 +108,16 @@ function App() {
             {/* --- Sửa chữa --- */}
             <Route path="/repair/yeu-cau" element={<RepairRequest />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
-            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
-            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
-            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList />} />
-            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
+            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
+            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
+            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
+            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
+            <Route path="/repair/history" element={<RepairHistoryList/>} />
 
             {/* --- Vật tư --- */}
             <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
             <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
             <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
-
-
 
             {/* --- CCDC --- */}
             <Route path="/ccdc/danh-sach" element={<ToolList />} />
@@ -120,12 +126,24 @@ function App() {
             <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
             <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
+            <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
             <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
+            <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
             <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+          </Route>
+
+          {/* ======= Employee Portal ======= */}
+          <Route element={
+            <ProtectedRoute>
+              <EmployeeLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="/employee" element={<EmployeePage />} />
+            <Route path="/employee/muon-ccdc" element={<EmployeeBorrowForm />} />
+            <Route path="/employee/lich-su" element={<EmployeeBorrowHistory />} />
           </Route>
 
           {/* 404 */}

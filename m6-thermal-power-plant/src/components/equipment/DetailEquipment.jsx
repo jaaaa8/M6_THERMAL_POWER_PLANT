@@ -4,7 +4,7 @@ import { Row, Col, Form, Button, Modal, Table, Spinner, Badge } from 'react-boot
 import {
   BsPlusLg, BsPencil, BsTrash, BsPlus, BsFileEarmarkPdf, BsArrowLeft
 } from 'react-icons/bs';
-import * as equipmentService from "../../services/equipmentService";
+import * as equipmentService from "../../services/equipment/equipmentService";
 import PageHeader from '../common/PageHeader';
 import StatusBadge from '../common/StatusBadge';
 import { toast } from 'react-toastify';

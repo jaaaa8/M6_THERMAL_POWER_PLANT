@@ -10,6 +10,7 @@ export const toolCategoryService = {
   create: (payload) => axios.post(CATEGORY_URL, payload),
   update: (id, payload) => axios.put(`${CATEGORY_URL}/${id}`, payload),
   remove: (id) => axios.delete(`${CATEGORY_URL}/${id}`),
+  getNextCode: () => axios.get(`${CATEGORY_URL}/next-code`),
 
   /**
    * Tìm kiếm chủng loại theo tên và/hoặc mã.
@@ -29,6 +30,8 @@ export const toolService = {
 
   getById: (id) => axios.get(`${TOOL_URL}/${id}`),
 
+  getNextCode: () => axios.get(`${TOOL_URL}/next-code`),
+
   create: (payload) => axios.post(TOOL_URL, payload),
 
   update: (id, payload) => axios.put(`${TOOL_URL}/${id}`, payload),
@@ -40,6 +43,28 @@ export const toolService = {
 
   /** Huỷ số lượng CCDC bị hư hỏng */
   markDamaged: (id, payload) => axios.patch(`${TOOL_URL}/${id}/damage`, payload),
+
+  /** Tải file Excel mẫu (blob) */
+  downloadImportTemplate: () =>
+      axios.get(`${TOOL_URL}/import/template`, { responseType: 'blob' }),
+
+  /** Upload file để xem trước dữ liệu import (chưa lưu) */
+  previewImport: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axios.post(`${TOOL_URL}/import/preview`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  /** Xác nhận import — lưu tất cả (all-or-nothing) */
+  confirmImport: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axios.post(`${TOOL_URL}/import`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const toolBorrowLogService = {
@@ -57,7 +82,4 @@ export const toolBorrowLogService = {
       axios.patch(`${BORROW_URL}/${id}/reject`, payload, { params: { approvedByAccountId } }),
 
   returnTool: (id, payload) => axios.patch(`${BORROW_URL}/${id}/return`, payload),
-
-  /** Quét và gửi ngay email nhắc các phiếu quá hạn, không cần chờ job theo giờ */
-  notifyOverdueNow: () => axios.post(`${BORROW_URL}/notify-overdue`),
 };

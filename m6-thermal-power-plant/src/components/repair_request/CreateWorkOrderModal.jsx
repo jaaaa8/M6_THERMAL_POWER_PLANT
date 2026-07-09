@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Button, Row, Col } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -8,8 +8,12 @@ import {
   BsSave, BsXCircle, BsCpu, BsFileEarmarkPlus,
 } from 'react-icons/bs';
 import { workOrderService } from '../../services/workOrderService';
+import { employeeService } from '../../services/hr/employeeService';
 import StatusBadge from '../common/StatusBadge';
 import './CreateWorkOrderModal.css';
+
+/** Mã role (roles.name trong DB) được phép làm Người giám sát an toàn. */
+const SAFETY_SUPERVISOR_ROLE = 'SAFETY_SUPERVISOR';
 
 /* ============================================================
    Map mức độ → StatusBadge
@@ -45,6 +49,23 @@ const validationSchema = Yup.object({
 });
 
 /**
+ * Lấy nguyên văn message lỗi backend trả về.
+ *
+ * GlobalExceptionHandler trả về 2 dạng response khác nhau tuỳ exception:
+ *  - ApiResponse<Object> (JSON, có field `message`) — VD lỗi validation.
+ *  - ResponseEntity<String> (body là CHUỖI THUẦN) — VD ObjectNotFoundException,
+ *    IllegalStateException, DuplicateHumanResourceException, TimeOverlapException.
+ * Nếu chỉ đọc `err.response.data.message` thì ở dạng thứ 2 sẽ luôn ra `undefined`
+ * (chuỗi thuần không có field `.message`) — nên phải kiểm tra cả hai dạng.
+ */
+function extractErrorMessage(err) {
+  const data = err.response?.data;
+  if (typeof data === 'string' && data.trim()) return data;
+  if (data && typeof data === 'object' && data.message) return data.message;
+  return err.message || 'Lỗi không xác định';
+}
+
+/**
  * ModalCreateWorkOrder — Tạo phiếu công tác (PCT) từ một Request.
  * (User story #40 — Quản đốc sửa chữa / Tổ trưởng)
  *
@@ -67,17 +88,52 @@ export default function ModalCreateWorkOrder({
 }) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
-  // Chuẩn bị danh sách employee để hiển thị trong select
+  // Danh sách nhân viên KÈM ROLE tài khoản (để lọc Người giám sát an toàn) +
+  // danh sách id đang bận ở phiếu công tác sống khác — tải khi mở modal.
+  // Prop `employees` (không có role) chỉ là fallback trong lúc chờ tải.
+  const [accountEmployees, setAccountEmployees] = useState(null); // null = chưa tải
+  const [busyIds, setBusyIds] = useState([]);
+
+  useEffect(() => {
+    if (!show) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [empRes, busyRes] = await Promise.all([
+          employeeService.getAllWithAccounts(),
+          workOrderService.getBusyEmployees(),
+        ]);
+        if (cancelled) return;
+        const empArr = empRes.data?.data || empRes.data || [];
+        setAccountEmployees(Array.isArray(empArr) ? empArr : []);
+        setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
+      } catch (err) {
+        if (!cancelled) {
+          toast.error(`Không thể tải danh sách nhân viên khả dụng: ${extractErrorMessage(err)}`);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [show]);
+
+  // Đã có dữ liệu role chưa? (fallback prop không có role → không lọc GSAT được)
+  const roleInfoLoaded = accountEmployees !== null;
+
+  // Chuẩn bị danh sách employee để hiển thị trong select — LOẠI người đang bận
+  // ở phiếu công tác sống khác và người đã nghỉ (isActive = false).
   const employeeList = useMemo(() => {
-    // Ensure employees is an array
-    const empArray = Array.isArray(employees) ? employees : [];
-    return empArray.map((emp) => ({
-      id: emp.id,
-      label: `${emp.fullName || emp.name || 'Unknown'} · ${emp.positionName || emp.position?.name || emp.chucVu || ''}`,
-      fullName: emp.fullName || emp.name || 'Unknown',
-      position: emp.positionName || emp.position?.name || emp.chucVu || '',
-    }));
-  }, [employees]);
+    const source = accountEmployees ?? (Array.isArray(employees) ? employees : []);
+    const busy = new Set(busyIds);
+    return source
+      .filter((emp) => emp.isActive !== false && !busy.has(emp.id))
+      .map((emp) => ({
+        id: emp.id,
+        label: `${emp.fullName || emp.name || 'Unknown'} · ${emp.positionName || emp.position?.name || emp.chucVu || ''}`,
+        fullName: emp.fullName || emp.name || 'Unknown',
+        position: emp.positionName || emp.position?.name || emp.chucVu || '',
+        roles: (emp.roles || []).map((r) => r?.name || r),
+      }));
+  }, [accountEmployees, employees, busyIds]);
 
   // Lấy danh sách member hiện tại để filter option
   function getAvailableEmployees(excludeIds) {
@@ -127,23 +183,24 @@ export default function ModalCreateWorkOrder({
             setSelectedEmployeeId('');
             onClose?.();
           } catch (err) {
-            // Xử lý lỗi 409 Conflict - trùng lịch hoặc thành viên
-            if (err.response?.status === 409) {
-              const errorMsg = err.response?.data?.message || '';
-              
-              // Kiểm tra loại xung đột
-              if (errorMsg.toLowerCase().includes('time') || errorMsg.toLowerCase().includes('thời gian') || errorMsg.toLowerCase().includes('schedule')) {
-                toast.error('⚠️ Xung đột thời gian! Một hoặc nhiều nhân viên đã có lịch làm việc trùng với thời gian này. Vui lòng chọn thời gian khác hoặc thay đổi thành viên.');
-              } else if (errorMsg.toLowerCase().includes('member') || errorMsg.toLowerCase().includes('employee') || errorMsg.toLowerCase().includes('nhân viên') || errorMsg.toLowerCase().includes('thành viên')) {
-                toast.error('⚠️ Xung đột thành viên! Một hoặc nhiều nhân viên đã được phân công vào phiếu công tác khác trong khoảng thời gian này. Vui lòng chọn thành viên khác hoặc thay đổi thời gian.');
-              } else {
-                // Lỗi conflict khác
-                toast.error(`⚠️ Xung đột dữ liệu: ${errorMsg}`);
+            const errorMsg = extractErrorMessage(err);
+            const status = err.response?.status;
+
+            if (status === 409) {
+              // 409 Conflict: TimeOverlapException / DuplicateHumanResourceException /
+              // IllegalStateException — backend đã soạn sẵn message mô tả CHÍNH XÁC
+              // xung đột nào (kèm mã PCT liên quan) nên hiển thị nguyên văn, không
+              // đoán/diễn giải lại. Chỉ chọn icon theo loại để dễ nhận biết.
+              let icon = '⚠️';
+              if (errorMsg.includes('chong lan')) {
+                icon = '⏰'; // TimeOverlapException
+              } else if (errorMsg.includes('da duoc phan cong')) {
+                icon = '👥'; // DuplicateHumanResourceException
               }
+              toast.error(`${icon} ${errorMsg}`, { autoClose: 8000 });
             } else {
-              // Các lỗi khác (400, 500, network, etc.)
-              const msg = err.response?.data?.message || err.message || 'Lỗi không xác định';
-              toast.error(`Không thể tạo PCT: ${msg}`);
+              // Các lỗi khác (400, 404, 500, network, etc.) — vẫn hiển thị nguyên văn.
+              toast.error(`Không thể tạo PCT: ${errorMsg}`, { autoClose: 8000 });
             }
           } finally {
             setSubmitting(false);
@@ -168,7 +225,28 @@ export default function ModalCreateWorkOrder({
             setFieldValue('members', values.members.filter((m) => m.employeeId !== employeeId));
           };
 
-          const excludeIds = values.members.map((m) => m.employeeId);
+          // Loại chéo giữa các ô: một người không xuất hiện ở 2 vai trò /
+          // vừa giữ vai trò vừa là thành viên trong CÙNG phiếu này.
+          const roleFieldIds = {
+            leaderId: values.leaderId ? Number(values.leaderId) : null,
+            directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
+            safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
+          };
+          const memberIds = values.members.map((m) => m.employeeId);
+
+          // Ô Người giám sát an toàn CHỈ hiện người có role SAFETY_SUPERVISOR
+          // (khi đã tải được role — fallback prop không có role thì bỏ lọc).
+          const optionsFor = (field) => employeeList.filter((e) => {
+            if (memberIds.includes(e.id)) return false;
+            const pickedElsewhere = Object.entries(roleFieldIds)
+              .some(([f, id]) => f !== field && id === e.id);
+            if (pickedElsewhere) return false;
+            if (field === 'safetySupervisorId' && roleInfoLoaded
+                && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
+            return true;
+          });
+
+          const excludeIds = [...memberIds, ...Object.values(roleFieldIds).filter(Boolean)];
           const available = getAvailableEmployees(excludeIds);
 
           return (
@@ -288,7 +366,7 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {employeeList.map((e) => (
+                      {optionsFor('leaderId').map((e) => (
                         <option key={e.id} value={e.id}>
                           {e.label}
                         </option>
@@ -309,7 +387,7 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {employeeList.map((e) => (
+                      {optionsFor('directSupervisorId').map((e) => (
                         <option key={e.id} value={e.id}>
                           {e.label}
                         </option>
@@ -330,7 +408,7 @@ export default function ModalCreateWorkOrder({
                       }`}
                     >
                       <option value="">— Chọn —</option>
-                      {employeeList.map((e) => (
+                      {optionsFor('safetySupervisorId').map((e) => (
                         <option key={e.id} value={e.id}>
                           {e.label}
                         </option>

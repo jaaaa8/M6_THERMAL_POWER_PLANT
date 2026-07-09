@@ -5,8 +5,8 @@ import { BsArrowLeft, BsCpu, BsCloudUpload, BsX } from 'react-icons/bs';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import * as equipmentService from "../../services/equipmentService";
-import * as systemService from '../../services/systemService';
+import * as equipmentService from "../../services/equipment/equipmentService";
+import * as systemService from '../../services/equipment/systemService';
 import PageHeader from '../common/PageHeader';
 import './style/AddEquipment.css';
 

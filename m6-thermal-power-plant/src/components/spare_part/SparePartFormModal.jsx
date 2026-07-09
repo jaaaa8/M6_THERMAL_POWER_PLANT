@@ -35,7 +35,7 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
             const fetchUnits = async () => {
                 try{
                     const response = await unitService.getAll();
-                    setUnits(response.data || []);
+                    setUnits(response.data?.content || []);
                 }catch (err){
                     console.error('Lỗi khi tải đơn vị: ', err);
                 }

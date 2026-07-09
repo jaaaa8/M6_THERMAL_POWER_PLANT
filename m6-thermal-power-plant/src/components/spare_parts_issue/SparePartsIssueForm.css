@@ -669,3 +669,56 @@
         width: 100%;
     }
 }
+.selected-spare-head th {
+    background: linear-gradient(
+            135deg,
+            #0d6efd,
+            #0b5ed7
+    ) !important;
+
+    color: #fff !important;
+
+    font-weight: 600;
+
+    text-align: center;
+
+    vertical-align: middle;
+
+    border: none;
+
+    padding: 14px 12px;
+}
+
+.selected-spare-head th svg {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+.spare-table {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+}
+
+.spare-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.spare-table td {
+    vertical-align: middle;
+}
+
+.unit-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e7f1ff;
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.quantity-input {
+    max-width: 90px;
+    text-align: center;
+    margin: auto;
+}
