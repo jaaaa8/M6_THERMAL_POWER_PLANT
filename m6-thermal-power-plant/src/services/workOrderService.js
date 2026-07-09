@@ -97,6 +97,7 @@ export const workOrderService = {
    * Tạo phiếu cấp vật tư GỘP (thay thế + tiêu hao) cho một phiếu công tác.
    * issuedBy lấy từ JWT principal — client KHÔNG truyền.
    * → POST /api/v1/work-orders/{workOrderId}/supplies-issues
+   * @param workOrderId
    * @param {object} data
    * @param {Array<{sparePartId: number, quantity: number}>} [data.spareParts]
    * @param {Array<{consumableId: number, quantity: number}>} [data.consumables]
@@ -141,6 +142,7 @@ export const workOrderService = {
    * status → WAITING_FOR_APPROVAL + tạo dòng gia hạn chờ Trưởng ca ký bản giấy.
    * Dùng cho cả phiếu OPEN xin duyệt trước khi làm lẫn tạm dừng cuối ngày.
    * → PATCH /api/v1/work-orders/{id}/stop
+   * @param id
    * @param {string} reason        - Lý do gửi duyệt / xin làm tiếp (bắt buộc)
    * @param {string} extendedUntil - Xin phép đến ngày (ISO datetime, bắt buộc)
    */
@@ -162,6 +164,7 @@ export const workOrderService = {
    *   ─gửi duyệt lại─► WAITING_FOR_APPROVAL ─duyệt gia hạn─► APPROVED ─► ...
    *   ─► COMPLETED; mọi trạng thái sống ─► CANCELLED.
    * → PATCH /api/v1/work-orders/{id}/status
+   * @param id
    * @param {object} data
    * @param {string} data.targetStatus   - Trạng thái đích (bắt buộc)
    * @param {string} [data.reason]        - Bắt buộc khi target = WAITING_FOR_APPROVAL
