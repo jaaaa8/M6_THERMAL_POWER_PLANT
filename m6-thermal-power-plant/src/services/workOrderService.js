@@ -1,7 +1,7 @@
 import apiClient from './apiClient';
 
 // All maintenance endpoints live under /api/maintenance
-const BASE = `${import.meta.env.VITE_API_URL}/api/v1/work-orders`;
+const BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/work-orders`;
 
 export const workOrderService = {
   /**

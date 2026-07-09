@@ -1,0 +1,48 @@
+.repair-history-card {
+    border: none;
+    border-radius: 16px;
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.history-header svg {
+    font-size: 24px;
+    color: #0d6efd;
+}
+
+.history-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.history-table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.history-table thead th {
+    background: linear-gradient(
+            135deg,
+            #0d6efd,
+            #0b5ed7
+    );
+
+    color: white;
+    border: none;
+    text-align: center;
+    font-weight: 600;
+    padding: 14px;
+}
+
+.history-table tbody td {
+    vertical-align: middle;
+}
+
+.history-table tbody tr:hover {
+    background: #f8f9fa;
+}

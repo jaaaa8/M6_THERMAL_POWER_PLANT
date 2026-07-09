@@ -25,6 +25,7 @@
     "react-router-dom": "^7.15.1",
     "react-toastify": "^11.1.0",
     "sockjs-client": "^1.6.1",
+    "stomp": "^0.1.1",
     "yup": "^1.7.1"
   },
   "devDependencies": {

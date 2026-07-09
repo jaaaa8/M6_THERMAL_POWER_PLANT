@@ -107,15 +107,16 @@ function App() {
             {/* --- Sửa chữa --- */}
             <Route path="/repair/yeu-cau" element={<RepairRequest />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
-            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
-            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
-            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList />} />
-            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
+            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
+            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
+            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
+            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
+            <Route path="/repair/history" element={<RepairHistory/>} />
 
-            {/* --- Vật tư --- */}
-            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
-            <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
-            <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
+            {/*/!* --- Vật tư --- *!/*/}
+            {/*<Route path="/material/catalog" element={<MaterialCatalogPage/>} />*/}
+            {/*<Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />*/}
+            {/*<Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />*/}
 
 
 
@@ -131,7 +132,7 @@ function App() {
             {/* --- Bảo dưỡng --- */}
             <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
             <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
+            <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
             <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
