@@ -1,10 +1,10 @@
 import apiClient from '../apiClient.js';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 const API_URL = `${BASE_URL}/api/v1/employees`;
 
 export const employeeService = {
-  getAll: () => apiClient.get(API_URL),
+  getAll: () => apiClient.get('/api/v1/employees'),
   getAllWithAccounts: () => apiClient.get(`${API_URL}/accounts`),
   getById: (id) => apiClient.get(`${API_URL}/${id}`),
   create: (data) => apiClient.post(API_URL, data),

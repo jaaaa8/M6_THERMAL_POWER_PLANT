@@ -98,7 +98,31 @@ export default function ListAccount() {
   }, [data]);
 
   const columns = [
-    { key: 'username', label: 'Tên đăng nhập', sortable: true },
+    { 
+      key: 'username', 
+      label: 'Tên đăng nhập', 
+      sortable: true,
+      render: (val, row) => (
+        <div className="d-flex align-items-center gap-2">
+          {row.image ? (
+            <img 
+              src={row.image.startsWith('http') ? row.image : `${import.meta.env.VITE_API_BASE_URL || ''}${row.image}`} 
+              alt={val} 
+              className="rounded-circle object-fit-cover" 
+              style={{ width: '32px', height: '32px' }}
+            />
+          ) : (
+            <div 
+              className="text-primary rounded-circle d-flex align-items-center justify-content-center fw-semibold fs-7" 
+              style={{ width: '32px', height: '32px', backgroundColor: 'var(--primary-light)' }}
+            >
+              {val ? val.trim()[0].toUpperCase() : 'U'}
+            </div>
+          )}
+          <span className="fw-medium">{val}</span>
+        </div>
+      )
+    },
     {
       key: 'employee',
       label: 'Nhân viên',
