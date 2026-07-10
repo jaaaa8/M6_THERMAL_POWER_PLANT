@@ -95,6 +95,8 @@ function App() {
             <Route path="/equipment/equipments" element={<ListEquipment />} />
             <Route path="/equipment/equipments/add" element={<AddEquipment />} />
             <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
+            <Route path="/equipment/equipments" element={<ListEquipment />} />
+            <Route path="/equipment/equipments/:systemId" element={<ListEquipment />} />
             <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
             <Route path="/equipment/equipments/units" element={<ManageUnits />} />
 
@@ -107,7 +109,7 @@ function App() {
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
 
             {/* --- Vật tư --- */}
-            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
+            <Route path="/material/catalog" element={<MaterialCatalogPage />} />
             <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
             <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
 
