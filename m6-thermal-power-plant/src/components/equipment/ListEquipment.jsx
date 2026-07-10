@@ -94,6 +94,7 @@ export default function ListEquipment() {
       }
 
       setData(res.data.content);
+      console.log(res.data.content);
       setPage(res.data.number);
       setSize(res.data.size);
       setTotalPages(res.data.totalPages);
