@@ -14,7 +14,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import RepairRequest from './components/repair_request/RepairRequest.jsx';
+import RepairRequestPage from './pages/RepairRequestPage.jsx';
 import WorkOrderList from './components/work_order/WorkOrderList.jsx';
 import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
@@ -108,7 +108,7 @@ function App() {
             <Route path="/equipment/equipments/units" element={<ManageUnits />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/repair/yeu-cau" element={<RepairRequest />} />
+            <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
