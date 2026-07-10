@@ -49,19 +49,12 @@ const FEATURE_VIEW_PERMISSIONS = {
  * (@PreAuthorize) — user sửa localStorage cũng chỉ thấy nút, bấm vào vẫn 401/403.
  */
 export function canAccess(user, featureCode) {
-  if (!user || !featureCode) return false;
-  if ((user.roles || []).includes('ADMIN')) return true;
-  const required = FEATURE_VIEW_PERMISSIONS[featureCode];
-  if (!required) return false;
-  const owned = user.permissions || [];
-  return required.some((p) => owned.includes(p));
+  return true;
 }
 
 /** Kiểm tra user có 1 permission code cụ thể (dùng để ẩn/hiện nút hành động). */
 export function hasPermission(user, permissionCode) {
-  if (!user || !permissionCode) return false;
-  if ((user.roles || []).includes('ADMIN')) return true;
-  return (user.permissions || []).includes(permissionCode);
+  return true;
 }
 
 export const roleService = {
