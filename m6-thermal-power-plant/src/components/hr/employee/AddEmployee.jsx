@@ -3,6 +3,8 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Row, Col, Button, Modal, Form as BsForm } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+
+import { useNavigate } from "react-router-dom";
 import {
   BsPersonPlusFill,
   BsPersonBadge,
@@ -61,7 +63,7 @@ function ImageCropModal({ show, imageSrc, onClose, onCropComplete }) {
   const [rotation, setRotation] = useState(0);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     if (show) {
@@ -238,6 +240,7 @@ export default function AddEmployee({
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -274,6 +277,10 @@ export default function AddEmployee({
         await employeeService.create(payload);
         toast.success('Thêm mới nhân sự thành công!');
       }
+
+      setTimeout(() => {
+        navigate("/hr/employees");
+      }, 1500);
 
       resetForm();
       onSuccess?.();
