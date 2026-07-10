@@ -27,8 +27,8 @@ const createAccountSchema = Yup.object({
     .min(3, 'Tên đăng nhập tối thiểu 3 ký tự')
     .max(50, 'Tên đăng nhập tối đa 50 ký tự')
     .matches(
-      /^[a-zA-Z0-9_]+$/,
-      'Chỉ chấp nhận chữ cái, số và dấu gạch dưới'
+      /^[a-zA-Z0-9!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]+$/,
+      'Chỉ chấp nhận chữ cái, số và các ký tự đặc biệt'
     ),
   password: Yup.string()
     .required('Vui lòng nhập mật khẩu')

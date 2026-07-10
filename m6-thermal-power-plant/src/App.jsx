@@ -131,10 +131,10 @@ function App() {
             <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
+            <Route path="/lubrication/plant" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
+            <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
             <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
-            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
           {/* ======= Employee Portal ======= */}
