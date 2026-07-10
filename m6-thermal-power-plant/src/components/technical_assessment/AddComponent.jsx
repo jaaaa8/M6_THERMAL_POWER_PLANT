@@ -1,5 +1,8 @@
+import { useState, useEffect } from "react";
 
-import { useState } from "react";
+import { getAllSystems } from "../../services/equipment/systemService.js";
+import { getAll as getAllEquipments } from "../../services/equipment/equipmentService.js";
+import { accountService } from "../../services/hr/accountService.js";
 import { BsFileEarmarkPdf } from "react-icons/bs";
 import {
     createTechnicalAssessment,
@@ -52,6 +55,106 @@ export default function TechnicalAssessmentForm() {
 
     const [imageFiles, setImageFiles] = useState([]);      // File[]
     const [imagePreviews, setImagePreviews] = useState([]); // base64
+    const [systems, setSystems] = useState([]);
+    const [equipments, setEquipments] = useState([]);
+    const [filteredEquipments, setFilteredEquipments] = useState([]);
+    const [assessors, setAssessors] = useState([]);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const [
+                systemsRes,
+                equipmentsRes,
+                assessorsRes
+            ] = await Promise.all([
+                getAllSystems("", "", 0, 1000),
+                getAllEquipments(),
+                accountService.getAll()
+            ]);
+
+            const systemData =
+                systemsRes.data?.content ||
+                systemsRes.data?.data ||
+                systemsRes.data ||
+                [];
+
+            const equipmentData =
+                equipmentsRes.data?.content ||
+                equipmentsRes.data?.data ||
+                equipmentsRes.data ||
+                [];
+
+            const assessorData =
+                assessorsRes.data?.content ||
+                assessorsRes.data?.data ||
+                assessorsRes.data ||
+                [];
+
+            setSystems(systemData);
+            setEquipments(equipmentData);
+            setAssessors(assessorData);
+
+            console.log("SYSTEMS", systemData);
+            console.log("EQUIPMENTS", equipmentData);
+            console.log(JSON.stringify(equipments[0], null, 2));
+            console.log(
+                JSON.stringify(equipmentData[0], null, 2)
+            );
+
+            if (systemData.length > 0) {
+                const firstSystemId = systemData[0].id;
+
+                const equipmentOfSystem =
+                    equipmentData.filter(
+                        item =>
+                            item.system?.id === firstSystemId ||
+                            item.systemId === firstSystemId
+                    );
+
+                setFilteredEquipments(equipmentOfSystem);
+
+                setFormData(prev => ({
+                    ...prev,
+                    systemId: firstSystemId.toString(),
+                    equipmentId:
+                        equipmentOfSystem.length > 0
+                            ? equipmentOfSystem[0].id.toString()
+                            : ""
+                }));
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Không thể tải dữ liệu");
+        }
+    };
+
+    const handleSystemChange = (e) => {
+        const systemId = e.target.value;
+
+        const equipmentOfSystem =
+            equipments.filter(
+                item =>
+                    item.system?.id?.toString() === systemId ||
+                    item.systemId?.toString() === systemId
+            );
+
+        setFilteredEquipments(equipmentOfSystem);
+        console.log("Selected system:", systemId);
+        console.log("Equipments:", equipments);
+
+        setFormData(prev => ({
+            ...prev,
+            systemId,
+            equipmentId:
+                equipmentOfSystem.length > 0
+                    ? equipmentOfSystem[0].id.toString()
+                    : ""
+        }));
+    };
 
     const handleImageUpload = async (e) => {
         try {
@@ -87,75 +190,9 @@ export default function TechnicalAssessmentForm() {
         }
     };
 
-  const workOrders = [
-    {
-      id: 1,
-      code: "WO-2026-001",
-    },
-    {
-      id: 2,
-      code: "WO-2026-002",
-    },
-    {
-      id: 3,
-      code: "WO-2026-003",
-    },
-  ];
 
-    const systems = [
-        {
-            id: 1,
-            name: "Hệ thống làm mát",
-        },
-        {
-            id: 2,
-            name: "Hệ thống cấp than",
-        },
-        {
-            id: 3,
-            name: "Hệ thống tua bin",
-        },
-        {
-            id: 4,
-            name: "Hệ thống xử lý tro xỉ",
-        },
-    ];
 
-    const equipments = [
-        {
-            id: 1,
-            code: "TB-001",
-            name: "Bơm nước làm mát",
-        },
-        {
-            id: 2,
-            code: "TB-002",
-            name: "Quạt gió lò hơi",
-        },
-        {
-            id: 3,
-            code: "TB-003",
-            name: "Băng tải than",
-        },
-        {
-            id: 4,
-            code: "TB-004",
-            name: "Tua bin hơi",
-        },
-    ];
 
-    const assessors = [
-        {
-            username: "admin",
-            email: "vana@gmail.com",
-            name: "Nguyễn Văn A"
-        },
-        {
-            username: "engineer",
-            email: "vanb@gmail.com",
-            name: "Trần Văn B"
-        }
-    ];
 
   const handleChange = (e) => {
     setFormData({
@@ -206,7 +243,6 @@ export default function TechnicalAssessmentForm() {
         try {
 
             const payload = {
-                technicalCode: formData.technicalCode, // tạm giữ
                 assessor: formData.assessor,
                 result: formData.result,
                 description: formData.description,
@@ -291,14 +327,21 @@ export default function TechnicalAssessmentForm() {
                                 value={formData.assessor.username}
                                 onChange={(e) => {
 
-                                    const selected = assessors.find(
-                                        item =>
-                                            item.username === e.target.value
-                                    );
+                                    const selected =
+                                        assessors.find(
+                                            item =>
+                                                item.username === e.target.value
+                                        );
 
                                     setFormData({
                                         ...formData,
-                                        assessor: selected
+                                        assessor: {
+                                            username: selected.username,
+                                            email: selected.email,
+                                            name:
+                                                selected.fullName ||
+                                                selected.name
+                                        }
                                     });
                                 }}
                             >
@@ -308,10 +351,10 @@ export default function TechnicalAssessmentForm() {
 
                                 {assessors.map((item) => (
                                     <option
-                                        key={item.username}
+                                        key={item.id}
                                         value={item.username}
                                     >
-                                        {item.name}
+                                        {item.fullName || item.name}
                                     </option>
                                 ))}
                             </Form.Select>
@@ -330,8 +373,12 @@ export default function TechnicalAssessmentForm() {
                             <Form.Select
                                 name="systemId"
                                 value={formData.systemId}
-                                onChange={handleChange}
+                                onChange={handleSystemChange}
                             >
+                                <option value="">
+                                    Chọn hệ thống
+                                </option>
+
                                 {systems.map((item) => (
                                     <option
                                         key={item.id}
@@ -353,12 +400,16 @@ export default function TechnicalAssessmentForm() {
                                 value={formData.equipmentId}
                                 onChange={handleChange}
                             >
-                                {equipments.map((item) => (
+                                <option value="">
+                                    Chọn thiết bị
+                                </option>
+
+                                {filteredEquipments.map((item) => (
                                     <option
                                         key={item.id}
                                         value={item.id}
                                     >
-                                        {item.code} - {item.name}
+                                        {item.kksCode} - {item.name}
                                     </option>
                                 ))}
                             </Form.Select>
