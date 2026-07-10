@@ -36,8 +36,8 @@ export default function AddDepartment({ onCancel }) {
       if (location.state?.initialData) {
         const data = location.state.initialData;
         setInitialValues({
-          tenPhongBan: data.tenPhongBan || '',
-          moTa: data.moTa || ''
+          tenPhongBan: data.name || data.tenPhongBan || '',
+          moTa: data.description || data.moTa || ''
         });
       } else {
         // Fallback: Fetch từ API nếu không có data truyền sang
@@ -47,8 +47,8 @@ export default function AddDepartment({ onCancel }) {
             const data = res.data?.data || res.data;
             if (data) {
               setInitialValues({
-                tenPhongBan: data.tenPhongBan || '',
-                moTa: data.moTa || ''
+                tenPhongBan: data.name || data.tenPhongBan || '',
+                moTa: data.description || data.moTa || ''
               });
             }
           })
