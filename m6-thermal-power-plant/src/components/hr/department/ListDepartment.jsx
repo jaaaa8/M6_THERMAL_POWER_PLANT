@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button } from 'react-bootstrap';
-import { BsFilter, BsTrash, BsPlusLg, BsArrowClockwise } from 'react-icons/bs';
+import { BsFilter, BsTrash, BsPlusLg, BsArrowClockwise, BsPencil } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { departmentService } from '../../../services/hr/departmentService';
 import PageHeader from '../../common/PageHeader';
@@ -127,6 +127,13 @@ export default function ListDepartment() {
         searchable={false}
         renderActions={(row) => (
           <div className="data-table-actions">
+            <button 
+              className="btn btn-sm btn-outline-primary me-2" 
+              onClick={() => navigate(`/hr/departments/create?id=${row.id}`, { state: { initialData: row } })} 
+              title="Sửa"
+            >
+              <BsPencil />
+            </button>
             <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteModal({ show: true, data: row })} title="Xoá">
               <BsTrash />
             </button>
