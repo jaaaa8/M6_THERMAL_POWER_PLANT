@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Button, Form, Table } from 'react-bootstrap';
+import { Button, Form, Table, Modal } from 'react-bootstrap';
 import {
   BsWrenchAdjustable, BsPlusLg, BsEye, BsTrash,
-  BsPencilSquare, BsCheckCircle, BsXCircle, BsFileEarmarkPlus,
+  BsFileEarmarkPlus, BsCpu,
   BsListUl, BsHourglassSplit, BsFileEarmarkCheck, BsLightningChargeFill,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
@@ -12,72 +12,98 @@ import StatusBadge from '../components/common/StatusBadge';
 import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ConfirmModal from '../components/common/ConfirmModal';
-import CreateRequestModal from '../components/requests/CreateRequestModal';
-import CreateWorkOrderModal from '../components/requests/CreateWorkOrderModal';
-import RequestDetailModal from '../components/requests/RequestDetailModal';
+import CreateRequestModal from '../components/repair_request/CreateRequestModal';
+import CreateWorkOrderModal from '../components/repair_request/CreateWorkOrderModal';
 import {
   repairRequestService,
   REQUEST_STATUS,
   REQUEST_STATUS_LABEL,
   REQUEST_STATUS_VARIANT,
-  PRIORITY,
   PRIORITY_LABEL,
   PRIORITY_COLOR,
 } from '../services/repairRequestService';
-import { authService } from '../services/authService';
 import './RepairRequestPage.css';
 
-// Pill nhanh cho các trạng thái dùng nhiều (TU_CHOI vẫn truy cập qua dropdown)
 const FILTER_PILLS = [
   { key: 'ALL', label: 'Tất cả' },
-  { key: REQUEST_STATUS.CHO_DUYET, label: 'Chờ duyệt' },
-  { key: REQUEST_STATUS.DA_DUYET, label: 'Đã duyệt' },
-  { key: REQUEST_STATUS.DANG_XU_LY, label: 'Đang xử lý' },
-  { key: REQUEST_STATUS.HOAN_THANH, label: 'Hoàn thành' },
+  { key: REQUEST_STATUS.PENDING, label: 'Chờ xử lý' },
+  { key: REQUEST_STATUS.IN_PROGRESS, label: 'Đang xử lý' },
+  { key: REQUEST_STATUS.COMPLETED, label: 'Hoàn thành' },
 ];
 
-// Vai trò được duyệt/từ chối yêu cầu sửa chữa
-const APPROVER_ROLES = ['ADMIN', 'MAINTENANCE_FOREMAN'];
-// Vai trò được tạo PCT từ yêu cầu đã duyệt
-const PCT_CREATOR_ROLES = ['ADMIN', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER'];
+function RequestDetailModal({ request, onClose }) {
+  if (!request) return null;
+  return (
+    <Modal show={!!request} onHide={onClose} centered>
+      <Modal.Header closeButton>
+        <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
+          <BsCpu className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          Chi tiết yêu cầu {request.requestCode}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <div className="yc-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Mã yêu cầu</span>
+            <span className="yc-detail-value font-mono">{request.requestCode}</span>
+          </div>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Trạng thái</span>
+            <span className="yc-detail-value"><StatusBadge status={REQUEST_STATUS_VARIANT[request.status] || 'warning'} label={REQUEST_STATUS_LABEL[request.status] || request.status} /></span>
+          </div>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Thiết bị</span>
+            <span className="yc-detail-value">{request.equipmentName}</span>
+          </div>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Mã KKS</span>
+            <span className="yc-detail-value font-mono">{request.equipmentKksCode}</span>
+          </div>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Mức độ</span>
+            <span className="yc-detail-value">{PRIORITY_LABEL[request.priority]}</span>
+          </div>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Người yêu cầu</span>
+            <span className="yc-detail-value">{request.requesterName}</span>
+          </div>
+          <div className="yc-detail-item">
+            <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)' }}>Thời gian</span>
+            <span className="yc-detail-value">{request.createdAt ? new Date(request.createdAt).toLocaleString('vi-VN') : '—'}</span>
+          </div>
+        </div>
+        <div className="yc-detail-desc" style={{ marginTop: '1.5rem' }}>
+          <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)', marginBottom: '0.5rem' }}>Mô tả sự cố</span>
+          <p style={{ background: 'var(--bg-surface-hover)', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{request.incidentDescription}</p>
+        </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="outline-secondary" size="sm" onClick={onClose}>Đóng</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
 
 export default function RepairRequestPage() {
-  const currentUser = authService.getCurrentUser();
-  const currentUserName = currentUser?.fullName || '';
-  const currentUserRole = currentUser?.role || '';
-
-  const canApprove = APPROVER_ROLES.includes(currentUserRole);
-  const canCreatePCT = PCT_CREATOR_ROLES.includes(currentUserRole);
-
-  // Data state
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter state
-  const [searchKKS, setSearchKKS] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
-  const [onlyMine, setOnlyMine] = useState(true);
 
-  // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editTarget, setEditTarget] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [approveTarget, setApproveTarget] = useState(null);
-  const [rejectTarget, setRejectTarget] = useState(null);
-  const [approving, setApproving] = useState(false);
-  const [rejecting, setRejecting] = useState(false);
   const [pctTarget, setPctTarget] = useState(null);
 
-  // Load danh sách yêu cầu
   const loadRequests = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await repairRequestService.getAll();
-      setRequests(res.data);
+      setRequests(res.data?.content || res.data || []);
     } catch (err) {
       setError('Không thể tải danh sách yêu cầu sửa chữa');
       toast.error('Lỗi tải dữ liệu');
@@ -90,83 +116,67 @@ export default function RepairRequestPage() {
     loadRequests();
   }, [loadRequests]);
 
-  // Danh sách trong phạm vi (theo bộ lọc "của tôi") — dùng để đếm & lọc tiếp
-  const scopedRequests = useMemo(() => {
-    if (onlyMine && currentUserName) {
-      return requests.filter((r) => r.createdBy === currentUserName);
-    }
-    return requests;
-  }, [requests, onlyMine, currentUserName]);
-
-  // Đếm theo từng pill — phụ thuộc scopedRequests (đã áp "của tôi")
   const pillCounts = useMemo(() => {
-    const counts = { ALL: scopedRequests.length };
+    const counts = { ALL: requests.length };
     FILTER_PILLS.forEach((p) => {
       if (p.key !== 'ALL') {
-        counts[p.key] = scopedRequests.filter((r) => r.status === p.key).length;
+        counts[p.key] = requests.filter((r) => r.status === p.key).length;
       }
     });
     return counts;
-  }, [scopedRequests]);
+  }, [requests]);
 
-  // Thống kê hiển thị 4 thẻ tóm tắt
   const stats = useMemo(() => {
-    const choDuyet = scopedRequests.filter((r) => r.status === REQUEST_STATUS.CHO_DUYET);
+    const pending = requests.filter((r) => r.status === REQUEST_STATUS.PENDING);
     return [
       {
         key: 'total',
-        label: onlyMine ? 'Yêu cầu của tôi' : 'Tổng yêu cầu',
-        value: scopedRequests.length,
+        label: 'Tổng yêu cầu',
+        value: requests.length,
         icon: <BsListUl />,
         color: 'var(--color-primary-500)',
       },
       {
         key: 'pending',
-        label: 'Đang chờ duyệt',
-        value: choDuyet.length,
+        label: 'Đang chờ xử lý',
+        value: pending.length,
         icon: <BsHourglassSplit />,
         color: 'var(--color-status-warning)',
       },
       {
-        key: 'approved',
-        label: 'Đã duyệt',
-        value: scopedRequests.filter((r) => r.status === REQUEST_STATUS.DA_DUYET).length,
+        key: 'in_progress',
+        label: 'Đang thực hiện',
+        value: requests.filter((r) => r.status === REQUEST_STATUS.IN_PROGRESS).length,
         icon: <BsFileEarmarkCheck />,
         color: 'var(--color-status-info)',
       },
       {
         key: 'urgent',
-        label: 'Khẩn cấp (chờ duyệt)',
-        value: choDuyet.filter((r) => r.priority === PRIORITY.KHAN_CAP).length,
+        label: 'Khẩn cấp (chờ xử lý)',
+        value: pending.filter((r) => r.priority === 'EMERGENCY').length,
         icon: <BsLightningChargeFill />,
         color: 'var(--color-status-danger)',
       },
     ];
-  }, [scopedRequests, onlyMine]);
+  }, [requests]);
 
-  // Filter & Search
   const filteredRequests = useMemo(() => {
-    let result = scopedRequests;
-
-    // Filter theo trạng thái
+    let result = requests;
     if (filterStatus !== 'ALL') {
       result = result.filter((r) => r.status === filterStatus);
     }
-
-    // Search theo mã KKS
-    if (searchKKS.trim()) {
-      const q = searchKKS.toLowerCase();
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
       result = result.filter(
         (r) =>
-          r.kksCode.toLowerCase().includes(q) ||
-          r.equipmentName.toLowerCase().includes(q)
+          (r.equipmentKksCode && r.equipmentKksCode.toLowerCase().includes(q)) ||
+          (r.equipmentName && r.equipmentName.toLowerCase().includes(q)) ||
+          (r.requestCode && r.requestCode.toLowerCase().includes(q))
       );
     }
-
     return result;
-  }, [scopedRequests, filterStatus, searchKKS]);
+  }, [requests, filterStatus, searchQuery]);
 
-  // Xử lý xóa
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -182,75 +192,32 @@ export default function RepairRequestPage() {
     }
   };
 
-  // Duyệt yêu cầu
-  const handleApprove = async () => {
-    if (!approveTarget) return;
-    try {
-      setApproving(true);
-      await repairRequestService.approve(approveTarget.id);
-      toast.success(`Đã duyệt yêu cầu [${approveTarget.kksCode}]`);
-      setApproveTarget(null);
-      loadRequests();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể duyệt yêu cầu');
-    } finally {
-      setApproving(false);
-    }
-  };
-
-  // Từ chối yêu cầu
-  const handleReject = async () => {
-    if (!rejectTarget) return;
-    try {
-      setRejecting(true);
-      await repairRequestService.reject(rejectTarget.id);
-      toast.success(`Đã từ chối yêu cầu [${rejectTarget.kksCode}]`);
-      setRejectTarget(null);
-      loadRequests();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể từ chối yêu cầu');
-    } finally {
-      setRejecting(false);
-    }
-  };
-
-  // Xử lý sau khi tạo mới / sửa thành công
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
-    setEditTarget(null);
     loadRequests();
   };
 
-  // Format ngày
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   };
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader
         title="Yêu cầu Sửa chữa"
         subtitle="Quản lý các yêu cầu sửa chữa thiết bị trong nhà máy"
         icon={<BsWrenchAdjustable />}
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setShowCreateModal(true)}
-          >
+          <Button variant="primary" size="sm" onClick={() => setShowCreateModal(true)}>
             <BsPlusLg className="me-1" /> Tạo mới
           </Button>
         }
       />
 
-      {/* Stats summary */}
       <div className="rr-stats">
         {stats.map((s) => (
           <div key={s.key} className="rr-stat surface-card">
@@ -263,7 +230,6 @@ export default function RepairRequestPage() {
         ))}
       </div>
 
-      {/* Filter pills (truy cập nhanh các trạng thái thường dùng) */}
       <div className="rr-filter-pills">
         {FILTER_PILLS.map((p) => (
           <button
@@ -278,26 +244,15 @@ export default function RepairRequestPage() {
         ))}
       </div>
 
-      {/* Toolbar: Search + Filter */}
       <div className="rr-toolbar surface-card">
         <div className="rr-toolbar-left">
           <SearchBox
-            placeholder="Tìm theo mã KKS hoặc tên thiết bị..."
-            value={searchKKS}
-            onSearch={setSearchKKS}
+            placeholder="Tìm theo mã YC, KKS hoặc tên thiết bị..."
+            value={searchQuery}
+            onSearch={setSearchQuery}
           />
         </div>
         <div className="rr-toolbar-right">
-          {/* Switch: Chỉ yêu cầu của tôi */}
-          <Form.Check
-            type="switch"
-            id="rr-only-mine"
-            label="Của tôi"
-            checked={onlyMine}
-            onChange={(e) => setOnlyMine(e.target.checked)}
-            className="rr-only-mine"
-          />
-
           <Form.Select
             size="sm"
             value={filterStatus}
@@ -309,28 +264,23 @@ export default function RepairRequestPage() {
               <option key={key} value={key}>{label}</option>
             ))}
           </Form.Select>
-          <span className="rr-result-count">
-            {filteredRequests.length} kết quả
-          </span>
+          <span className="rr-result-count">{filteredRequests.length} kết quả</span>
         </div>
       </div>
 
-      {/* Table */}
       {loading ? (
         <LoadingSpinner />
       ) : error ? (
         <div className="rr-error surface-card">
           <p className="text-danger">{error}</p>
-          <Button variant="outline-primary" size="sm" onClick={loadRequests}>
-            Thử lại
-          </Button>
+          <Button variant="outline-primary" size="sm" onClick={loadRequests}>Thử lại</Button>
         </div>
       ) : filteredRequests.length === 0 ? (
         <div className="surface-card" style={{ padding: 'var(--space-6)' }}>
           <EmptyState
             title="Không tìm thấy"
             message={
-              searchKKS || filterStatus !== 'ALL' || onlyMine
+              searchQuery || filterStatus !== 'ALL'
                 ? 'Không có yêu cầu nào phù hợp với bộ lọc'
                 : 'Chưa có yêu cầu sửa chữa nào. Bấm "Tạo mới" để bắt đầu.'
             }
@@ -342,21 +292,23 @@ export default function RepairRequestPage() {
             <Table hover className="data-table rr-table">
               <thead>
                 <tr>
-                  <th style={{ width: '5%' }}>#</th>
+                  <th style={{ width: '10%' }}>Mã YC</th>
                   <th style={{ width: '15%' }}>Mã KKS</th>
-                  <th style={{ width: '22%' }}>Thiết bị</th>
-                  <th style={{ width: '16%' }}>Ưu tiên</th>
-                  <th style={{ width: '16%' }}>Trạng thái</th>
-                  <th style={{ width: '16%' }}>Ngày tạo</th>
-                  <th style={{ width: '10%' }}>Thao tác</th>
+                  <th style={{ width: '25%' }}>Thiết bị</th>
+                  <th style={{ width: '12%' }}>Ưu tiên</th>
+                  <th style={{ width: '12%' }}>Trạng thái</th>
+                  <th style={{ width: '15%' }}>Ngày tạo</th>
+                  <th style={{ width: '11%' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((req, idx) => (
+                {filteredRequests.map((req) => (
                   <tr key={req.id}>
-                    <td className="text-muted">{idx + 1}</td>
                     <td>
-                      <code className="code-tag">{req.kksCode}</code>
+                      <code className="code-tag">{req.requestCode}</code>
+                    </td>
+                    <td>
+                      <code className="code-tag">{req.equipmentKksCode}</code>
                     </td>
                     <td className="rr-cell-truncate" title={req.equipmentName}>
                       {req.equipmentName}
@@ -364,18 +316,16 @@ export default function RepairRequestPage() {
                     <td>
                       <span
                         className="rr-priority-badge"
-                        style={{
-                          '--priority-color': PRIORITY_COLOR[req.priority],
-                        }}
+                        style={{ '--priority-color': PRIORITY_COLOR[req.priority] || PRIORITY_COLOR.NORMAL }}
                       >
-                        {PRIORITY_LABEL[req.priority]}
+                        {PRIORITY_LABEL[req.priority] || req.priority}
                       </span>
                     </td>
                     <td>
                       <StatusBadge
-                        status={REQUEST_STATUS_VARIANT[req.status]}
-                        label={REQUEST_STATUS_LABEL[req.status]}
-                        pulse={req.priority === 'KHAN_CAP' && req.status !== 'HOAN_THANH'}
+                        status={REQUEST_STATUS_VARIANT[req.status] || 'warning'}
+                        label={REQUEST_STATUS_LABEL[req.status] || req.status}
+                        pulse={req.priority === 'EMERGENCY' && req.status === 'PENDING'}
                       />
                     </td>
                     <td className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>
@@ -390,37 +340,7 @@ export default function RepairRequestPage() {
                         >
                           <BsEye />
                         </button>
-                        {/* Sửa: chỉ khi CHO_DUYET và là người tạo */}
-                        {req.status === REQUEST_STATUS.CHO_DUYET && req.createdBy === currentUserName && (
-                          <button
-                            className="btn btn-sm btn-outline-warning"
-                            onClick={() => setEditTarget(req)}
-                            title="Sửa"
-                          >
-                            <BsPencilSquare />
-                          </button>
-                        )}
-                        {/* Duyệt / Từ chối: chỉ khi CHO_DUYET và user có quyền */}
-                        {req.status === REQUEST_STATUS.CHO_DUYET && canApprove && (
-                          <>
-                            <button
-                              className="btn btn-sm btn-outline-success"
-                              onClick={() => setApproveTarget(req)}
-                              title="Duyệt"
-                            >
-                              <BsCheckCircle />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => setRejectTarget(req)}
-                              title="Từ chối"
-                            >
-                              <BsXCircle />
-                            </button>
-                          </>
-                        )}
-                        {/* Tạo PCT: chỉ khi DA_DUYET và user có quyền */}
-                        {req.status === REQUEST_STATUS.DA_DUYET && canCreatePCT && (
+                        {req.status === REQUEST_STATUS.PENDING && (
                           <button
                             className="btn btn-sm btn-outline-info"
                             onClick={() => setPctTarget(req)}
@@ -429,8 +349,7 @@ export default function RepairRequestPage() {
                             <BsFileEarmarkPlus />
                           </button>
                         )}
-                        {/* Xóa: chỉ khi CHO_DUYET */}
-                        {req.status === REQUEST_STATUS.CHO_DUYET && (
+                        {req.status === REQUEST_STATUS.PENDING && (
                           <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => setDeleteTarget(req)}
@@ -449,52 +368,17 @@ export default function RepairRequestPage() {
         </div>
       )}
 
-      {/* Create / Edit Request Modal */}
       <CreateRequestModal
-        show={showCreateModal || !!editTarget}
-        onClose={() => { setShowCreateModal(false); setEditTarget(null); }}
+        show={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
         onSuccess={handleCreateSuccess}
-        editRequest={editTarget}
       />
 
-      {/* Detail Modal (read-only) */}
       <RequestDetailModal
         request={detailTarget}
         onClose={() => setDetailTarget(null)}
       />
 
-      {/* Approve Confirm Modal */}
-      <ConfirmModal
-        show={!!approveTarget}
-        onClose={() => setApproveTarget(null)}
-        onConfirm={handleApprove}
-        title="Duyệt yêu cầu sửa chữa"
-        message={
-          approveTarget
-            ? `Duyệt yêu cầu cho thiết bị "${approveTarget.equipmentName}" (${approveTarget.kksCode})? Sau khi duyệt, yêu cầu sẽ chuyển sang trạng thái "Đã duyệt" và có thể tạo Phiếu công tác.`
-            : ''
-        }
-        confirmText="Duyệt"
-        variant="primary"
-        loading={approving}
-      />
-
-      {/* Reject Confirm Modal */}
-      <ConfirmModal
-        show={!!rejectTarget}
-        onClose={() => setRejectTarget(null)}
-        onConfirm={handleReject}
-        title="Từ chối yêu cầu sửa chữa"
-        message={
-          rejectTarget
-            ? `Từ chối yêu cầu cho thiết bị "${rejectTarget.equipmentName}" (${rejectTarget.kksCode})? Hành động này không thể hoàn tác.`
-            : ''
-        }
-        confirmText="Từ chối"
-        loading={rejecting}
-      />
-
-      {/* Delete Confirm Modal */}
       <ConfirmModal
         show={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -502,14 +386,13 @@ export default function RepairRequestPage() {
         title="Xoá yêu cầu sửa chữa"
         message={
           deleteTarget
-            ? `Bạn có chắc chắn muốn xoá yêu cầu cho thiết bị "${deleteTarget.equipmentName}" (${deleteTarget.kksCode})? Hành động này không thể hoàn tác.`
+            ? `Bạn có chắc chắn muốn xoá yêu cầu cho thiết bị "${deleteTarget.equipmentName}" (${deleteTarget.equipmentKksCode})? Hành động này không thể hoàn tác.`
             : ''
         }
         confirmText="Xoá"
         loading={deleting}
       />
 
-      {/* Tạo Phiếu Công tác từ Yêu cầu */}
       <CreateWorkOrderModal
         show={!!pctTarget}
         request={pctTarget}
