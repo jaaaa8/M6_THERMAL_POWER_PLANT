@@ -81,12 +81,36 @@ export default function ListSystem() {
 
     {
       key: "code",
-      label: "Mã hệ thống"
+      label: "Mã hệ thống",
+      render: (value, row) => (
+        <span
+          style={{
+            cursor: "pointer",
+          }}
+          onClick={() =>
+            navigate(`/equipment/equipments/${row.id}`)
+          }
+        >
+          {value}
+        </span>
+      )
     },
 
     {
       key: "name",
-      label: "Tên hệ thống"
+      label: "Tên hệ thống",
+      render: (value, row) => (
+        <span
+          style={{
+            cursor: "pointer",
+          }}
+          onClick={() =>
+            navigate(`/equipment/equipments/${row.id}`)
+          }
+        >
+          {value}
+        </span>
+      )
     },
 
     {
