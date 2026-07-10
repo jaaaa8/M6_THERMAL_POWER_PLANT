@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { getAllSystems } from "../../services/equipment/systemService.js";
-import { getAll as getAllEquipments } from "../../services/equipment/equipmentService.js";
+import { getAll as getAllEquipments, getBySystem} from "../../services/equipment/equipmentService.js";
 import { accountService } from "../../services/hr/accountService.js";
 import { BsFileEarmarkPdf } from "react-icons/bs";
 import {
@@ -76,6 +76,8 @@ export default function TechnicalAssessmentForm() {
                 accountService.getAll()
             ]);
 
+            console.log("ASSESSORS RESPONSE", assessorsRes.data);
+
             const systemData =
                 systemsRes.data?.content ||
                 systemsRes.data?.data ||
@@ -94,26 +96,46 @@ export default function TechnicalAssessmentForm() {
                 assessorsRes.data ||
                 [];
 
+            console.log("ASSESSORS", assessorData);
+
             setSystems(systemData);
             setEquipments(equipmentData);
-            setAssessors(assessorData);
+            const activeAssessors =
+                assessorData.filter(
+                    item => item.status === "ACTIVE"
+                );
 
-            console.log("SYSTEMS", systemData);
-            console.log("EQUIPMENTS", equipmentData);
-            console.log(JSON.stringify(equipments[0], null, 2));
-            console.log(
-                JSON.stringify(equipmentData[0], null, 2)
-            );
+            setAssessors(activeAssessors);
+
+            if (assessorData.length > 0) {
+                const firstAssessor = assessorData[0];
+
+                setFormData(prev => ({
+                    ...prev,
+                    assessor: {
+                        username: firstAssessor.username,
+                        email:
+                            firstAssessor.employee?.gmail ||
+                            firstAssessor.email ||
+                            "",
+                        name:
+                            firstAssessor.employee?.fullName ||
+                            firstAssessor.username
+                    }
+                }));
+            }
+
 
             if (systemData.length > 0) {
                 const firstSystemId = systemData[0].id;
 
+                const equipmentRes = await getBySystem(firstSystemId);
+
                 const equipmentOfSystem =
-                    equipmentData.filter(
-                        item =>
-                            item.system?.id === firstSystemId ||
-                            item.systemId === firstSystemId
-                    );
+                    equipmentRes.data?.content ||
+                    equipmentRes.data?.data ||
+                    equipmentRes.data ||
+                    [];
 
                 setFilteredEquipments(equipmentOfSystem);
 
@@ -132,28 +154,32 @@ export default function TechnicalAssessmentForm() {
         }
     };
 
-    const handleSystemChange = (e) => {
-        const systemId = e.target.value;
+    const handleSystemChange = async (e) => {
+        try {
+            const systemId = e.target.value;
 
-        const equipmentOfSystem =
-            equipments.filter(
-                item =>
-                    item.system?.id?.toString() === systemId ||
-                    item.systemId?.toString() === systemId
-            );
+            const res = await getBySystem(systemId);
 
-        setFilteredEquipments(equipmentOfSystem);
-        console.log("Selected system:", systemId);
-        console.log("Equipments:", equipments);
+            const equipmentOfSystem =
+                res.data?.content ||
+                res.data?.data ||
+                res.data ||
+                [];
 
-        setFormData(prev => ({
-            ...prev,
-            systemId,
-            equipmentId:
-                equipmentOfSystem.length > 0
-                    ? equipmentOfSystem[0].id.toString()
-                    : ""
-        }));
+            setFilteredEquipments(equipmentOfSystem);
+
+            setFormData(prev => ({
+                ...prev,
+                systemId,
+                equipmentId:
+                    equipmentOfSystem.length > 0
+                        ? equipmentOfSystem[0].id.toString()
+                        : ""
+            }));
+        } catch (error) {
+            console.error(error);
+            toast.error("Không tải được danh sách thiết bị");
+        }
     };
 
     const handleImageUpload = async (e) => {
@@ -216,8 +242,6 @@ export default function TechnicalAssessmentForm() {
                     ...formData,
                     technicalCode
                 }}
-                workOrders={workOrders}
-                assessors={assessors}
                 systems={systems}
                 equipments={equipments}
                 images={imageFiles}
@@ -327,22 +351,23 @@ export default function TechnicalAssessmentForm() {
                                 value={formData.assessor.username}
                                 onChange={(e) => {
 
-                                    const selected =
-                                        assessors.find(
-                                            item =>
-                                                item.username === e.target.value
-                                        );
+                                    const selected = assessors.find(
+                                        item => item.username === e.target.value
+                                    );
 
-                                    setFormData({
-                                        ...formData,
+                                    setFormData(prev => ({
+                                        ...prev,
                                         assessor: {
                                             username: selected.username,
-                                            email: selected.email,
+                                            email:
+                                                selected.employee?.gmail ||
+                                                selected.email ||
+                                                "",
                                             name:
-                                                selected.fullName ||
-                                                selected.name
+                                                selected.employee?.fullName ||
+                                                selected.username
                                         }
-                                    });
+                                    }));
                                 }}
                             >
                                 <option value="">
@@ -354,7 +379,7 @@ export default function TechnicalAssessmentForm() {
                                         key={item.id}
                                         value={item.username}
                                     >
-                                        {item.fullName || item.name}
+                                        {item.employee?.fullName || item.username}
                                     </option>
                                 ))}
                             </Form.Select>
