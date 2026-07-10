@@ -406,7 +406,7 @@ export default function ListEquipment() {
               </thead>
               <tbody>
                 {data.map((row, idx) => {
-                  const statusProps = getStatusProps(row.status);
+                  const statusProps = getStatusProps(row.equipmentStatus);
                   return (
                     <tr key={row.id}>
                       <td className="text-center">
