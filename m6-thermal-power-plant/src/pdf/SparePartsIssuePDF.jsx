@@ -144,13 +144,14 @@ export default function SparePartsIssuePDF({
                                                workOrders,
                                                spareParts,
                                                employees,
-                                               technicalAssessment,
                                            }) {
 
     const workOrder =
         workOrders.find(
-            w => w.id.toString() === data.workOrderId.toString()
-        )?.workOrderCode || "";
+            w => Number(w.id) === Number(data.workOrderId)
+        )?.orderCode || "";
+    console.log("PDF DATA", data);
+    console.log("PDF WORK ORDERS", workOrders);
 
     const issuedBy =
         employees.find(

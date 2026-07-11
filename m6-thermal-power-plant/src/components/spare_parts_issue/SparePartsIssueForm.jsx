@@ -131,11 +131,6 @@ export default function SparePartsIssueForm({
                     ? sparePartData
                     : []
             );
-
-            console.log("ACCOUNT RESPONSE", accountRes);
-            console.log("ACCOUNT DATA", accountRes.data);
-            console.log("FIRST ACCOUNT", accountRes.data[0]);
-            console.table(accountRes.data);
         } catch (error) {
             console.error(error);
             toast.error("Không thể tải dữ liệu");
@@ -165,6 +160,9 @@ export default function SparePartsIssueForm({
         values,
         fileName
     ) => {
+        console.log("WORK ORDERS BEFORE PDF", workOrders);
+        console.log("SPARE PARTS BEFORE PDF", spareParts);
+        console.log("EMPLOYEES BEFORE PDF", accounts);
         const blob = await pdf(
             <SparePartsIssuePDF
                 data={values}
