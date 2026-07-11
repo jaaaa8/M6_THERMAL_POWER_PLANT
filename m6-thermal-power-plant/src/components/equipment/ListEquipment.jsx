@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from "react-router-dom";
 import { Row, Col, Form, Button, Modal, Table, Spinner, Badge } from 'react-bootstrap';
 import {
   BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX,
@@ -17,7 +17,7 @@ export default function ListEquipment() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const { systemId } = useParams();
   // Pagination state
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(5);
@@ -85,9 +85,16 @@ export default function ListEquipment() {
 
       console.log(params);
 
-      const res = await equipmentService.getAll(params);
+      let res;
+
+      if (systemId) {
+        res = await equipmentService.getBySystem(systemId, params);
+      } else {
+        res = await equipmentService.getAll(params);
+      }
 
       setData(res.data.content);
+      console.log(res.data.content);
       setPage(res.data.number);
       setSize(res.data.size);
       setTotalPages(res.data.totalPages);
@@ -400,7 +407,7 @@ export default function ListEquipment() {
               </thead>
               <tbody>
                 {data.map((row, idx) => {
-                  const statusProps = getStatusProps(row.status);
+                  const statusProps = getStatusProps(row.equipmentStatus);
                   return (
                     <tr key={row.id}>
                       <td className="text-center">

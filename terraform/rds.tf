@@ -27,7 +27,9 @@ resource "aws_db_instance" "mysql" {
   multi_az = false
   # Bật backup tự động 7 ngày — trước đây = 0 nghĩa là mất dữ liệu vĩnh viễn nếu RDS lỗi
   backup_retention_period = 7
-  deletion_protection     = false
+  # Bật deletion protection: chặn xoá RDS do terraform apply sai nhánh / thao tác nhầm
+  # (đã từng xảy ra 2026-07-02). Muốn xoá thật phải set = false rồi apply lại trước.
+  deletion_protection     = true
 
   performance_insights_enabled = false
   monitoring_interval          = 0

@@ -16,3 +16,8 @@ export const findAll = (params) =>
 
 export const getEquipmentTypes = () =>
   apiClient.get(TYPE_URL);
+
+export const getBySystem = (systemId, params = {}) =>
+  apiClient.get(`${EQUIPMENT_URL}/${systemId}`, {
+    params,
+  });
