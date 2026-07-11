@@ -76,15 +76,6 @@ export const workOrderService = {
   leaveMember: (id, memberId) => apiClient.patch(`${BASE}/${id}/members/${memberId}/leave`),
 
   /**
-   * Lịch sử phiếu cấp vật tư của một phiếu công tác.
-   * → GET /api/v1/work-orders/{workOrderId}/supplies-issues
-   * Trả về { sparePartsIssues: [...], consumableIssues: [...], issues: [...] }
-   * — issues: các LẦN cấp (gom thay thế + tiêu hao của cùng một hành động tạo),
-   * đánh số seq #1, #2... theo thời gian; id = null với dữ liệu mồ côi cũ.
-   */
-  getSuppliesIssues: (workOrderId) => apiClient.get(`${BASE}/${workOrderId}/supplies-issues`),
-
-  /**
    * Id nhân viên ĐANG BẬN ở một phiếu công tác sống bất kỳ (giữ vai trò phụ
    * trách hoặc là thành viên chưa rời) — dùng để ẩn khỏi gợi ý khi thêm nhân sự.
    * → GET /api/v1/work-orders/busy-employees
@@ -94,41 +85,44 @@ export const workOrderService = {
     apiClient.get(`${BASE}/busy-employees`, { params: { excludeWorkOrderId } }),
 
   /**
-   * Tạo phiếu cấp vật tư GỘP (thay thế + tiêu hao) cho một phiếu công tác.
-   * issuedBy lấy từ JWT principal — client KHÔNG truyền.
-   * → POST /api/v1/work-orders/{workOrderId}/supplies-issues
+   * Lịch sử phiếu cấp vật tư THAY THẾ của một phiếu công tác, mới nhất trước.
+   * → GET /api/v1/work-orders/{workOrderId}/spare-parts-issues
+   */
+  getSparePartsIssues: (workOrderId) => apiClient.get(`${BASE}/${workOrderId}/spare-parts-issues`),
+
+  /**
+   * Tạo phiếu cấp vật tư THAY THẾ cho một phiếu công tác. issuedBy lấy từ JWT
+   * principal — client KHÔNG truyền.
+   * → POST /api/v1/work-orders/{workOrderId}/spare-parts-issues
    * @param workOrderId
    * @param {object} data
-   * @param {Array<{sparePartId: number, quantity: number}>} [data.spareParts]
-   * @param {Array<{consumableId: number, quantity: number}>} [data.consumables]
-   *        Ít nhất một trong hai danh sách phải có dòng.
+   * @param {Array<{sparePartId: number, quantity: number}>} data.items
    */
-  createSuppliesIssue: (workOrderId, data) =>
-    apiClient.post(`${BASE}/${workOrderId}/supplies-issues`, data),
+  createSparePartsIssue: (workOrderId, data) =>
+    apiClient.post(`${BASE}/${workOrderId}/spare-parts-issues`, data),
+
+  /**
+   * Lịch sử phiếu cấp vật tư TIÊU HAO của một phiếu công tác, mới nhất trước.
+   * → GET /api/v1/work-orders/{workOrderId}/consumable-issues
+   */
+  getConsumableIssues: (workOrderId) => apiClient.get(`${BASE}/${workOrderId}/consumable-issues`),
+
+  /**
+   * Tạo phiếu cấp vật tư TIÊU HAO cho một phiếu công tác. issuedBy lấy từ JWT
+   * principal — client KHÔNG truyền.
+   * → POST /api/v1/work-orders/{workOrderId}/consumable-issues
+   * @param workOrderId
+   * @param {object} data
+   * @param {Array<{consumableId: number, quantity: number}>} data.items
+   */
+  createConsumableIssue: (workOrderId, data) =>
+    apiClient.post(`${BASE}/${workOrderId}/consumable-issues`, data),
 
   /**
    * Tải bản in PDF của phiếu công tác (backend đồng thời upload Cloudinary).
    * → GET /api/v1/work-orders/{id}/pdf
    */
   exportPdf: (id) => apiClient.get(`${BASE}/${id}/pdf`, { responseType: 'blob' }),
-
-  /**
-   * Tải bản in PDF "Phiếu đề nghị cấp phát vật tư": MỘT file gom tất cả dòng
-   * vật tư (thay thế + tiêu hao) đã cấp cho phiếu công tác. Backend trả 409
-   * nếu PCT chưa được cấp vật tư lần nào.
-   * → GET /api/v1/work-orders/{workOrderId}/supplies-issues/pdf
-   */
-  exportSuppliesIssuePdf: (workOrderId) =>
-    apiClient.get(`${BASE}/${workOrderId}/supplies-issues/pdf`, { responseType: 'blob' }),
-
-  /**
-   * Tải bản in PDF của MỘT LẦN cấp vật tư (dòng supplies_issues) — chỉ gồm các
-   * dòng vật tư của đúng lần đó. Lần cấp bất biến sau khi tạo nên client cache
-   * được kết quả theo id. 404 nếu lần cấp không thuộc phiếu công tác.
-   * → GET /api/v1/work-orders/{workOrderId}/supplies-issues/{suppliesIssueId}/pdf
-   */
-  exportSuppliesIssueInstancePdf: (workOrderId, suppliesIssueId) =>
-    apiClient.get(`${BASE}/${workOrderId}/supplies-issues/${suppliesIssueId}/pdf`, { responseType: 'blob' }),
 
   /**
    * Hoàn thành phiếu công tác (chỉ đổi status → COMPLETED, không sửa gì khác).

@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import {
   BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsPlayCircle,
-  BsEye, BsBoxSeam, BsPrinter, BsPencilSquare, BsArrowRepeat,
+  BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -17,7 +17,6 @@ import WorkOrderStatusModal from './WorkOrderStatusModal';
 import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
-import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
 
@@ -69,7 +68,6 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [totalElements, setTotalElements] = useState(0);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
   const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
-  const [printingIssueId, setPrintingIssueId] = useState(null);
   const [editTarget, setEditTarget] = useState(null);     // dòng đang sửa thông tin
   const [statusTarget, setStatusTarget] = useState(null); // dòng đang đổi trạng thái
   const pageSize = 20;
@@ -156,24 +154,6 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     },
   ];
 
-  /* --- In phiếu đề nghị cấp phát vật tư (PDF, mở tab mới) --- */
-  const handlePrintSuppliesIssue = async (row) => {
-    // Phiếu đã kết thúc → mở thẳng bản lưu đóng băng, khỏi render lại.
-    if (isTerminalStatus(row.status) && row.suppliesPdfPath) {
-      window.open(row.suppliesPdfPath, '_blank');
-      return;
-    }
-    setPrintingIssueId(row.id);
-    try {
-      const res = await workOrderService.exportSuppliesIssuePdf(row.id);
-      openPdfBlob(res.data);
-    } catch (err) {
-      toast.error(`Không thể in phiếu cấp vật tư: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
-    } finally {
-      setPrintingIssueId(null);
-    }
-  };
-
   /* --- Hành động dòng --- */
   function renderActions(row) {
     const finished = row.status === 'COMPLETED' || row.status === 'CANCELLED';
@@ -217,15 +197,6 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
           onClick={() => setSuppliesIssueTarget(row)}
         >
           <BsBoxSeam className="me-1" /> Cấp vật tư
-        </Button>
-        <Button
-          variant="outline-secondary"
-          size="sm"
-          title="In phiếu đề nghị cấp phát vật tư (PDF)"
-          disabled={printingIssueId === row.id}
-          onClick={() => handlePrintSuppliesIssue(row)}
-        >
-          <BsPrinter className="me-1" /> {printingIssueId === row.id ? 'Đang in...' : 'In VT'}
         </Button>
       </div>
     );
@@ -297,7 +268,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={550} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">
