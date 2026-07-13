@@ -5,54 +5,78 @@ import {
     Modal,
     Row,
     Col,
-    Table
+    Table,
+    Form
+
 } from "react-bootstrap";
 import {
     BsEye,
-    BsUpload,
     BsPlusCircle,
+    BsArrowClockwise
 } from "react-icons/bs";
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import DataTable from "../../components/common/DataTable";
 
 import sparePartIssueService from "../../services/sparePartIssueService";
 import { workOrderService } from "../../services/workOrderService";
-import {accountService} from "../../services/hr/accountService.js";
-import * as sparePartService from "../../services/sparePartService";
 
 export default function SparePartsIssueList() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedIssue, setSelectedIssue] = useState(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [spareParts, setSpareParts] = useState([]);
     const [workOrderMap, setWorkOrderMap] = useState({});
+    const [filters, setFilters] = useState({
+        keyword: "",
+        status: ""
+    });
+    const [pagination, setPagination] = useState({
+        page: 0,
+        size: 10,
+        totalPages: 0,
+        totalElements: 0
+    });
+    const [searchTrigger, setSearchTrigger] = useState(0);
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [pagination.page, searchTrigger]);
 
     const loadData = async () => {
         try {
             const [
-                issues,
-                workOrderResponse,
-                accountResponse,
-                sparePartResponse
+                issueResponse,
+                workOrderResponse
             ] = await Promise.all([
-                sparePartIssueService.getAll(),
-                workOrderService.getAll(),
-                accountService.getAll(),
-                sparePartService.getAll(),
+                sparePartIssueService.search({
+                    page: pagination.page,
+                    size: pagination.size,
+
+                    keyword:
+                        filters.keyword || undefined,
+
+                    status:
+                        filters.status || undefined
+                }),
+
+                workOrderService.getAll()
             ]);
-            console.log(import.meta.env.VITE_API_URL);
+
+            const issues =
+                issueResponse.content || [];
+
+            setPagination(prev => ({
+                ...prev,
+                totalPages:
+                    issueResponse.totalPages || 0,
+
+                totalElements:
+                    issueResponse.totalElements || 0
+            }));
 
             const workOrderData = workOrderResponse?.data;
 
-            console.log("workOrderData:", workOrderData);
 
             const workOrders = Array.isArray(workOrderData)
                 ? workOrderData
@@ -71,25 +95,6 @@ export default function SparePartsIssueList() {
 
             setWorkOrderMap(woMap);
 
-            const sparePartData =
-                sparePartResponse?.data?.content ??
-                sparePartResponse?.data ??
-                [];
-
-            setSpareParts(
-                Array.isArray(sparePartData)
-                    ? sparePartData
-                    : []
-            );
-
-            const accountData = accountResponse?.data;
-
-            const accounts = Array.isArray(accountData)
-                ? accountData
-                : Array.isArray(accountData?.content)
-                    ? accountData.content
-                    : [];
-
             const workOrderMap = {};
             workOrders.forEach((item) => {
                 workOrderMap[item.id] =
@@ -99,19 +104,7 @@ export default function SparePartsIssueList() {
                     `WO-${item.id}`;
             });
 
-
-
-            const employeeMap = {};
-            accounts.forEach((item) => {
-                employeeMap[item.username] =
-                    item.fullName ||
-                    item.username ||
-                    item.name ||
-                    `EMP-${item.username}`;
-            });
-
-            console.log(issues);
-            console.log(employeeMap);
+            console.log("issues content:", issues);
 
             const tableData = issues.map((item) => ({
                 id: item.id,
@@ -121,8 +114,14 @@ export default function SparePartsIssueList() {
                 workOrderCode:
                     workOrderMap[item.workOrderId] || "-",
 
+
                 issuedBy:
-                    employeeMap[item.issueUsername] || "-",
+                    item.issuedBy?.employee?.employeeName
+                    ||
+                    item.issuedBy?.username
+                    ||
+                    "-",
+
 
                 issuedAt: item.issuedAt
                     ? new Date(item.issuedAt).toLocaleString(
@@ -130,17 +129,19 @@ export default function SparePartsIssueList() {
                     )
                     : "-",
 
+
                 detailCount:
                     item.details?.length || 0,
 
+
                 status:
                     item.status || "-",
+
 
                 rawData: item,
             }));
 
             setData(tableData);
-            console.log(issues);
         } catch (error) {
             console.error(
                 "Load Spare Parts Issue Error:",
@@ -150,6 +151,8 @@ export default function SparePartsIssueList() {
             setLoading(false);
         }
     };
+
+
 
     const columns = [
         {
@@ -162,11 +165,11 @@ export default function SparePartsIssueList() {
         },
         {
             key: "issuedBy",
-            label: "Người cấp phát",
+            label: "Người yêu cầu",
         },
         {
             key: "issuedAt",
-            label: "Ngày cấp phát",
+            label: "Ngày yêu cầu",
         },
         {
             key: "detailCount",
@@ -187,9 +190,15 @@ export default function SparePartsIssueList() {
                     case "PENDING":
                         return (
                             <Badge bg="warning">
-                                Chưa upload Phiếu xuất vật tư
+                                Đang xử lý
                             </Badge>
                         );
+                    case "REJECTED":
+                        return (
+                            <Badge bg="danger">
+                                Từ chối
+                            </Badge>
+                        )
 
                     default:
                         return (
@@ -202,106 +211,42 @@ export default function SparePartsIssueList() {
         },
     ];
 
-    const handleView = async (row) => {
-        try {
-            setShowDetailModal(true);
-            setDetailLoading(true);
-            setSelectedIssue(null);
-
-            const detail =
-                await sparePartIssueService.getDetail(
-                    row.id
-                );
-
-            setSelectedIssue(detail);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setDetailLoading(false);
-        }
+    const handleView = (row) => {
+        setSelectedIssue(row.rawData);
+        setShowDetailModal(true);
     };
     const renderStatus = (status) => {
         switch (status) {
             case "COMPLETED":
-                return (
-                    <Badge bg="success">
-                        Hoàn thành
-                    </Badge>
-                );
+                return <Badge bg="success">Hoàn thành</Badge>;
 
             case "PENDING":
-                return (
-                    <Badge bg="warning">
-                        Chờ upload PDF
-                    </Badge>
-                );
+                return <Badge bg="warning">Đang xử lý</Badge>;
+
+            case "REJECTED":
+                return <Badge bg="danger">Từ chối</Badge>;
 
             default:
-                return (
-                    <Badge bg="secondary">
-                        Không xác định
-                    </Badge>
-                );
+                return <Badge bg="secondary">Không xác định</Badge>;
         }
     };
-
-    const handleUploadPdf = async (id, file) => {
-        if (!file) return;
-
-        try {
-            setLoading(true);
-            console.log("ID:", id);
-            console.log("FILE:", file);
-
-            const result =
-                await sparePartIssueService.uploadPdf(
-                    id,
-                    file
-                );
-
-            console.log("Upload Success:", result);
-
-            alert("Upload PDF thành công");
-
-            await loadData();
-        } catch (error) {
-            console.error(
-                "Upload PDF Error:",
-                error.response?.data || error
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Upload PDF thất bại"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const sparePartMap = useMemo(() => {
-        const map = {};
-
-        spareParts.forEach((sp) => {
-            map[sp.id] = sp;
-        });
-
-        return map;
-    }, [spareParts]);
-    console.log("SPARE PARTS", spareParts);
 
     return (
+
         <div className="page-container">
             <div className="page-header d-flex justify-content-between align-items-center mb-3">
                 <div>
                     <h3 className="mb-1">
-                        Danh sách phiếu xuất vật tư
+                        Danh sách phiếu xuất vật tư thay thế
                     </h3>
 
                     <p className="text-muted mb-0">
                         Quản lý cấp phát vật tư theo phiếu xuất kho
                     </p>
+
                 </div>
+
+
 
                 <Button
                     as={Link}
@@ -313,11 +258,124 @@ export default function SparePartsIssueList() {
                 </Button>
             </div>
 
+            <div className="card mb-3">
+                <div className="card-body">
+
+                    <Row className="g-2">
+
+                        <Col md={8}>
+                            <Form.Control
+                                placeholder="Tìm theo mã phiếu, lệnh công việc hoặc người yêu cầu"
+                                value={filters.keyword}
+                                onChange={(e) =>
+                                    setFilters({
+                                        ...filters,
+                                        keyword: e.target.value
+                                    })
+                                }
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+
+                                        setPagination(prev => ({
+                                            ...prev,
+                                            page: 0
+                                        }));
+
+                                        setSearchTrigger(prev => prev + 1);
+                                    }
+                                }}
+                            />
+                        </Col>
+
+                        <Col md={2}>
+                            <Form.Select
+                                value={filters.status}
+                                onChange={(e) =>
+                                    setFilters({
+                                        ...filters,
+                                        status: e.target.value
+                                    })
+                                }
+                            >
+                                <option value="">
+                                    Tất cả trạng thái
+                                </option>
+
+                                <option value="PENDING">
+                                    Đang xử lý
+                                </option>
+
+                                <option value="COMPLETED">
+                                    Hoàn thành
+                                </option>
+
+                                <option value="REJECTED">
+                                    Từ chối
+                                </option>
+                            </Form.Select>
+                        </Col>
+
+                        <Col md={1}>
+                            <Button
+                                className="w-100"
+                                onClick={() => {
+
+                                    setPagination(prev => ({
+                                        ...prev,
+                                        page: 0
+                                    }));
+
+                                    setSearchTrigger(prev => prev + 1);
+
+                                }}
+                            >
+                                Tìm kiếm
+                            </Button>
+
+                        </Col>
+                        <Col md={1}>
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => {
+
+                                    setFilters({
+                                        keyword: "",
+                                        status: ""
+                                    });
+
+                                    setPagination(prev => ({
+                                        ...prev,
+                                        page: 0
+                                    }));
+
+                                    setSearchTrigger(prev => prev + 1);
+
+                                }}
+                            >
+                                <BsArrowClockwise />
+                            </Button>
+                        </Col>
+
+                    </Row>
+
+                </div>
+            </div>
+
+            <div className="mb-2 text-muted">
+                Tổng số phiếu:
+                <strong>
+                    {" "}
+                    {pagination.totalElements}
+                    {" "}
+                </strong>
+                phiếu
+            </div>
+
             <DataTable
                 loading={loading}
                 data={data}
+                searchable={false}
                 columns={columns}
-                searchPlaceholder="Tìm kiếm phiếu xuất vật tư..."
                 renderActions={(row) => (
                     <div className="data-table-actions">
                         <Button
@@ -327,184 +385,239 @@ export default function SparePartsIssueList() {
                         >
                             <BsEye />
                         </Button>
-
-                        <label className="btn btn-sm btn-outline-success m-0">
-                            <BsUpload />
-
-                            <input
-                                type="file"
-                                hidden
-                                accept=".pdf"
-                                onChange={(e) =>
-                                    handleUploadPdf(
-                                        row.id,
-                                        e.target.files?.[0]
-                                    )
-                                }
-                            />
-                        </label>
                     </div>
                 )}
             />
+
             <Modal
                 show={showDetailModal}
                 onHide={() => setShowDetailModal(false)}
                 size="xl"
                 centered
             >
-                <Modal.Header closeButton>
+                <Modal.Header
+                    closeButton
+                    className="bg-primary text-white"
+                >
                     <Modal.Title>
                         Chi tiết phiếu xuất vật tư
                     </Modal.Title>
                 </Modal.Header>
 
-                <Modal.Body>
-                    {detailLoading ? (
-                        <div className="text-center py-4">
-                            Đang tải dữ liệu...
-                        </div>
-                    ) : (
-                        selectedIssue && (
-                            <>
-                                <Row className="mb-3">
-                                    <Col md={4}>
-                                        <strong>Mã phiếu:</strong>
-                                        <div>{selectedIssue.issueCode}</div>
-                                    </Col>
+                <Modal.Body className="bg-light">
+
+                    {selectedIssue && (
+                        <>
+                            {/* THÔNG TIN CHUNG */}
+                            <div className="bg-white rounded shadow-sm p-3 mb-4">
+                                <h5 className="border-bottom pb-2 mb-3">
+                                    Thông tin phiếu xuất
+                                </h5>
+
+                                <Row className="g-3">
 
                                     <Col md={4}>
-                                        <strong>Lệnh công việc:</strong>
-                                        <div>
-                                            {workOrderMap[selectedIssue.workOrderId] || "-"}
+                                        <div className="text-muted small">
+                                            Mã phiếu
+                                        </div>
+                                        <div className="fw-bold">
+                                            {selectedIssue.issueCode}
                                         </div>
                                     </Col>
 
                                     <Col md={4}>
-                                        <strong>Trạng thái:</strong>
+                                        <div className="text-muted small">
+                                            Lệnh công việc
+                                        </div>
+                                        <div className="fw-bold">
+                                            {
+                                                workOrderMap[
+                                                    selectedIssue.workOrderId
+                                                    ] || "-"
+                                            }
+                                        </div>
+                                    </Col>
+
+                                    <Col md={4}>
+                                        <div className="text-muted small">
+                                            Trạng thái
+                                        </div>
                                         <div>
                                             {renderStatus(selectedIssue.status)}
                                         </div>
                                     </Col>
+
+                                    <Col md={4}>
+                                        <div className="text-muted small">
+                                            Người yêu cầu
+                                        </div>
+
+                                        <div className="fw-semibold">
+                                            {
+                                                selectedIssue.issuedBy?.employee
+                                                    ?.employeeName
+                                            }
+                                        </div>
+
+                                        <small className="text-muted">
+                                            {
+                                                selectedIssue.issuedBy?.username
+                                            }
+                                        </small>
+                                    </Col>
+
+                                    <Col md={4}>
+                                        <div className="text-muted small">
+                                            Ngày cấp phát
+                                        </div>
+
+                                        <div className="fw-semibold">
+                                            {
+                                                selectedIssue.issuedAt
+                                                    ? new Date(
+                                                        selectedIssue.issuedAt
+                                                    ).toLocaleString("vi-VN")
+                                                    : "-"
+                                            }
+                                        </div>
+                                    </Col>
+
+                                    <Col md={4}>
+                                        <div className="text-muted small">
+                                            Tổng loại vật tư
+                                        </div>
+
+                                        <div className="fw-bold text-primary">
+                                            {
+                                                selectedIssue.details?.length || 0
+                                            }
+                                        </div>
+                                    </Col>
+
                                 </Row>
+                            </div>
 
-                                <Row className="mb-3">
-                                    <Col md={4}>
-                                        <strong>Người cấp phát:</strong>
-                                        <div>
-                                            {selectedIssue.issueUsername}
-                                        </div>
-                                    </Col>
+                            {/* DANH SÁCH VẬT TƯ */}
+                            <div className="bg-white rounded shadow-sm p-3">
 
-                                    <Col md={4}>
-                                        <strong>Ngày cấp phát:</strong>
-                                        <div>
-                                            {selectedIssue.issuedAt
-                                                ? new Date(
-                                                    selectedIssue.issuedAt
-                                                ).toLocaleString("vi-VN")
-                                                : "-"}
-                                        </div>
-                                    </Col>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
 
-                                    <Col md={4}>
-                                        <strong>File PDF:</strong>
+                                    <h5 className="mb-0">
+                                        Danh sách vật tư xuất kho
+                                    </h5>
 
-                                        <div>
-                                            {selectedIssue.attachmentPath ? (
-                                                <a
-                                                    href={`${import.meta.env.VITE_API_URL}${selectedIssue.attachmentPath}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    Xem PDF
-                                                </a>
-                                            ) : (
-                                                "-"
-                                            )}
-                                        </div>
-                                    </Col>
-                                </Row>
+                                    <Badge bg="primary">
+                                        {selectedIssue.details?.length || 0}
+                                        {" "}vật tư
+                                    </Badge>
 
-                                <hr />
-
-                                <h5 className="mb-3">
-                                    Danh sách vật tư xuất kho
-                                </h5>
+                                </div>
 
                                 <Table
-                                    bordered
+                                    striped
                                     hover
                                     responsive
-                                    className="align-middle"
+                                    className="align-middle mb-0"
                                 >
-                                    <thead>
+                                    <thead className="table-primary">
                                     <tr>
-                                        <th>Ảnh</th>
-                                        <th>Mã VT</th>
-                                        <th>Tên vật tư</th>
-                                        <th>Đơn vị</th>
-                                        <th>Số lượng</th>
+                                        <th width="70">
+                                            STT
+                                        </th>
+
+                                        <th width="100">
+                                            Hình ảnh
+                                        </th>
+
+                                        <th>
+                                            Mã vật tư
+                                        </th>
+
+                                        <th>
+                                            Tên vật tư
+                                        </th>
+
+                                        <th width="120">
+                                            Đơn vị
+                                        </th>
+
+                                        <th width="120">
+                                            Số lượng
+                                        </th>
                                     </tr>
                                     </thead>
 
                                     <tbody>
-                                    {selectedIssue.details?.map(
-                                        (detail, index) => {
-                                            const sparePart =
-                                                sparePartMap[
-                                                    detail.sparePartId
-                                                    ];
+                                    {
+                                        selectedIssue.details?.map(
+                                            (detail, index) => (
 
-                                            return (
                                                 <tr key={index}>
+
+                                                    <td>
+                                                        {index + 1}
+                                                    </td>
+
                                                     <td>
                                                         <img
                                                             src={
-                                                                (sparePart?.imgPath ? sparePart.imgPath.split('|').filter(Boolean)[0] : null) ||
-                                                                sparePart?.image ||
-                                                                sparePart?.imageUrl ||
-                                                                "/images/no-image.png"
+                                                                detail.imgPath
+                                                                    ? `${detail.imgPath}`
+                                                                    : "https://png.pngtree.com/png-vector/20240805/ourlarge/pngtree-gear-machinery-metal-three-dimensional-png-image_13284500.png"
                                                             }
-                                                            alt={
-                                                                sparePart?.name
-                                                            }
-                                                            width="60"
-                                                            onError={(e) => { e.target.src = "/images/no-image.png"; }}
+                                                            alt={detail.sparePartName}
+                                                            style={{
+                                                                width: "60px",
+                                                                height: "60px",
+                                                                objectFit: "cover",
+                                                                borderRadius: "8px",
+                                                                border: "1px solid #dee2e6"
+                                                            }}
+                                                            onError={(e) => {
+                                                                e.target.src = "https://png.pngtree.com/png-vector/20240805/ourlarge/pngtree-gear-machinery-metal-three-dimensional-png-image_13284500.png";
+                                                            }}
                                                         />
                                                     </td>
 
                                                     <td>
-                                                        {sparePart?.sparePartCode}
+                    <span className="fw-semibold">
+                        {detail.sparePartCode}
+                    </span>
                                                     </td>
 
                                                     <td>
-                                                        {sparePart?.name}
+                                                        {detail.sparePartName}
                                                     </td>
 
                                                     <td>
-                                                        {sparePart?.unitName || "Cái"}
+                                                        <Badge bg="secondary">
+                                                            {detail.unit}
+                                                        </Badge>
                                                     </td>
 
                                                     <td>
-                                                        {detail.quantity}
+                    <span className="fw-bold text-success">
+                        {detail.quantity}
+                    </span>
                                                     </td>
+
                                                 </tr>
-                                            );
-                                        }
-                                    )}
+                                            )
+                                        )
+                                    }
                                     </tbody>
                                 </Table>
-                            </>
-                        )
+
+                            </div>
+                        </>
                     )}
+
                 </Modal.Body>
 
-                <Modal.Footer>
+                <Modal.Footer className="bg-light">
                     <Button
                         variant="secondary"
-                        onClick={() =>
-                            setShowDetailModal(false)
-                        }
+                        onClick={() => setShowDetailModal(false)}
                     >
                         Đóng
                     </Button>

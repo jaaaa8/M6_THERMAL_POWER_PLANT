@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAllRepairHistories } from "../../services/RepairHistoryService";
+import { getAllRepairHistories } from "../../services/repairHistoryService";
 import {
     Card,
     Table,
