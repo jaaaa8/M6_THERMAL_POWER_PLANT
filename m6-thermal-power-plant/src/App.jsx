@@ -52,6 +52,7 @@ import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
 import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
 import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
+import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
 
 function App() {
   return (
@@ -131,7 +132,7 @@ function App() {
             <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/lubrication/plant" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
+            <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
             <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
             <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
             <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
