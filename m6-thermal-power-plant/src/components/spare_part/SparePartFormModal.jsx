@@ -105,7 +105,7 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
                                         name="code"
                                         type="text"
                                         className={`form-control font-mono ${touched.code && errors.code ? 'is-invalid' : ''}`}
-                                        placeholder="Mã tự động sinh"
+                                        placeholder="Mã tự động"
                                         disabled={true}
                                     />
                                     <ErrorMessage name="code" component="div" className="invalid-feedback" />

@@ -722,3 +722,17 @@
     text-align: center;
     margin: auto;
 }
+
+.spare-part-image {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--border-color);
+    cursor: zoom-in;
+    transition: transform 0.15s ease;
+}
+
+.spare-part-image:hover {
+    transform: scale(1.05);
+}

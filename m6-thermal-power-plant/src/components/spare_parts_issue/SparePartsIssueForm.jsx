@@ -1,7 +1,7 @@
 import { useState, useEffect  } from "react";
 import { Formik, Form, Field, ErrorMessage  } from "formik";
 import * as Yup from "yup";
-import { Row, Col, Button } from "react-bootstrap";
+import { Row, Col, Button, Modal  } from "react-bootstrap";
 import { pdf } from "@react-pdf/renderer";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -67,6 +67,7 @@ export default function SparePartsIssueForm({
     const [spareParts, setSpareParts] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [zoomImage, setZoomImage] = useState(null);
 
     useEffect(() => {
         loadData();
@@ -399,17 +400,21 @@ export default function SparePartsIssueForm({
                               </td>
 
                               <td className="text-center">
-                                <img
-                                    src={
-                                        (sp.imgPath ? sp.imgPath.split('|').filter(Boolean)[0] : null) ||
-                                        sp.imageUrl ||
-                                        sp.image ||
-                                        "/images/no-image.png"
-                                    }
-                                    alt={sp.name}
-                                    className="spare-part-image"
-                                    onError={(e) => { e.target.src = "/images/no-image.png"; }}
-                                />
+                                  <img
+                                      src={
+                                          (sp.imgPath ? sp.imgPath.split('|').filter(Boolean)[0] : null) ||
+                                          sp.imageUrl ||
+                                          sp.image ||
+                                          "/images/no-image.png"
+                                      }
+                                      alt={sp.name}
+                                      className="spare-part-image"
+                                      onClick={() => setZoomImage(
+                                          (sp.imgPath ? sp.imgPath.split('|').filter(Boolean)[0] : null) ||
+                                          sp.imageUrl || sp.image || "/images/no-image.png"
+                                      )}
+                                      onError={(e) => { e.target.src = "/images/no-image.png"; }}
+                                  />
                               </td>
 
                               <td>{sp.sparePartCode || sp.code}</td>
@@ -634,7 +639,23 @@ export default function SparePartsIssueForm({
               </Form>
           )}
         </Formik>
+          <Modal
+              show={!!zoomImage}
+              onHide={() => setZoomImage(null)}
+              centered
+              size="lg"
+          >
+              <Modal.Body className="p-0 text-center">
+                  <img
+                      src={zoomImage}
+                      alt="Xem ảnh"
+                      style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                  />
+              </Modal.Body>
+          </Modal>
       </div>
+
+
 
   );
 }
