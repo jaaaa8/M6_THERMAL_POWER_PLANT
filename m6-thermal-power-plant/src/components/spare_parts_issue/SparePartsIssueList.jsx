@@ -460,6 +460,7 @@ export default function SparePartsIssueList() {
                                                     <td>
                                                         <img
                                                             src={
+                                                                (sparePart?.imgPath ? sparePart.imgPath.split('|').filter(Boolean)[0] : null) ||
                                                                 sparePart?.image ||
                                                                 sparePart?.imageUrl ||
                                                                 "/images/no-image.png"
@@ -468,6 +469,7 @@ export default function SparePartsIssueList() {
                                                                 sparePart?.name
                                                             }
                                                             width="60"
+                                                            onError={(e) => { e.target.src = "/images/no-image.png"; }}
                                                         />
                                                     </td>
 
@@ -480,7 +482,7 @@ export default function SparePartsIssueList() {
                                                     </td>
 
                                                     <td>
-                                                        {sparePart?.unit}
+                                                        {sparePart?.unitName || "Cái"}
                                                     </td>
 
                                                     <td>

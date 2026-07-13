@@ -378,11 +378,11 @@ export default function SparePartsIssueForm({
                                       if (e.target.checked) {
                                         setFieldValue("items", [
                                           ...values.items,
-                                          {
-                                            sparePartId: sp.id.toString(),
-                                            quantity: 1,
-                                            unit: sp.unit || "Cái",
-                                          },
+                                            {
+                                              sparePartId: sp.id.toString(),
+                                              quantity: 1,
+                                              unit: sp.unitName || "Cái",
+                                            },
                                         ]);
                                       } else {
                                         setFieldValue(
@@ -401,12 +401,14 @@ export default function SparePartsIssueForm({
                               <td className="text-center">
                                 <img
                                     src={
+                                        (sp.imgPath ? sp.imgPath.split('|').filter(Boolean)[0] : null) ||
                                         sp.imageUrl ||
                                         sp.image ||
                                         "/images/no-image.png"
                                     }
                                     alt={sp.name}
                                     className="spare-part-image"
+                                    onError={(e) => { e.target.src = "/images/no-image.png"; }}
                                 />
                               </td>
 
@@ -416,7 +418,7 @@ export default function SparePartsIssueForm({
 
                               <td>
     <span className="unit-badge">
-        {sp.unit}
+        {sp.unitName || "Cái"}
     </span>
                               </td>
                             </tr>
@@ -472,21 +474,27 @@ export default function SparePartsIssueForm({
                             <tr key={index}>
                               <td>
                                 <img
-                                    src={sparePart?.image}
+                                    src={
+                                        (sparePart?.imgPath ? sparePart.imgPath.split('|').filter(Boolean)[0] : null) ||
+                                        sparePart?.imageUrl ||
+                                        sparePart?.image ||
+                                        "/images/no-image.png"
+                                    }
                                     alt={sparePart?.name}
                                     className="spare-part-image"
+                                    onError={(e) => { e.target.src = "/images/no-image.png"; }}
                                 />
                               </td>
 
-                              <td>{sparePart?.code}</td>
+                              <td>{sparePart?.sparePartCode || sparePart?.code}</td>
 
                               <td>{sparePart?.name}</td>
 
                               {/* ĐƠN VỊ */}
                               <td>
-                <span className="unit-badge">
-                    {sparePart?.unit}
-                </span>
+                                <span className="unit-badge">
+                                    {sparePart?.unitName || "Cái"}
+                                </span>
                               </td>
 
                               {/* SỐ LƯỢNG */}
