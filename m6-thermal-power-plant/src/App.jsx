@@ -14,7 +14,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import RepairRequest from './components/repair_request/RepairRequest.jsx';
+import RepairRequestPage from './pages/RepairRequestPage.jsx';
 import WorkOrderList from './components/work_order/WorkOrderList.jsx';
 import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
@@ -108,7 +108,7 @@ function App() {
             <Route path="/equipment/equipments/units" element={<ManageUnits />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/repair/yeu-cau" element={<RepairRequest />} />
+            <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
@@ -131,10 +131,10 @@ function App() {
             <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
+            <Route path="/lubrication/plant" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
+            <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
             <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
-            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
           {/* ======= Employee Portal ======= */}

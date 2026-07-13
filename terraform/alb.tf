@@ -29,6 +29,11 @@ resource "aws_lb_target_group" "api" {
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
 
+  # 30s thay vì mặc định 300s: API stateless, không có kết nối dài — task cũ
+  # không cần chờ 5 phút để "drain". Giảm giúp deploy nhanh hơn nhiều, tránh
+  # "aws ecs wait services-stable" timeout gây báo đỏ giả.
+  deregistration_delay = 30
+
   health_check {
     path                = "/actuator/health"
     protocol            = "HTTP"
