@@ -38,11 +38,10 @@ export default function TechnicalAssessmentForm() {
             email: "",
             name: ""
         },
-        workOrderId: "1",
-        assessorId: "2",
+        assessorId: "",
 
-        systemId: "1",
-        equipmentId: "1",
+        systemId: "",
+        equipmentId: "",
 
         result:
             "Động cơ bơm nước làm mát bị mòn vòng bi, phát sinh rung động lớn.",
@@ -268,6 +267,7 @@ export default function TechnicalAssessmentForm() {
 
             const payload = {
                 assessor: formData.assessor,
+                equipmentId: formData.equipmentId,
                 result: formData.result,
                 description: formData.description,
                 status: formData.status
@@ -306,6 +306,7 @@ export default function TechnicalAssessmentForm() {
 
         } catch (error) {
             console.error(error);
+            console.log(error.response.data.message);
             toast.error(
                 error?.response?.data?.message ||
                 error?.message ||

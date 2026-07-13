@@ -4,8 +4,7 @@
  * VÒNG ĐỜI FILE PDF (khớp backend):
  *  - Phiếu còn sống: backend render snapshot MỚI mỗi lần xuất → luôn gọi API.
  *  - Phiếu đã kết thúc (COMPLETED/CANCELLED): backend đã ĐÓNG BĂNG bản lưu trên
- *    Cloudinary (pdfPath / suppliesPdfPath) lúc đóng phiếu → mở thẳng URL đó,
- *    khỏi tốn một lượt render.
+ *    Cloudinary (pdfPath) lúc đóng phiếu → mở thẳng URL đó, khỏi tốn một lượt render.
  */
 
 /** Phiếu đã kết thúc → dữ liệu bất biến, bản PDF lưu sẵn là bản chốt. */
