@@ -44,6 +44,15 @@ export const toolService = {
   /** Huỷ số lượng CCDC bị hư hỏng */
   markDamaged: (id, payload) => axios.patch(`${TOOL_URL}/${id}/damage`, payload),
 
+  /** Upload ảnh CCDC lên Cloudinary, trả về { url } để gắn vào imgPath */
+  uploadImage: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axios.post(`${TOOL_URL}/images`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
   /** Tải file Excel mẫu (blob) */
   downloadImportTemplate: () =>
       axios.get(`${TOOL_URL}/import/template`, { responseType: 'blob' }),

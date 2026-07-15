@@ -14,9 +14,9 @@ import '../../pages/ccdc/CcdcForm.css';
 
 function computeDueDate(dateStr) {
     if (!dateStr) return '';
-    // TEST: +5 phút (đổi lại thành +7 ngày sau khi test xong)
+    // TEST: +2 phút (đổi lại thành +7 ngày sau khi test xong)
     const d = new Date();
-    d.setMinutes(d.getMinutes() + 5);
+    d.setMinutes(d.getMinutes() + 2);
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
