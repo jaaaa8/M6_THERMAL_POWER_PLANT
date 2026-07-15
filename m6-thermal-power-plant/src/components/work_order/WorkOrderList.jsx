@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import {
-  BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
+  BsClipboardCheck, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsPlayCircle,
   BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat,
 } from 'react-icons/bs';
@@ -230,12 +230,12 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
       {/* ===== SEARCH + FILTERS ===== */}
       <div className="wo-toolbar">
+        {/* SearchBox không có prop onChange/icon — gõ phím gọi onSearch(value);
+            cập nhật state ở đây thì effect [search, page] tự refetch. */}
         <SearchBox
           value={search}
-          onChange={setSearch}
-          placeholder="Tìm theo mã PCT, mã yêu cầu hoặc nội dung..."
-          onSearch={() => { setPage(0); fetchWorkOrders(); }}
-          icon={<BsSearch />}
+          placeholder="Tìm theo ID, mã PCT hoặc mô tả sửa chữa..."
+          onSearch={(val) => { setSearch(val); setPage(0); }}
         />
       </div>
 

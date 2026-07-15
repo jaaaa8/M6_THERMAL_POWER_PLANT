@@ -19,8 +19,11 @@ export const workOrderService = {
 
   /**
    * Lấy danh sách phiếu công tác (có phân trang + tìm kiếm).
-   * → GET /api/maintenance/work-orders
-   * @param {string} search - Từ khoá tìm trong mã PCT / mã yêu cầu / nội dung
+   * Backend sắp mặc định theo TIẾN ĐỘ: OPEN → đang làm (APPROVED/IN_PROGRESS/
+   * STOPPED) → chờ duyệt gia hạn → hoàn thành → huỷ; cùng nhóm thì phiếu mới
+   * tạo đứng trước (không truyền sort để giữ thứ tự này).
+   * → GET /api/v1/work-orders
+   * @param {string} search - Từ khoá: ID phiếu (khi là số) / mã PCT / mô tả sửa chữa (KHÔNG tìm theo mã yêu cầu hay nội dung sự cố)
    * @param {number} page - Trang (0-based)
    * @param {number} size - Số dòng / trang
    */
@@ -80,9 +83,13 @@ export const workOrderService = {
    * trách hoặc là thành viên chưa rời) — dùng để ẩn khỏi gợi ý khi thêm nhân sự.
    * → GET /api/v1/work-orders/busy-employees
    * @param {number} [excludeWorkOrderId] - Bỏ qua phiếu này khi xét (thao tác trên chính nó)
+   * @param {string[]} [statuses] - Chỉ xét phiếu có status thuộc danh sách
+   *   (VD ['IN_PROGRESS'] cho ô Người giám sát an toàn); bỏ trống = mọi trạng thái sống
    */
-  getBusyEmployees: (excludeWorkOrderId) =>
-    apiClient.get(`${BASE}/busy-employees`, { params: { excludeWorkOrderId } }),
+  getBusyEmployees: (excludeWorkOrderId, statuses) =>
+    apiClient.get(`${BASE}/busy-employees`, {
+      params: { excludeWorkOrderId, statuses: statuses?.length ? statuses.join(',') : undefined },
+    }),
 
   /**
    * Lịch sử phiếu cấp vật tư THAY THẾ của một phiếu công tác, mới nhất trước.
