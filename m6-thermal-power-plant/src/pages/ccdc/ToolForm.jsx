@@ -34,8 +34,8 @@ export default function ToolForm() {
     const [tool, setTool] = useState(null);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [nextCode, setNextCode] = useState('...');
     const [showImport, setShowImport] = useState(false);
+    const [generatedCode, setGeneratedCode] = useState('');
     const [uploadingImg, setUploadingImg] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -67,7 +67,7 @@ export default function ToolForm() {
                 if (!active) return;
                 setCategories(categoriesRes.data?.data ?? []);
                 if (toolRes) setTool(toolRes.data?.data ?? null);
-                if (nextCodeRes) setNextCode(nextCodeRes.data?.data || 'MCCDC-????');
+                if (nextCodeRes) setGeneratedCode(nextCodeRes.data?.data || '');
             })
             .catch((err) => {
                 if (!active) return;
@@ -99,7 +99,8 @@ export default function ToolForm() {
                 await toolService.update(tool.id, payload);
                 toast.success('Cập nhật CCDC thành công');
             } else {
-                await toolService.create(payload);
+                // Gửi đúng mã đã hiển thị trên form để mã hiện = mã lưu vào DB
+                await toolService.create({ ...payload, toolCode: generatedCode });
                 toast.success('Tạo CCDC thành công');
             }
             goBack();
@@ -219,7 +220,7 @@ export default function ToolForm() {
                                         <input
                                             type="text"
                                             readOnly
-                                            value={isEdit ? (tool?.toolCode || '') : nextCode}
+                                            value={isEdit ? (tool?.toolCode || '') : (generatedCode || 'Đang lấy mã...')}
                                             className="form-control font-mono bg-light text-muted"
                                         />
                                     </Col>
