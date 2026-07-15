@@ -10,6 +10,7 @@ import ConsumableImportModal from '../components/consumable/ConsumableImportModa
 import SparePartImportModal from '../components/spare_part/SparePartImportModal';
 import * as consumableInventoryService from '../services/consumableInventoryService';
 import * as sparePartInventoryService from '../services/sparePartInventoryService';
+import StorekeeperSparePartsIssueList from '../components/spare_parts_issue/StorekeeperSparePartsIssueList';
 
 export default function MaterialInventoryPage({ type = 'consumables' }) {
     const materialType = type;
@@ -381,6 +382,12 @@ export default function MaterialInventoryPage({ type = 'consumables' }) {
                         pageSize={10}
                     />
                 </Tab>
+
+                {materialType === 'spareparts' && (
+                    <Tab eventKey="issue" title="Xuất theo phiếu yêu cầu">
+                        <StorekeeperSparePartsIssueList />
+                    </Tab>
+                )}
             </Tabs>
 
             {/* Modal Nhập kho */}
