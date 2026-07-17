@@ -13,15 +13,15 @@ import {
     BsArrowClockwise
 } from "react-icons/bs";
 import { toast } from "react-toastify";
-import { authService } from "../../services/authService";
+import { authService } from "../../services/authService.js";
 
-import DataTable from "../../components/common/DataTable";
-import sparePartIssueService from "../../services/sparePartIssueService";
-import { workOrderService } from "../../services/workOrderService";
-import SparePartImportModal from "../spare_part/SparePartImportModal";
-import * as sparePartInventoryService from "../../services/sparePartInventoryService";
+import DataTable from "../common/DataTable.jsx";
+import consumableIssueService from "../../services/consumableIssueService.js";
+import { workOrderService } from "../../services/workOrderService.js";
+import ConsumableImportModal from "./ConsumableImportModal.jsx";
+import * as consumableInventoryService from "../../services/consumableInventoryService.js";
 
-export default function StorekeeperSparePartsIssueList() {
+export default function StorekeeperConsumableIssueList() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -39,7 +39,7 @@ export default function StorekeeperSparePartsIssueList() {
     });
     const [searchTrigger, setSearchTrigger] = useState(0);
     const [showImportModal, setShowImportModal] = useState(false);
-    const [selectedSparePartForImport, setSelectedSparePartForImport] = useState(null);
+    const [selectedConsumableForImport, setSelectedConsumableForImport] = useState(null);
 
     const currentUser = authService.getCurrentUser();
     const isStorekeeper = currentUser?.role === "MATERIALS_STOREKEEPER" || currentUser?.role === "ADMIN";
@@ -55,7 +55,7 @@ export default function StorekeeperSparePartsIssueList() {
                 issueResponse,
                 workOrderResponse
             ] = await Promise.all([
-                sparePartIssueService.search({
+                consumableIssueService.search({
                     page: pagination.page,
                     size: pagination.size,
                     keyword: filters.keyword || undefined,
@@ -91,7 +91,7 @@ export default function StorekeeperSparePartsIssueList() {
                 id: item.id,
                 issueCode: item.issueCode,
                 workOrderCode: woMap[item.workOrderId] || "-",
-                issuedBy: item.issuedBy?.employee?.fullName || item.issuedBy?.username || "-",
+                issuedBy: item.issuedByName || "-",
                 issuedAt: item.issuedAt ? new Date(item.issuedAt).toLocaleString("vi-VN") : "-",
                 detailCount: item.details?.length || 0,
                 status: item.status || "-",
@@ -100,8 +100,8 @@ export default function StorekeeperSparePartsIssueList() {
 
             setData(tableData);
         } catch (error) {
-            console.error("Load Spare Parts Issue Error:", error);
-            toast.error("Không thể tải danh sách phiếu yêu cầu xuất vật tư.");
+            console.error("Load Consumable Issue Error:", error);
+            toast.error("Không thể tải danh sách phiếu yêu cầu cấp phát vật tư tiêu hao.");
         } finally {
             setLoading(false);
         }
@@ -123,7 +123,7 @@ export default function StorekeeperSparePartsIssueList() {
 
         try {
             const uploadToast = toast.info("Đang tải file PDF lên...", { autoClose: false });
-            const response = await sparePartIssueService.uploadPdf(selectedIssue.id, file);
+            const response = await consumableIssueService.uploadPdf(selectedIssue.id, file);
             toast.dismiss(uploadToast);
             setSelectedIssue(response);
             toast.success("Tải lên PDF chữ ký thành công!");
@@ -141,27 +141,21 @@ export default function StorekeeperSparePartsIssueList() {
             const updatePayload = {
                 id: selectedIssue.id,
                 workOrderId: selectedIssue.workOrderId,
-                issuedBy: {
-                    username: selectedIssue.issuedBy?.username
-                },
+                issuedByName: currentUser?.username,
                 issuedAt: selectedIssue.issuedAt ? selectedIssue.issuedAt.slice(0, 19) : new Date().toISOString().slice(0, 19),
                 status: "COMPLETED",
                 details: selectedIssue.details ? selectedIssue.details.map(d => ({
-                    sparePartId: d.sparePartId,
+                    consumableId: d.consumableId,
                     quantity: d.quantity
                 })) : []
             };
-            console.log("=== PAYLOAD GỬI LÊN ===", JSON.stringify(updatePayload, null, 2));
-            console.log("=== SELECTED ISSUE ===", JSON.stringify(selectedIssue, null, 2));
-            const response = await sparePartIssueService.update(updatePayload);
+            const response = await consumableIssueService.update(updatePayload);
             setSelectedIssue(response);
             toast.success("Xác nhận hoàn thành phiếu xuất thành công!");
             setShowDetailModal(false);
             loadData();
         } catch (error) {
             console.error("Lỗi hoàn thành phiếu xuất:", error);
-            console.error("Response data:", error.response?.data);
-            console.error("Response status:", error.response?.status);
             const errData = error.response?.data;
             const errMsg = typeof errData === 'string' ? errData : errData?.message || error.message || "Lỗi khi cập nhật trạng thái";
             toast.error(errMsg);
@@ -169,26 +163,30 @@ export default function StorekeeperSparePartsIssueList() {
     };
 
     const handleOpenImportModalFromDetail = (detail) => {
-        setSelectedSparePartForImport({
-            id: detail.sparePartId,
-            sparePartCode: detail.sparePartCode,
-            name: detail.sparePartName,
-            unitName: detail.unit,
+        setSelectedConsumableForImport({
+            id: detail.consumableId,
+            consumableCode: detail.consumableCode,
+            name: detail.consumableName,
+            unitName: detail.unitName,
             manufacturer: ""
         });
+        showImportModalForm();
+    };
+
+    const showImportModalForm = () => {
         setShowImportModal(true);
     };
 
     const handleImportSubmit = async (payload, { setSubmitting, resetForm }) => {
         try {
-            await sparePartInventoryService.importSparePart(payload);
-            toast.success("Nhập kho vật tư thay thế thành công.");
+            await consumableInventoryService.importConsumable(payload);
+            toast.success("Nhập kho vật tư tiêu hao thành công.");
             setShowImportModal(false);
-            setSelectedSparePartForImport(null);
+            setSelectedConsumableForImport(null);
             resetForm();
-            
+
             if (selectedIssue) {
-                const updatedDetail = await sparePartIssueService.getDetail(selectedIssue.id);
+                const updatedDetail = await consumableIssueService.getDetail(selectedIssue.id);
                 setSelectedIssue(updatedDetail);
             }
             loadData();
@@ -203,7 +201,7 @@ export default function StorekeeperSparePartsIssueList() {
 
     const handleView = async (row) => {
         try {
-            const detail = await sparePartIssueService.getDetail(row.id);
+            const detail = await consumableIssueService.getDetail(row.id);
             setSelectedIssue(detail);
             setShowDetailModal(true);
         } catch (error) {
@@ -256,7 +254,7 @@ export default function StorekeeperSparePartsIssueList() {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h5 className="mb-1 text-primary fw-bold">
-                        Xuất vật tư thay thế theo phiếu yêu cầu
+                        Xuất vật tư tiêu hao theo phiếu yêu cầu
                     </h5>
                     <p className="text-muted small mb-0">
                         Thủ kho thực hiện kiểm tra tồn kho khả dụng, tải lên phiếu cấp đã ký và hoàn thành cấp phát
@@ -358,7 +356,7 @@ export default function StorekeeperSparePartsIssueList() {
             >
                 <Modal.Header closeButton className="bg-light">
                     <Modal.Title className="h5 fw-bold text-dark">
-                        Chi tiết yêu cầu xuất vật tư thay thế
+                        Chi tiết yêu cầu xuất vật tư tiêu hao
                     </Modal.Title>
                 </Modal.Header>
 
@@ -385,7 +383,7 @@ export default function StorekeeperSparePartsIssueList() {
                                 <Col md={6}>
                                     <div className="p-3 border rounded bg-light">
                                         <div className="text-muted small">Người yêu cầu</div>
-                                        <div className="fw-semibold">{selectedIssue.issuedBy?.employee?.fullName || selectedIssue.issuedBy?.username || "-"}</div>
+                                        <div className="fw-semibold">{selectedIssue.issuedByName || "-"}</div>
                                     </div>
                                 </Col>
                                 <Col md={6}>
@@ -421,7 +419,7 @@ export default function StorekeeperSparePartsIssueList() {
                                                         <td style={{ width: "80px" }}>
                                                             <img
                                                                 src={detail.imgPath || "https://png.pngtree.com/png-vector/20240805/ourlarge/pngtree-gear-machinery-metal-three-dimensional-png-image_13284500.png"}
-                                                                alt={detail.sparePartName}
+                                                                alt={detail.consumableName}
                                                                 style={{
                                                                     width: "50px",
                                                                     height: "50px",
@@ -434,16 +432,16 @@ export default function StorekeeperSparePartsIssueList() {
                                                                 }}
                                                             />
                                                         </td>
-                                                        <td className="fw-semibold">{detail.sparePartCode}</td>
-                                                        <td>{detail.sparePartName}</td>
+                                                        <td className="fw-semibold">{detail.consumableCode}</td>
+                                                        <td>{detail.consumableName}</td>
                                                         <td>
-                                                            <Badge bg="secondary">{detail.unit}</Badge>
+                                                            <Badge bg="secondary">{detail.unitName}</Badge>
                                                         </td>
                                                         <td className="text-end fw-bold text-dark">{detail.quantity}</td>
                                                         <td className="text-end fw-bold text-info">
                                                             {detail.currentStock != null ? detail.currentStock.toLocaleString("vi-VN") : 0}
                                                         </td>
-                                                         {selectedIssue.status !== "COMPLETED" && (
+                                                        {selectedIssue.status !== "COMPLETED" && (
                                                              <td className="text-center">
                                                                  {isAvailable ? (
                                                                      <Badge bg="success">Khả dụng</Badge>
@@ -544,13 +542,13 @@ export default function StorekeeperSparePartsIssueList() {
             </Modal>
 
             {/* Modal Nhập kho từ chi tiết yêu cầu */}
-            <SparePartImportModal
+            <ConsumableImportModal
                 show={showImportModal}
                 onHide={() => {
                     setShowImportModal(false);
-                    setSelectedSparePartForImport(null);
+                    setSelectedConsumableForImport(null);
                 }}
-                sparePartItem={selectedSparePartForImport}
+                consumableItem={selectedConsumableForImport}
                 onSubmit={handleImportSubmit}
             />
         </div>
