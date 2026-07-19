@@ -93,13 +93,12 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     setError(null);
     try {
       const res = await workOrderService.getById(workOrderId);
-      // API returns { workOrder: {...}, memberHistory: [...], sparePartsIssues: [...] }
+      // API returns { workOrder: {...}, memberHistory: [...], extensions: [...] }
       const data = res.data;
       // Flatten the structure for easier access
       const flattenedDetail = {
         ...data.workOrder,
         memberHistory: data.memberHistory || [],
-        sparePartsIssues: data.sparePartsIssues || [],
         extensions: data.extensions || [],
         // Add computed fields
         currentMembers: data.workOrder?.members || [],

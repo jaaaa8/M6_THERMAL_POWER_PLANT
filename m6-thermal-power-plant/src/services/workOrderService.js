@@ -18,17 +18,22 @@ export const workOrderService = {
     apiClient.get(`${BASE_URL}/api/v1/repair-requests/pending`, { params: { page, size, sort: 'createdAt,desc' } }),
 
   /**
-   * Lấy danh sách phiếu công tác (có phân trang + tìm kiếm).
+   * Lấy danh sách phiếu công tác (có phân trang + 4 bộ lọc độc lập kết hợp
+   * AND, bỏ trống = không lọc).
    * Backend sắp mặc định theo TIẾN ĐỘ: OPEN → đang làm (APPROVED/IN_PROGRESS/
    * STOPPED) → chờ duyệt gia hạn → hoàn thành → huỷ; cùng nhóm thì phiếu mới
    * tạo đứng trước (không truyền sort để giữ thứ tự này).
    * → GET /api/v1/work-orders
-   * @param {string} search - Từ khoá: ID phiếu (khi là số) / mã PCT / mô tả sửa chữa (KHÔNG tìm theo mã yêu cầu hay nội dung sự cố)
+   * @param {object} filters
+   * @param {string} [filters.code] - ID phiếu (khi là số) / mã PCT / mã nhân viên tổ trưởng (KHÔNG tìm theo mã yêu cầu hay nội dung sự cố)
+   * @param {string} [filters.description] - Từ khoá tìm theo mô tả sửa chữa
+   * @param {string} [filters.fromDate] - Chỉ lấy phiếu bắt đầu từ ngày này (yyyy-MM-dd)
+   * @param {string} [filters.toDate] - Chỉ lấy phiếu bắt đầu đến HẾT ngày này (yyyy-MM-dd)
    * @param {number} page - Trang (0-based)
    * @param {number} size - Số dòng / trang
    */
-  getAll: (search, page = 0, size = 20) =>
-    apiClient.get(`${BASE}`, { params: { search, page, size } }),
+  getAll: ({ code, description, fromDate, toDate } = {}, page = 0, size = 20) =>
+    apiClient.get(`${BASE}`, { params: { code, description, fromDate, toDate, page, size } }),
 
   /**
    * Lấy chi tiết một phiếu công tác bao gồm:
@@ -90,23 +95,6 @@ export const workOrderService = {
     apiClient.get(`${BASE}/busy-employees`, {
       params: { excludeWorkOrderId, statuses: statuses?.length ? statuses.join(',') : undefined },
     }),
-
-  /**
-   * Lịch sử phiếu cấp vật tư THAY THẾ của một phiếu công tác, mới nhất trước.
-   * → GET /api/v1/work-orders/{workOrderId}/spare-parts-issues
-   */
-  getSparePartsIssues: (workOrderId) => apiClient.get(`${BASE}/${workOrderId}/spare-parts-issues`),
-
-  /**
-   * Tạo phiếu cấp vật tư THAY THẾ cho một phiếu công tác. issuedBy lấy từ JWT
-   * principal — client KHÔNG truyền.
-   * → POST /api/v1/work-orders/{workOrderId}/spare-parts-issues
-   * @param workOrderId
-   * @param {object} data
-   * @param {Array<{sparePartId: number, quantity: number}>} data.items
-   */
-  createSparePartsIssue: (workOrderId, data) =>
-    apiClient.post(`${BASE}/${workOrderId}/spare-parts-issues`, data),
 
   /**
    * Lịch sử phiếu cấp vật tư TIÊU HAO của một phiếu công tác, mới nhất trước.
