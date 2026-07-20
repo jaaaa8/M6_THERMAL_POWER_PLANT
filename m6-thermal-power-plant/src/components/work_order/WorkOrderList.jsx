@@ -148,7 +148,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         <div>
           <div>{val ? new Date(val).toLocaleString('vi-VN') : '—'}</div>
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-            Dự kiến kết thúc: {row.expectedEndTime ? new Date(row.expectedEndTime).toLocaleString('vi-VN') : '—'}
+            Kết thúc: {row.endTime ? new Date(row.endTime).toLocaleString('vi-VN') : '—'}
           </span>
         </div>
       ),

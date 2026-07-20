@@ -3,11 +3,12 @@ import { Modal, Button, Tabs, Tab, Table, Badge } from 'react-bootstrap';
 import {
   BsBoxSeam, BsSearch, BsTrash, BsSave,
   BsClockHistory, BsPlusLg,
-  BsChevronDown, BsChevronUp,
+  BsChevronDown, BsChevronUp, BsPrinter,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
+import { openPdfBlob, blobErrorMessage } from './pdfUtils';
 import { workOrderService } from '../../services/workOrderService';
 import * as consumableService from '../../services/consumableService';
 
@@ -187,6 +188,7 @@ function SupplyIssuePanel({ show, workOrder, config, onCreated, onClose }) {
                 key={issue.id}
                 issue={issue}
                 config={config}
+                workOrderId={workOrder.id}
                 expanded={expandedIssueIds.includes(issue.id)}
                 onToggle={() => toggleExpanded(issue.id)}
               />
@@ -346,7 +348,23 @@ function SupplyLinePicker({ title, searchFn, codeKey, lines, setLines }) {
    CARD — MỘT phiếu cấp vật tư trong lịch sử (mã phiếu — thời điểm — người
    cấp) + nút xem chi tiết (mặc định thu gọn).
    ============================================================ */
-function IssueCard({ issue, config, expanded, onToggle }) {
+function IssueCard({ issue, config, workOrderId, expanded, onToggle }) {
+  const [printing, setPrinting] = useState(false);
+
+  // In phiếu đề nghị cấp phát vật tư: backend render theo mẫu giấy + upload đè
+  // bản lưu Cloudinary (phiếu bất biến nên bản in luôn khớp bản lưu).
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const res = await workOrderService.exportConsumableIssuePdf(workOrderId, issue.id);
+      openPdfBlob(res.data);
+    } catch (err) {
+      toast.error(`Không thể in phiếu cấp vật tư: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <div className="border rounded p-2 mb-2">
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-1">
@@ -359,6 +377,15 @@ function IssueCard({ issue, config, expanded, onToggle }) {
           </span>
         </span>
         <span className="d-flex gap-1">
+          <Button
+            variant="outline-primary"
+            size="sm"
+            disabled={printing}
+            title="In phiếu đề nghị cấp phát vật tư theo mẫu giấy"
+            onClick={handlePrint}
+          >
+            <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In phiếu'}
+          </Button>
           <Button variant="outline-secondary" size="sm" onClick={onToggle}>
             {expanded ? <BsChevronUp className="me-1" /> : <BsChevronDown className="me-1" />}
             {expanded ? 'Thu gọn' : 'Chi tiết'}

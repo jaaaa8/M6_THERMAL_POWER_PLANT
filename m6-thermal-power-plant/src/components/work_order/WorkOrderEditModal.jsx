@@ -17,7 +17,7 @@ import { employeeService } from '../../services/hr/employeeService';
  * @param {boolean} props.show
  * @param {object}  props.workOrder - Dòng WorkOrderDTO từ danh sách (đủ leaderId,
  *                                    directSupervisorId, safetySupervisorId,
- *                                    startTime, expectedEndTime, repairDescription)
+ *                                    startTime, repairDescription)
  * @param {Function} props.onClose
  * @param {Function} [props.onChanged] - Gọi sau khi lưu thành công (list refetch)
  */
@@ -31,7 +31,6 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
     directSupervisorId: workOrder.directSupervisorId ?? '',
     safetySupervisorId: workOrder.safetySupervisorId ?? '',
     startTime: toLocalInput(workOrder.startTime),
-    expectedEndTime: toLocalInput(workOrder.expectedEndTime),
     repairDescription: workOrder.repairDescription || '',
   } : null));
   const [saving, setSaving] = useState(false);
@@ -66,7 +65,6 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
         directSupervisorId: form.directSupervisorId ? Number(form.directSupervisorId) : null,
         safetySupervisorId: form.safetySupervisorId ? Number(form.safetySupervisorId) : null,
         startTime: form.startTime ? `${form.startTime}:00` : null,
-        expectedEndTime: form.expectedEndTime ? `${form.expectedEndTime}:00` : null,
         repairDescription: form.repairDescription?.trim() || null,
       });
       toast.success('Đã cập nhật phiếu công tác');
@@ -110,30 +108,19 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
               onChange={(v) => setField('safetySupervisorId', v)}
               employees={employees}
             />
-            <div className="row">
-              <Form.Group className="mb-3 col-6">
-                <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                  Bắt đầu
-                </Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  size="sm"
-                  value={form.startTime}
-                  onChange={(e) => setField('startTime', e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3 col-6">
-                <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                  Dự kiến kết thúc
-                </Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  size="sm"
-                  value={form.expectedEndTime}
-                  onChange={(e) => setField('expectedEndTime', e.target.value)}
-                />
-              </Form.Group>
-            </div>
+            {/* Không sửa giờ kết thúc: end_time là mốc THỰC TẾ, hệ thống đóng
+                dấu khi phiếu hoàn thành. */}
+            <Form.Group className="mb-3">
+              <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
+                Bắt đầu
+              </Form.Label>
+              <Form.Control
+                type="datetime-local"
+                size="sm"
+                value={form.startTime}
+                onChange={(e) => setField('startTime', e.target.value)}
+              />
+            </Form.Group>
             <Form.Group>
               <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
                 Mô tả nội dung sửa chữa

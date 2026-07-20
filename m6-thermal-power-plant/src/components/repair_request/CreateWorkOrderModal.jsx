@@ -45,7 +45,6 @@ const validationSchema = Yup.object({
     .required('Vui lòng chọn người giám sát an toàn'),
   startTime: Yup.string()
     .required('Vui lòng nhập thời gian bắt đầu'),
-  expectedEndTime: Yup.string().nullable(),
 });
 
 /**
@@ -153,7 +152,6 @@ export default function ModalCreateWorkOrder({
     directSupervisorId: '',
     safetySupervisorId: '',
     startTime: '',
-    expectedEndTime: '',
     members: [], // [{ employeeId, roleInTask }]
   };
 
@@ -171,7 +169,6 @@ export default function ModalCreateWorkOrder({
               directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
               safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
               startTime: values.startTime || null,
-              expectedEndTime: values.expectedEndTime || null,
               members: values.members.map((m) => ({
                 employeeId: m.employeeId,
                 roleInTask: m.roleInTask || undefined,
@@ -340,15 +337,11 @@ export default function ModalCreateWorkOrder({
                     <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
                   </Col>
                   <Col md={6}>
-                    <label htmlFor="pct-expectedEndTime" className="form-label">
-                      Dự kiến kết thúc
-                    </label>
-                    <Field
-                      id="pct-expectedEndTime"
-                      name="expectedEndTime"
-                      type="datetime-local"
-                      className="form-control"
-                    />
+                    {/* Không nhập mốc kết thúc: giờ kết thúc là mốc THỰC TẾ, hệ
+                        thống tự ghi khi phiếu chuyển Hoàn thành. */}
+                    <div className="form-text mt-4">
+                      Giờ kết thúc được hệ thống ghi nhận khi phiếu hoàn thành.
+                    </div>
                   </Col>
                 </Row>
 

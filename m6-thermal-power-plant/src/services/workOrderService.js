@@ -7,6 +7,33 @@ import apiClient from './apiClient';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BASE = `${BASE_URL}/api/v1/work-orders`;
 
+/** Cộng thêm ngày vào chuỗi "yyyy-MM-dd" bằng UTC — tránh lệch ngày theo múi giờ. */
+function addDays(isoDate, days) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/**
+ * NGÀY xin làm tiếp của lần gia hạn KẾ TIẾP. Mỗi lần gia hạn kéo dài đúng 1
+ * ngày nên ngày này luôn là hôm sau ngày làm việc gần nhất đã được phép:
+ *  - phiếu ĐÃ có gia hạn được duyệt -> allowedDate mới nhất + 1 ngày
+ *  - chưa có gia hạn nào            -> ngày bắt đầu phiếu + 1 ngày
+ *
+ * Tổ trưởng KHÔNG chọn được ngày này (chỉ xem); Trưởng ca mới chốt allowedDate
+ * lúc duyệt và có thể lùi xa hơn nếu chưa cô lập được thiết bị.
+ *
+ * @param {string} [startTime]    WorkOrder.startTime (ISO datetime)
+ * @param {Array}  [extensions]   WorkOrderExtensionDTO[] (cần allowedDate)
+ * @returns {string} "yyyy-MM-dd", hoặc '' nếu không suy ra được
+ */
+export function nextExtensionDate(startTime, extensions) {
+  const granted = (extensions || []).map((e) => e.allowedDate).filter(Boolean).sort();
+  const base = granted.length
+    ? granted[granted.length - 1]
+    : (startTime ? String(startTime).slice(0, 10) : null);
+  return base ? addDays(base, 1) : '';
+}
+
 export const workOrderService = {
   /**
    * Lấy danh sách yêu cầu sửa chữa đang chờ xử lý (status = PENDING).
@@ -55,7 +82,8 @@ export const workOrderService = {
    * @param {number}  data.directSupervisorId      - bắt buộc
    * @param {number}  data.safetySupervisorId      - bắt buộc
    * @param {string}  data.startTime               - bắt buộc (ISO datetime)
-   * @param {string}  [data.expectedEndTime]       - tuỳ chọn (ISO datetime)
+   *   (KHÔNG có mốc kết thúc — end_time là giờ kết thúc THỰC TẾ, hệ thống tự ghi
+   *    khi phiếu hoàn thành)
    * @param {Array<{employeeId: number, roleInTask?: string}>} [data.members]
    */
   create: (data) => apiClient.post(`${BASE}`, data),
@@ -114,6 +142,15 @@ export const workOrderService = {
     apiClient.post(`${BASE}/${workOrderId}/consumable-issues`, data),
 
   /**
+   * Tải bản in PDF "Phiếu đề nghị cấp phát vật tư, trang thiết bị" của MỘT phiếu
+   * cấp vật tư (backend đồng thời upload Cloudinary + lưu pdf_path).
+   * → GET /api/v1/work-orders/{workOrderId}/consumable-issues/{issueId}/pdf
+   */
+  exportConsumableIssuePdf: (workOrderId, issueId) =>
+    apiClient.get(`${BASE}/${workOrderId}/consumable-issues/${issueId}/pdf`,
+      { responseType: 'blob' }),
+
+  /**
    * Tải bản in PDF của phiếu công tác (backend đồng thời upload Cloudinary).
    * → GET /api/v1/work-orders/{id}/pdf
    */
@@ -127,22 +164,36 @@ export const workOrderService = {
   complete: (id) => apiClient.patch(`${BASE}/${id}/complete`),
 
   /**
-   * Tổ trưởng GỬI DUYỆT / TẠM DỪNG phiếu (từ mọi trạng thái đang sống):
-   * status → WAITING_FOR_APPROVAL + tạo dòng gia hạn chờ Trưởng ca ký bản giấy.
-   * Dùng cho cả phiếu OPEN xin duyệt trước khi làm lẫn tạm dừng cuối ngày.
+   * Tổ trưởng XIN GIA HẠN: status → WAITING_FOR_APPROVAL + tạo dòng gia hạn
+   * chờ Trưởng ca ký bản giấy.
+   *
+   * UI chỉ cho gọi khi phiếu ĐANG TẠM DỪNG (STOPPED) — hết ngày phải dừng việc
+   * và trả phiếu giấy về phòng Trưởng ca trước, hôm sau mới xin làm tiếp.
+   * Backend vẫn nhận từ mọi trạng thái đang sống (giữ đường lùi cho hiện trường).
    * → PATCH /api/v1/work-orders/{id}/stop
    * @param id
-   * @param {string} reason        - Lý do gửi duyệt / xin làm tiếp (bắt buộc)
-   * @param {string} extendedUntil - Xin phép đến ngày (ISO datetime, bắt buộc)
+   * @param {string} reason - Lý do gửi duyệt / xin làm tiếp (bắt buộc). KHÔNG
+   *                          gửi ngày: ngày cho phép làm tiếp do Trưởng ca chốt
+   *                          lúc duyệt (xem approveExtension).
    */
-  stop: (id, reason, extendedUntil) =>
-    apiClient.patch(`${BASE}/${id}/stop`, { reason, extendedUntil }),
+  stop: (id, reason) => apiClient.patch(`${BASE}/${id}/stop`, { reason }),
+
+  /**
+   * Trưởng ca duyệt gia hạn: ghi nhận tài khoản đang đăng nhập vào "Người cho
+   * phép" + chốt ngày cho đơn vị công tác làm tiếp.
+   * → PATCH /api/v1/work-orders/{id}/approve-extension?allowedDate=yyyy-MM-dd
+   * @param {number} id
+   * @param {string} [allowedDate] - Ngày cho phép tiếp tục làm việc (yyyy-MM-dd);
+   *                                 bỏ trống = hôm sau ngày Tổ trưởng gửi duyệt.
+   */
+  approveExtension: (id, allowedDate) =>
+    apiClient.patch(`${BASE}/${id}/approve-extension`, null, { params: { allowedDate } }),
 
   /**
    * Sửa thông tin phiếu đang sống (partial update — chỉ trường khác null được
    * ghi đè): leaderId / directSupervisorId / safetySupervisorId / startTime /
-   * expectedEndTime / repairDescription. Backend KHÔNG áp ràng buộc lúc tạo
-   * (trùng vai trò, chồng lấn giờ); phiếu COMPLETED/CANCELLED trả 409.
+   * repairDescription. Backend KHÔNG áp ràng buộc lúc tạo (trùng vai trò);
+   * phiếu COMPLETED/CANCELLED trả 409.
    * → PATCH /api/v1/work-orders/{id}
    */
   update: (id, data) => apiClient.patch(`${BASE}/${id}`, data),
@@ -156,8 +207,10 @@ export const workOrderService = {
    * @param id
    * @param {object} data
    * @param {string} data.targetStatus   - Trạng thái đích (bắt buộc)
-   * @param {string} [data.reason]        - Bắt buộc khi target = WAITING_FOR_APPROVAL
-   * @param {string} [data.extendedUntil] - Bắt buộc khi target = WAITING_FOR_APPROVAL
+   * @param {string} [data.reason]      - Bắt buộc khi target = WAITING_FOR_APPROVAL
+   * @param {string} [data.allowedDate] - Ngày cho phép làm tiếp (yyyy-MM-dd), chỉ
+   *                                      dùng khi duyệt gia hạn (target = APPROVED
+   *                                      từ WAITING_FOR_APPROVAL)
    */
   updateStatus: (id, data) => apiClient.patch(`${BASE}/${id}/status`, data),
 
