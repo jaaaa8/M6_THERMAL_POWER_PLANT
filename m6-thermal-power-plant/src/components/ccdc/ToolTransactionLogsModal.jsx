@@ -30,7 +30,7 @@ export default function ToolTransactionLogsModal({ show, onClose, tool }) {
         <Modal show={show} onHide={onClose} centered size="lg">
             <Modal.Header closeButton>
                 <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-                    <BsClockHistory className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+                    <BsClockHistory className="me-2" style={{ color: 'var(--color-primary)' }} />
                     Lịch sử thao tác — {tool?.toolCode}
                 </Modal.Title>
             </Modal.Header>

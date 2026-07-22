@@ -47,7 +47,7 @@
 
 .crm-priority-pill:hover {
   border-color: var(--color-neutral-300);
-  background: var(--bg-surface-hover);
+  background: var(--color-surface-container);
 }
 
 /* --- Priority Colors --- */

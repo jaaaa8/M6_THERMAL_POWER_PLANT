@@ -4,12 +4,12 @@
 
 .wo-detail-modal .modal-content {
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-secondary);
+  border: 1px solid var(--border-color);
 }
 
 .wo-detail-modal .modal-header {
-  background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
-  border-bottom: 1px solid var(--border-secondary);
+  background: var(--color-primary-50);
+  border-bottom: 1px solid var(--border-color);
   padding: var(--space-4);
 }
 
@@ -84,7 +84,7 @@
   color: var(--text-primary);
   margin-bottom: var(--space-3);
   padding-bottom: var(--space-2);
-  border-bottom: 2px solid var(--border-secondary);
+  border-bottom: 2px solid var(--border-color);
 }
 
 /* ============================================================
@@ -96,7 +96,7 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-3);
   padding: var(--space-3);
-  background: var(--color-surface-secondary);
+  background: var(--color-surface-container);
   border-radius: var(--radius-md);
 }
 
@@ -156,8 +156,8 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3);
-  background: var(--color-surface-secondary);
-  border: 2px solid var(--border-secondary);
+  background: var(--color-surface-container);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
 }
@@ -168,13 +168,13 @@
 }
 
 .wo-detail-member-card.offline {
-  border-color: var(--border-tertiary);
+  border-color: var(--color-outline-variant);
   opacity: 0.75;
 }
 
 .wo-detail-member-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-outline-variant);
+  background: var(--color-surface-container);
 }
 
 /* Member Avatar */
@@ -183,7 +183,7 @@
   width: 48px;
   height: 48px;
   min-width: 48px;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  background: var(--color-primary);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -200,7 +200,7 @@
   right: -2px;
   width: 16px;
   height: 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -253,15 +253,15 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: var(--color-surface-secondary);
-  border: 1px solid var(--border-secondary);
+  background: var(--color-surface-container);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
 }
 
 .wo-detail-member-compact:hover {
-  background: var(--color-surface-primary);
-  border-color: var(--border-primary);
+  background: var(--bg-surface);
+  border-color: var(--color-outline-variant);
 }
 
 .wo-detail-member-compact.online {
@@ -269,7 +269,7 @@
 }
 
 .wo-detail-member-compact.offline {
-  border-left: 3px solid var(--border-tertiary);
+  border-left: 3px solid var(--color-outline-variant);
   opacity: 0.7;
 }
 
@@ -277,7 +277,7 @@
   width: 36px;
   height: 36px;
   min-width: 36px;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  background: var(--color-primary);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -336,7 +336,7 @@
   top: 8px;
   bottom: 8px;
   width: 2px;
-  background: var(--border-secondary);
+  background: var(--border-color);
 }
 
 .wo-detail-timeline-event {
@@ -362,15 +362,15 @@
   justify-content: center;
   color: white;
   font-size: var(--text-sm);
-  border: 3px solid var(--color-surface-primary);
+  border: 3px solid var(--bg-surface);
 }
 
 .wo-detail-timeline-content {
   flex: 1;
   padding: var(--space-2) var(--space-3);
-  background: var(--color-surface-secondary);
+  background: var(--color-surface-container);
   border-radius: var(--radius-md);
-  border-left: 3px solid var(--border-secondary);
+  border-left: 3px solid var(--border-color);
 }
 
 .wo-detail-timeline-text {

@@ -7,22 +7,23 @@
 
 /* Tắt card hover-lift — dòng bảng đã có hover highlight riêng */
 .data-table-wrapper:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .data-table-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
   gap: var(--space-3);
   flex-wrap: wrap;
+  background: var(--color-surface-container-low);
 }
 
 .data-table-count {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  font-size: var(--text-label-sm);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
@@ -32,6 +33,11 @@
 
 .data-table {
   margin: 0;
+}
+
+/* Số liệu thẳng cột (mã phiếu, số lượng, ngày) — chữ số cùng bề rộng */
+.data-table td {
+  font-variant-numeric: tabular-nums;
 }
 
 .data-table-th-inner {
@@ -69,21 +75,21 @@
 }
 
 .data-table-pagination .pagination {
-  --bs-pagination-bg: var(--bg-surface);
-  --bs-pagination-border-color: var(--border-color);
-  --bs-pagination-color: var(--text-secondary);
-  --bs-pagination-hover-bg: var(--bg-surface-hover);
-  --bs-pagination-hover-color: var(--text-primary);
-  --bs-pagination-hover-border-color: var(--border-color-strong);
-  --bs-pagination-active-bg: var(--color-primary-600);
-  --bs-pagination-active-border-color: var(--color-primary-600);
-  --bs-pagination-disabled-bg: var(--bg-surface);
-  --bs-pagination-disabled-color: var(--text-tertiary);
+  --bs-pagination-bg: var(--color-surface);
+  --bs-pagination-border-color: var(--color-border);
+  --bs-pagination-color: var(--color-text-secondary);
+  --bs-pagination-hover-bg: var(--color-surface-container);
+  --bs-pagination-hover-color: var(--color-text-primary);
+  --bs-pagination-hover-border-color: var(--color-outline-variant);
+  --bs-pagination-active-bg: var(--color-primary);
+  --bs-pagination-active-border-color: var(--color-primary);
+  --bs-pagination-disabled-bg: var(--color-surface);
+  --bs-pagination-disabled-color: var(--color-outline);
 }
 
 /* --- Loading skeleton --- */
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-surface-hover) 25%, var(--border-color) 50%, var(--bg-surface-hover) 75%);
+  background: linear-gradient(90deg, var(--color-surface-container-low) 25%, var(--color-surface-container) 50%, var(--color-surface-container-low) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
   border-radius: var(--radius-sm);

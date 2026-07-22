@@ -143,7 +143,7 @@ export default function ToolImportModal({ show, onClose, onImported }) {
 
             <div style={{ maxHeight: 320, overflowY: 'auto' }}>
               <Table size="sm" bordered hover className="mb-0">
-                <thead style={{ position: 'sticky', top: 0, background: 'var(--surface-card, #fff)' }}>
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--color-surface)' }}>
                   <tr>
                     <th style={{ width: 50 }}>Dòng</th>
                     <th>Tên CCDC</th>

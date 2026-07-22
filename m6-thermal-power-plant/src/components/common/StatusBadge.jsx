@@ -3,7 +3,7 @@ import './StatusBadge.css';
 /**
  * StatusBadge — Badge trạng thái theo chuẩn công nghiệp.
  * 
- * @param {'normal'|'warning'|'danger'|'inactive'|'info'} props.status
+ * @param {'normal'|'warning'|'danger'|'inactive'|'info'|'accent'} props.status
  * @param {string} [props.label] - Text hiển thị (tự động nếu không truyền)
  * @param {boolean} [props.pulse=false] - Hiệu ứng nhấp nháy cho trạng thái khẩn cấp
  */
@@ -14,6 +14,7 @@ const statusConfig = {
   danger: { label: 'Sự cố', dotClass: 'dot-danger' },
   inactive: { label: 'Ngừng hoạt động', dotClass: 'dot-inactive' },
   info: { label: 'Đang sửa chữa', dotClass: 'dot-info' },
+  accent: { label: 'Đã duyệt', dotClass: 'dot-accent' },
 };
 
 export default function StatusBadge({ status = 'inactive', label, pulse = false }) {

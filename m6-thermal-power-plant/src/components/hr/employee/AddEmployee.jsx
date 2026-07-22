@@ -156,10 +156,10 @@ function ImageCropModal({ show, imageSrc, onClose, onCropComplete }) {
             height: '300px',
             position: 'relative',
             overflow: 'hidden',
-            border: '2px solid var(--primary-light)',
+            border: '2px solid var(--color-secondary-container)',
             borderRadius: '50%',
             cursor: 'move',
-            backgroundColor: '#f8f9fa',
+            backgroundColor: 'var(--color-surface-container)',
             boxShadow: 'var(--shadow-md)'
           }}
           onMouseDown={handleMouseDown}

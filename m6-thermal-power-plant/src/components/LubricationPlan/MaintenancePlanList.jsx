@@ -1,71 +1,76 @@
-import {useEffect, useState} from "react";
-import {
-    Table,
-    Button,
-    Form,
-    Pagination,
-    Modal,
-    Row,
-    Col,
-    Badge
-} from "react-bootstrap";
-
+import { useEffect, useState } from "react";
+import { Table, Button, Form, Pagination, Modal, Row, Col } from "react-bootstrap";
 import {
     BsEye,
-    // BsPencil,
     BsTrash,
     BsSearch,
-    BsPlusCircle,
-    BsArrowClockwise
+    BsArrowClockwise,
+    BsPlusLg,
+    BsDropletHalf,
+    BsChevronLeft,
+    BsChevronRight,
 } from "react-icons/bs";
-
-import {Link} from "react-router-dom";
-
-import lubricationPlanService from "../../services/lubricationPlanService";
-
-import "../LubricationPlan/LubricationPlanForm.css";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import PageHeader from "../common/PageHeader";
+import StatusBadge from "../common/StatusBadge";
+import LoadingSpinner from "../common/LoadingSpinner";
+import EmptyState from "../common/EmptyState";
+import ConfirmModal from "../common/ConfirmModal";
+import lubricationPlanService from "../../services/lubricationPlanService";
+import { authService } from "../../services/authService";
+import { hasAnyRole } from "../../services/roleService";
+import "./MaintenancePlanList.css";
 
+/* Ánh xạ trạng thái BE → biến thể StatusBadge của hệ thống */
+const STATUS_MAP = {
+    NOT_LUBRICATED: { status: "inactive", label: "Chưa bảo dưỡng" },
+    DUE_FOR_LUBRICATION: { status: "warning", label: "Đến hạn bảo dưỡng" },
+    DUE_SOON: { status: "info", label: "Sắp đến hạn" },
+    LUBRICATED: { status: "normal", label: "Đã bảo dưỡng" },
+    OVERDUE: { status: "danger", label: "Quá hạn" },
+};
+
+const renderPlanStatus = (status) => {
+    const cfg = STATUS_MAP[status] || { status: "inactive", label: status };
+    return <StatusBadge status={cfg.status} label={cfg.label} pulse={status === "OVERDUE"} />;
+};
+
+const getCycleName = (days) => {
+    switch (days) {
+        case 7:
+            return "1 tuần";
+        case 30:
+            return "1 tháng";
+        case 90:
+            return "3 tháng";
+        case 180:
+            return "6 tháng";
+        default:
+            return `${days} ngày`;
+    }
+};
+
+const PAGE_SIZE = 10;
 
 export default function MaintenancePlanList() {
+    const [plans, setPlans] = useState([]);
+    const [search, setSearch] = useState("");
+    const [status, setStatus] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showDetail, setShowDetail] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
-
-    const [plans,setPlans] = useState([]);
-
-    const [search,setSearch] = useState("");
-
-    const [status,setStatus] = useState("");
-
-    const [loading,setLoading] = useState(false);
-
-
-    const [showDetail,setShowDetail] = useState(false);
-
-    const [selectedPlan,setSelectedPlan] = useState(null)
-
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-    const [deleteId, setDeleteId] = useState(null);
-
+    // Chỉ Tổ trưởng được thêm/xoá kế hoạch bôi trơn (khớp BE @PreAuthorize TEAM_LEADER).
+    const canManage = hasAnyRole(authService.getCurrentUser(), ['TEAM_LEADER']);
     const [deleting, setDeleting] = useState(false);
-
-
-    const [pagination,setPagination] = useState({
-        page:0,
-        size:10,
-        totalPages:0,
-        totalElements:0
+    const [pagination, setPagination] = useState({
+        page: 0,
+        size: PAGE_SIZE,
+        totalPages: 0,
+        totalElements: 0,
     });
-
-
-
-    useEffect(()=>{
-
-        loadData();
-
-    },[pagination.page]);
-
-
 
     const loadData = async (
         keyword = search,
@@ -74,23 +79,19 @@ export default function MaintenancePlanList() {
     ) => {
         try {
             setLoading(true);
-
             const res = await lubricationPlanService.search(
                 keyword,
                 searchStatus,
                 page,
                 pagination.size
             );
-
             setPlans(res.content || []);
-
-            setPagination(prev => ({
+            setPagination((prev) => ({
                 ...prev,
                 page,
                 totalPages: res.totalPages,
-                totalElements: res.totalElements
+                totalElements: res.totalElements,
             }));
-
         } catch (error) {
             console.error(error);
         } finally {
@@ -99,868 +100,363 @@ export default function MaintenancePlanList() {
     };
 
 
-
-    const handleSearch = (e)=>{
-
-        setSearch(e.target.value);
-
-    };
-
-    const openDeleteModal = (id) => {
-
-        setDeleteId(id);
-
-        setShowDeleteModal(true);
-
-    };
-
-    const confirmDelete = async () => {
-
-        try {
-
-            setDeleting(true);
-
-            await lubricationPlanService.remove(deleteId);
-
-            toast.success("Xóa kế hoạch thành công");
-
-            setShowDeleteModal(false);
-
-            setDeleteId(null);
-
-            loadData(
-                search,
-                status,
-                pagination.page
-            );
-
-        } catch (error) {
-
-            console.error(error);
-
-            toast.error("Xóa kế hoạch thất bại");
-
-        } finally {
-
-            setDeleting(false);
-
-        }
-
-    };
-
-
-
-    const handleSearchClick = () => {
-        loadData(search, status, 0);
-    };
+    useEffect(() => {
+        loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pagination.page]);
+    const handleSearchClick = () => loadData(search, status, 0);
 
     const handleResetSearch = async () => {
-
         setSearch("");
         setStatus("");
-
         await loadData("", "", 0);
-
     };
 
-
-
-    const formatStatus=(status)=>{
-
-        switch(status){
-
-            case "NOT_LUBRICATED":
-                return "Chưa bảo dưỡng";
-
-            case "DUE_FOR_LUBRICATION":
-                return "Đến hạn bảo dưỡng";
-
-            case "DUE_SOON":
-                return "Sắp đến hạn";
-
-            case "LUBRICATED":
-                return "Đã bảo dưỡng";
-
-            case "OVERDUE":
-                return "Quá hạn";
-
-            default:
-                return status;
+    const goToPage = (page) => {
+        if (page >= 0 && page < pagination.totalPages) {
+            setPagination((prev) => ({ ...prev, page }));
         }
-
     };
 
+    const handleView = (plan) => {
+        setSelectedPlan(plan);
+        setShowDetail(true);
+    };
 
-
-    const getCycleName=(days)=>{
-
-        switch(days){
-
-            case 7:
-                return "1 tuần";
-
-            case 30:
-                return "1 tháng";
-
-            case 90:
-                return "3 tháng";
-
-            case 180:
-                return "6 tháng";
-
-            default:
-                return `${days} ngày`;
-
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            setDeleting(true);
+            await lubricationPlanService.remove(deleteTarget.id);
+            toast.success("Xoá kế hoạch bảo dưỡng thành công");
+            setDeleteTarget(null);
+            loadData(search, status, pagination.page);
+        } catch (error) {
+            console.error(error);
+            toast.error(error?.response?.data?.message || "Không thể xoá kế hoạch");
+        } finally {
+            setDeleting(false);
         }
-
     };
-
-
+    // Dải số trang tối đa 5 nút quanh trang hiện tại (giống DataTable chung của hệ thống)
+    const pageNumbers = (() => {
+        const total = pagination.totalPages;
+        const current = pagination.page;
+        if (total <= 5) return [...Array(total)].map((_, i) => i);
+        if (current <= 2) return [0, 1, 2, 3, 4];
+        if (current >= total - 3)
+            return [total - 5, total - 4, total - 3, total - 2, total - 1];
+        return [current - 2, current - 1, current, current + 1, current + 2];
+    })();
 
     return (
-
-        <div className="data-table-wrapper">
-
-
-            {/* TOOLBAR */}
-            <div
-                className="data-table-toolbar"
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "16px",
-                    padding: "16px 20px",
-                    background: "#fff",
-                    borderRadius: "12px",
-                    marginBottom: "16px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-                }}
-            >
-
-                {/* BÊN TRÁI */}
-                <div>
-                    <h6
-                        style={{
-                            margin: 0,
-                            fontWeight: 600
-                        }}
-                    >
-                        Danh sách kế hoạch bôi trơn
-                    </h6>
-
-                    <small className="text-muted">
-                        Tổng cộng {pagination.totalElements} kế hoạch
-                    </small>
-                </div>
-
-                {/* BÊN PHẢI */}
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "10px",
-                        alignItems: "center",
-                        flexWrap: "wrap"
-                    }}
-                >
-
-                    <Form.Control
-                        size="sm"
-                        placeholder="Mã kế hoạch, thiết bị..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        style={{
-                            width: "250px",
-                            minWidth: "220px"
-                        }}
-                    />
-
-                    <Form.Select
-                        size="sm"
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        style={{
-                            width: "180px"
-                        }}
-                    >
-                        <option value="">
-                            Tất cả trạng thái
-                        </option>
-
-                        <option value="NOT_LUBRICATED">
-                            Chưa bảo dưỡng
-                        </option>
-
-                        <option value="DUE_FOR_LUBRICATION">
-                            Đến hạn bảo dưỡng
-                        </option>
-
-                        <option value="DUE_SOON">
-                            Sắp đến hạn
-                        </option>
-
-                        <option value="LUBRICATED">
-                            Đã bảo dưỡng
-                        </option>
-
-                        <option value="OVERDUE">
-                            Quá hạn
-                        </option>
-                    </Form.Select>
-
-                    <Button
-                        variant="success"
-                        size="sm"
-                        onClick={handleSearchClick}
-                    >
-                        <BsSearch className="me-1"/>
-                        Tìm kiếm
-                    </Button>
-
-                    <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        onClick={handleResetSearch}
-                    >
-                        <BsArrowClockwise className="me-1"/>
-                        Làm mới
-                    </Button>
-
-                    <Button
-                        as={Link}
-                        to="/lubrication/plant/add"
-                        variant="primary"
-                        size="sm"
-                    >
-                        <BsPlusCircle className="me-1"/>
-                        Thêm mới
-                    </Button>
-
-                </div>
-
-            </div>
-
-
-
-
-
-            <div className="data-table-scroll">
-
-
-                <Table
-                    className="data-table"
-                    hover
-                    responsive
-                >
-
-                    <thead>
-                    <tr>
-                        <th>Mã kế hoạch</th>
-                        <th>Thiết bị</th>
-                        <th>Chu kỳ</th>
-                        <th>Ngày tiếp theo</th>
-                        <th>Vật tư</th>
-                        <th>SL</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                    </thead>
-
-
-
-                    <tbody>
-
-                    {
-                        loading && (
-                            <tr>
-                                <td
-                                    colSpan={10}
-                                    className="text-center py-4"
-                                >
-                                    Đang tải dữ liệu...
-                                </td>
-                            </tr>
-                        )
-                    }
-
-                    {
-                        plans.map(plan=>(
-
-                            <tr key={plan.id}>
-
-
-                                <td>
-                                    {plan.lubricationCode}
-                                </td>
-
-
-                                <td>
-                                    {plan.equipment?.name || "-"}
-                                </td>
-
-
-
-
-
-                                <td>
-                                    {
-                                        getCycleName(plan.cycleDays)
-                                    }
-                                </td>
-
-
-                                <td>
-                                    {plan.nextDueDate}
-                                </td>
-
-
-                                <td>
-                                    {
-                                        plan.consumable?.name || "-"
-                                    }
-                                </td>
-
-
-                                <td>
-                                    {plan.quantity}
-                                </td>
-
-
-                                <td>
-
-                                    <Badge
-                                        bg={
-                                            plan.status==="LUBRICATED"
-                                                ?"success"
-                                                :
-                                                plan.status==="OVERDUE"
-                                                    ?"danger"
-                                                    :
-                                                    "warning"
-                                        }
-                                    >
-
-                                        {
-                                            formatStatus(plan.status)
-                                        }
-
-                                    </Badge>
-
-                                </td>
-
-
-
-                                <td>
-
-                                    <div className="action-buttons">
-
-
-                                        <Button
-
-                                            size="sm"
-
-                                            variant="outline-info"
-
-                                            onClick={()=>{
-
-                                                setSelectedPlan(plan);
-                                                setShowDetail(true);
-
-                                            }}
-
-                                        >
-
-                                            <BsEye/>
-
-                                        </Button>
-
-
-                                        {/*<Button*/}
-                                        {/*    size="sm"*/}
-                                        {/*    variant="outline-primary"*/}
-                                        {/*>*/}
-
-                                        {/*    <BsPencil/>*/}
-
-                                        {/*</Button>*/}
-
-
-                                        <Button
-                                            size="sm"
-                                            variant="outline-danger"
-                                            onClick={() => openDeleteModal(plan.id)}
-                                        >
-                                            <BsTrash />
-                                        </Button>
-
-
-                                    </div>
-
-
-                                </td>
-
-
-                            </tr>
-
-                        ))
-                    }
-
-
-                    </tbody>
-
-
-                </Table>
-
-
-            </div>
-
-            <div className="data-table-pagination">
-
-
-                <div className="data-table-pagination-info">
-
-                    Hiển thị:
-
-                    {" "}
-
-                    {plans.length}
-
-                    /
-
-                    {pagination.totalElements}
-
-                    {" "}
-                    kế hoạch
-
-
-                </div>
-
-
-
-                <div
-                    className="data-table-pagination"
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginTop: "16px",
-                        flexWrap: "wrap"
-                    }}
-                >
-
-                    <div className="text-muted">
-                        Hiển thị {plans.length} / {pagination.totalElements} bản ghi
+        <div className="animate-fade-in">
+            <PageHeader
+                icon={<BsDropletHalf />}
+                title="Kế hoạch Bảo dưỡng Dầu mỡ"
+                subtitle="Quản lý kế hoạch bảo dưỡng, bôi trơn theo hệ thống"
+                actions={
+                    canManage && (
+                        <Button
+                            as={Link}
+                            to="/lubrication/plant/add"
+                            variant="primary"
+                            size="sm"
+                        >
+                            <BsPlusLg className="me-1" /> Thêm mới
+                        </Button>
+                    )
+                }
+            />
+
+            <div className="data-table-wrapper surface-card">
+                {/* Toolbar: lọc theo keyword + trạng thái (server-side) */}
+                <div className="data-table-toolbar mpl-toolbar">
+                    <span className="data-table-count">
+                        Tổng cộng <strong>{pagination.totalElements}</strong> kế hoạch
+                    </span>
+                    <div className="mpl-toolbar-actions">
+                        <Form.Control
+                            size="sm"
+                            placeholder="Mã kế hoạch, thiết bị..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSearchClick()}
+                            className="mpl-search-input"
+                        />
+                        <Form.Select
+                            size="sm"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="mpl-status-select"
+                        >
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="NOT_LUBRICATED">Chưa bảo dưỡng</option>
+                            <option value="DUE_FOR_LUBRICATION">Đến hạn bảo dưỡng</option>
+                            <option value="DUE_SOON">Sắp đến hạn</option>
+                            <option value="LUBRICATED">Đã bảo dưỡng</option>
+                            <option value="OVERDUE">Quá hạn</option>
+                        </Form.Select>
+                        <Button variant="primary" size="sm" onClick={handleSearchClick}>
+                            <BsSearch className="me-1" /> Tìm kiếm
+                        </Button>
+                        <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={handleResetSearch}
+                        >
+                            <BsArrowClockwise className="me-1" /> Làm mới
+                        </Button>
                     </div>
-
-                    <Pagination size="sm">
-
-
-                        <Pagination.First
-
-                            disabled={
-                                pagination.page===0
-                            }
-
-                            onClick={()=>{
-
-                                setPagination(prev=>({
-                                    ...prev,
-                                    page:0
-                                }));
-
-                            }}
-
-                        />
-
-
-
-                        <Pagination.Prev
-
-                            disabled={
-                                pagination.page===0
-                            }
-
-                            onClick={()=>{
-
-                                setPagination(prev=>({
-                                    ...prev,
-                                    page:prev.page-1
-                                }));
-
-                            }}
-
-                        />
-
-
-
-                        {
-                            Array.from(
-                                {
-                                    length:
-                                    pagination.totalPages
-                                }
-                            )
-                                .map((_,index)=>(
-
-                                    <Pagination.Item
-
-                                        key={index}
-
-                                        active={
-                                            pagination.page===index
-                                        }
-
-                                        onClick={()=>{
-
-                                            setPagination(prev=>({
-                                                ...prev,
-                                                page:index
-                                            }));
-
-                                        }}
-
-                                    >
-
-                                        {index+1}
-
-                                    </Pagination.Item>
-
-                                ))
-                        }
-
-
-
-                        <Pagination.Next
-
-                            disabled={
-                                pagination.page >=
-                                pagination.totalPages-1
-                            }
-
-                            onClick={()=>{
-
-                                setPagination(prev=>({
-                                    ...prev,
-                                    page:prev.page+1
-                                }));
-
-                            }}
-
-                        />
-
-
-
-                        <Pagination.Last
-
-                            disabled={
-                                pagination.page >=
-                                pagination.totalPages-1
-                            }
-
-                            onClick={()=>{
-
-                                setPagination(prev=>({
-                                    ...prev,
-                                    page:
-                                        pagination.totalPages-1
-                                }));
-
-                            }}
-
-                        />
-
-
-                    </Pagination>
-
                 </div>
+                {/* Bảng dữ liệu */}
+                {loading ? (
+                    <LoadingSpinner text="Đang tải dữ liệu..." />
+                ) : plans.length === 0 ? (
+                    <EmptyState
+                        icon={<BsDropletHalf />}
+                        title="Chưa có kế hoạch bảo dưỡng"
+                        message={
+                            search || status
+                                ? "Không tìm thấy kế hoạch nào khớp bộ lọc."
+                                : "Dữ liệu sẽ hiển thị khi có kế hoạch được tạo."
+                        }
+                    />
+                ) : (
+                    <div className="data-table-scroll">
+                        <Table hover className="data-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã kế hoạch</th>
+                                    <th>Thiết bị</th>
+                                    <th>Chu kỳ</th>
+                                    <th>Ngày tiếp theo</th>
+                                    <th>Vật tư</th>
+                                    <th>SL</th>
+                                    <th>Trạng thái</th>
+                                    <th style={{ width: 120 }}>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {plans.map((plan) => (
+                                    <tr key={plan.id}>
+                                        <td className="font-mono">{plan.lubricationCode}</td>
+                                        <td>{plan.equipment?.name || "-"}</td>
+                                        <td>{getCycleName(plan.cycleDays)}</td>
+                                        <td>{plan.nextDueDate}</td>
+                                        <td>{plan.consumable?.name || "-"}</td>
+                                        <td>{plan.quantity}</td>
+                                        <td>{renderPlanStatus(plan.status)}</td>
+                                        <td>
+                                            <div className="data-table-actions">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    title="Xem chi tiết"
+                                                    onClick={() => handleView(plan)}
+                                                >
+                                                    <BsEye />
+                                                </button>
+                                                {canManage && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-danger"
+                                                        title="Xoá"
+                                                        onClick={() => setDeleteTarget(plan)}
+                                                    >
+                                                        <BsTrash />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </div>
+                )}
 
-
-            </div>
-
-
-
-            {/* MODAL CHI TIẾT */}
-
-            <Modal
-
-                show={showDetail}
-
-                onHide={()=>setShowDetail(false)}
-
-                size="lg"
-
-            >
-
-                <Modal.Header closeButton>
-
-                    <Modal.Title>
-
-                        Chi tiết kế hoạch bôi trơn
-
-                    </Modal.Title>
-
-                </Modal.Header>
-
-
-
-                <Modal.Body>
-
-                    {selectedPlan && (
-
-                        <>
-                            {/* THÔNG TIN KẾ HOẠCH */}
-                            <div
-                                className="p-3 mb-3"
-                                style={{
-                                    background: "#f8f9fa",
-                                    borderRadius: "12px",
-                                    border: "1px solid #e9ecef"
-                                }}
+                {/* Phân trang server-side */}
+                {pagination.totalPages > 1 && (
+                    <div className="data-table-pagination">
+                        <span className="data-table-pagination-info">
+                            Hiển thị {plans.length} / {pagination.totalElements} kế hoạch
+                            {" — "}Trang {pagination.page + 1} / {pagination.totalPages}
+                        </span>
+                        <Pagination size="sm" className="mb-0">
+                            <Pagination.Prev
+                                disabled={pagination.page === 0}
+                                onClick={() => goToPage(pagination.page - 1)}
                             >
-                                <h5 className="mb-3 text-primary">
-                                    Thông tin kế hoạch
-                                </h5>
-
+                                <BsChevronLeft />
+                            </Pagination.Prev>
+                            {pageNumbers.map((p) => (
+                                <Pagination.Item
+                                    key={p}
+                                    active={p === pagination.page}
+                                    onClick={() => goToPage(p)}
+                                >
+                                    {p + 1}
+                                </Pagination.Item>
+                            ))}
+                            <Pagination.Next
+                                disabled={pagination.page >= pagination.totalPages - 1}
+                                onClick={() => goToPage(pagination.page + 1)}
+                            >
+                                <BsChevronRight />
+                            </Pagination.Next>
+                        </Pagination>
+                    </div>
+                )}
+            </div>
+            {/* Modal chi tiết */}
+            <Modal
+                size="lg"
+                show={showDetail}
+                onHide={() => setShowDetail(false)}
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title className="d-flex align-items-center gap-2">
+                        <BsDropletHalf style={{ color: "var(--color-primary)" }} />
+                        Chi tiết kế hoạch bôi trơn
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedPlan && (
+                        <>
+                            <div className="mpl-detail-section">
+                                <h6 className="mpl-detail-title">Thông tin kế hoạch</h6>
                                 <Row>
                                     <Col md={6}>
                                         <p>
-                                            <strong>Mã kế hoạch:</strong><br />
+                                            <strong>Mã kế hoạch:</strong>
+                                            <br />
                                             {selectedPlan.lubricationCode}
                                         </p>
-
                                         <p>
-                                            <strong>Hệ thống:</strong><br />
+                                            <strong>Hệ thống:</strong>
+                                            <br />
                                             {selectedPlan.equipment?.system?.name || "-"}
                                         </p>
-
                                         <p>
-                                            <strong>Thiết bị:</strong><br />
+                                            <strong>Thiết bị:</strong>
+                                            <br />
                                             {selectedPlan.equipment?.name || "-"}
                                         </p>
                                     </Col>
-
                                     <Col md={6}>
                                         <p>
-                                            <strong>Mã thiết bị:</strong><br />
+                                            <strong>Mã thiết bị:</strong>
+                                            <br />
                                             {selectedPlan.equipment?.equipmentCode || "-"}
                                         </p>
-
                                         <p>
-                                            <strong>Chu kỳ:</strong><br />
+                                            <strong>Chu kỳ:</strong>
+                                            <br />
                                             {getCycleName(selectedPlan.cycleDays)}
                                         </p>
-
                                         <p>
-                                            <strong>Ngày bảo dưỡng tiếp theo:</strong><br />
+                                            <strong>Ngày bảo dưỡng tiếp theo:</strong>
+                                            <br />
                                             {selectedPlan.nextDueDate}
                                         </p>
-
                                         <p>
-                                            <strong>Trạng thái:</strong><br />
-
-                                            <Badge
-                                                bg={
-                                                    selectedPlan.status === "LUBRICATED"
-                                                        ? "success"
-                                                        : selectedPlan.status === "OVERDUE"
-                                                            ? "danger"
-                                                            : "warning"
-                                                }
-                                            >
-                                                {formatStatus(selectedPlan.status)}
-                                            </Badge>
+                                            <strong>Trạng thái:</strong>
+                                            <br />
+                                            {renderPlanStatus(selectedPlan.status)}
                                         </p>
                                     </Col>
                                 </Row>
                             </div>
-
-                            {/* THÔNG TIN VẬT TƯ */}
-                            <div
-                                className="p-3"
-                                style={{
-                                    background: "#f8f9fa",
-                                    borderRadius: "12px",
-                                    border: "1px solid #e9ecef"
-                                }}
-                            >
-                                <h5 className="mb-3 text-success">
-                                    Vật tư sử dụng
-                                </h5>
-
+                            <div className="mpl-detail-section">
+                                <h6 className="mpl-detail-title">Vật tư sử dụng</h6>
                                 <Row className="align-items-center">
-
                                     <Col md={4} className="text-center">
-
                                         <img
                                             src={
                                                 selectedPlan.consumable?.imgPath ||
                                                 "/images/no-image.png"
                                             }
-                                            alt={
-                                                selectedPlan.consumable?.name
-                                            }
-                                            style={{
-                                                width: "220px",
-                                                height: "220px",
-                                                objectFit: "cover",
-                                                borderRadius: "12px",
-                                                border: "1px solid #dee2e6",
-                                                boxShadow:
-                                                    "0 2px 8px rgba(0,0,0,0.1)"
-                                            }}
+                                            alt={selectedPlan.consumable?.name || "Vật tư"}
+                                            className="mpl-detail-img"
                                         />
-
                                     </Col>
-
                                     <Col md={8}>
-
                                         <Row>
-
                                             <Col md={6}>
                                                 <p>
-                                                    <strong>Mã vật tư:</strong><br />
-                                                    {
-                                                        selectedPlan.consumable?.consumableCode
-                                                        || "-"
-                                                    }
+                                                    <strong>Mã vật tư:</strong>
+                                                    <br />
+                                                    {selectedPlan.consumable?.consumableCode ||
+                                                        "-"}
                                                 </p>
                                             </Col>
-
                                             <Col md={6}>
                                                 <p>
-                                                    <strong>Số lượng:</strong><br />
+                                                    <strong>Số lượng:</strong>
+                                                    <br />
                                                     {selectedPlan.quantity}
                                                 </p>
                                             </Col>
-
                                         </Row>
-
                                         <p>
-                                            <strong>Tên vật tư:</strong><br />
-                                            {
-                                                selectedPlan.consumable?.name
-                                                || "-"
-                                            }
+                                            <strong>Tên vật tư:</strong>
+                                            <br />
+                                            {selectedPlan.consumable?.name || "-"}
                                         </p>
-
                                         <p>
-                                            <strong>Đơn vị:</strong><br />
-                                            {
-                                                selectedPlan.consumable?.unit?.unitName
-                                                || "-"
-                                            }
+                                            <strong>Đơn vị:</strong>
+                                            <br />
+                                            {selectedPlan.consumable?.unit?.unitName || "-"}
                                         </p>
-
                                         <p>
-                                            <strong>Trạng thái:</strong><br />
-
-                                            <Badge
-                                                bg={
-                                                    selectedPlan.consumable?.status === "ACTIVE"
-                                                        ? "success"
-                                                        : "secondary"
-                                                }
-                                            >
-                                                {
-                                                    selectedPlan.consumable?.status === "ACTIVE"
-                                                        ? "Đang sử dụng"
-                                                        : "Ngừng sử dụng"
-                                                }
-                                            </Badge>
+                                            <strong>Trạng thái:</strong>
+                                            <br />
+                                            {selectedPlan.consumable?.status === "ACTIVE" ? (
+                                                <StatusBadge
+                                                    status="normal"
+                                                    label="Đang sử dụng"
+                                                />
+                                            ) : (
+                                                <StatusBadge
+                                                    status="inactive"
+                                                    label="Ngừng sử dụng"
+                                                />
+                                            )}
                                         </p>
-
                                     </Col>
-
                                 </Row>
                             </div>
                         </>
                     )}
-
                 </Modal.Body>
-
-
-
                 <Modal.Footer>
-
-
                     <Button
-
-                        variant="secondary"
-
-                        onClick={()=>setShowDetail(false)}
-
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => setShowDetail(false)}
                     >
-
                         Đóng
-
                     </Button>
-
-
                 </Modal.Footer>
-
-
             </Modal>
 
-            <Modal
-                show={showDeleteModal}
-                onHide={() => setShowDeleteModal(false)}
-                centered
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>
-                        Xác nhận xóa
-                    </Modal.Title>
-                </Modal.Header>
-
-                <Modal.Body>
-
-                    <div className="text-center">
-
-                        <div
-                            className="mb-3"
-                            style={{ fontSize: "50px", color: "#dc3545" }}
-                        >
-                            <BsTrash />
-                        </div>
-
-                        <h5>
-                            Bạn có chắc chắn muốn xóa?
-                        </h5>
-
-                        <p className="text-muted mb-0">
-                            Dữ liệu kế hoạch bôi trơn sẽ bị xóa khỏi hệ thống.
-                        </p>
-
-                    </div>
-
-                </Modal.Body>
-
-                <Modal.Footer>
-
-                    <Button
-                        variant="secondary"
-                        onClick={() => setShowDeleteModal(false)}
-                    >
-                        Hủy
-                    </Button>
-
-                    <Button
-                        variant="danger"
-                        onClick={confirmDelete}
-                        disabled={deleting}
-                    >
-                        {deleting ? "Đang xóa..." : "Xác nhận xóa"}
-                    </Button>
-
-                </Modal.Footer>
-
-            </Modal>
-
-
-
+            {/* Xác nhận xoá — dùng ConfirmModal chuẩn hệ thống */}
+            <ConfirmModal
+                show={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleDelete}
+                loading={deleting}
+                title="Xoá kế hoạch bảo dưỡng"
+                message={
+                    deleteTarget
+                        ? `Bạn có chắc muốn xoá kế hoạch "${deleteTarget.lubricationCode}"? Hành động này không thể hoàn tác.`
+                        : ""
+                }
+                confirmText="Xoá"
+            />
         </div>
-
     );
-
 }
+

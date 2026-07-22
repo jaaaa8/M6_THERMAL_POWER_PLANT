@@ -16,8 +16,6 @@ function normalizeUser(beUser) {
     fullName: beUser.fullName || beUser.username,
     roles,
     role: roles[0] || null, // tiện cho check role chính
-    // Permission code thật từ BE — nguồn dữ liệu cho canAccess/hasPermission (roleService)
-    permissions: beUser.permissions || [],
     employeeCode: beUser.employeeCode,
     departmentName: beUser.departmentName,
     position: beUser.position,

@@ -56,7 +56,7 @@ export default function EmployeeBorrowHistory() {
             {/* Header */}
             <div style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                    <BsClockHistory style={{ fontSize: '1.4rem', color: 'var(--color-primary-500)' }} />
+                    <BsClockHistory style={{ fontSize: '1.4rem', color: 'var(--color-primary)' }} />
                     <h2 style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', color: 'var(--text-primary)' }}>
                         Lịch sử mượn CCDC
                     </h2>
@@ -69,10 +69,10 @@ export default function EmployeeBorrowHistory() {
             {logs.length === 0 ? (
                 <div style={{
                     textAlign: 'center', padding: '60px 0',
-                    background: 'var(--bg-surface)', borderRadius: 'var(--radius-xl)',
+                    background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)',
                     border: '1px solid var(--border-color)',
                 }}>
-                    <BsClockHistory style={{ fontSize: '3rem', color: 'var(--text-quaternary)', marginBottom: 16 }} />
+                    <BsClockHistory style={{ fontSize: '3rem', color: 'var(--text-tertiary)', marginBottom: 16 }} />
                     <p style={{ color: 'var(--text-tertiary)', margin: 0 }}>Bạn chưa có phiếu mượn nào.</p>
                     <Button variant="primary" size="sm" className="mt-3" onClick={() => navigate('/employee/muon-ccdc')}>
                         Tạo yêu cầu mượn
@@ -82,7 +82,7 @@ export default function EmployeeBorrowHistory() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {logs.map((log) => (
                         <div key={log.id} style={{
-                            background: 'var(--bg-surface)',
+                            background: 'var(--color-surface)',
                             border: '1px solid var(--border-color)',
                             borderRadius: 'var(--radius-xl)',
                             padding: '16px 20px',
@@ -92,7 +92,7 @@ export default function EmployeeBorrowHistory() {
                             {/* Icon */}
                             <div style={{
                                 width: 44, height: 44, borderRadius: 'var(--radius-lg)',
-                                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
+                                background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-container))',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: '#fff', fontSize: '1.1rem', flexShrink: 0,
                             }}>
@@ -116,7 +116,7 @@ export default function EmployeeBorrowHistory() {
                                     </div>
                                 )}
                                 {log.rejectionReason && (
-                                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-status-error)', marginTop: 4 }}>
+                                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-status-danger)', marginTop: 4 }}>
                                         Lý do từ chối: {log.rejectionReason}
                                     </div>
                                 )}

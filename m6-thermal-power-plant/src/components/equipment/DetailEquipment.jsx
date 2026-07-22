@@ -13,7 +13,7 @@ import {
 import EquipmentPdf from "./EquipmentPDF";
 import './style/DetailEquipment.css';
 import TechnicalParameterTab from "./TechnicalParameterTab";
-import RepairHistoryTab from "../repair_history/RepairHistoryList";
+import { RepairHistoryTab } from "../repair_history/RepairHistoryList";
 import LubricationHistoryTab from "./LubricationHistoryTab";
 import * as parameterService from "../../services/equipment/parameterService";
 import * as repairHistoryService
@@ -152,7 +152,7 @@ export default function DetailEquipment() {
   };
   // Helper resolving system name from systems list
   const getSystemName = (sysId) => {
-    const sys = systems.find(s => s.id === Number(sysId));
+    const sys = (selectedEqData?.systems || []).find(s => s.id === Number(sysId));
     return sys ? sys.name : 'Chưa phân loại';
   };
 

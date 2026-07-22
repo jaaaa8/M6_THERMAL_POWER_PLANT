@@ -93,7 +93,7 @@ export default function RepairRequest() {
   const stats = useMemo(() => {
     const pending = requests.filter((r) => r.status === 'PENDING');
     return [
-      { key: 'total',   label: 'Tổng yêu cầu',      value: requests.length, icon: <BsListUl />,            color: 'var(--color-primary-500)' },
+      { key: 'total',   label: 'Tổng yêu cầu',      value: requests.length, icon: <BsListUl />,            color: 'var(--color-primary)' },
       { key: 'pending', label: 'Đang chờ xử lý',     value: pending.length,  icon: <BsHourglassSplit />,    color: 'var(--color-status-warning)' },
       { key: 'pct',     label: 'Đang thực hiện',      value: requests.filter((r) => r.status === 'IN_PROGRESS').length, icon: <BsFileEarmarkCheck />, color: 'var(--color-status-info)' },
       { key: 'urgent',  label: 'Khẩn cấp (chờ)',      value: pending.filter((r) => r.priority === 'EMERGENCY').length, icon: <BsLightningChargeFill />, color: 'var(--color-status-danger)' },
@@ -265,7 +265,7 @@ function RequestDetailModal({ request, onClose }) {
     <Modal show={!!request} onHide={onClose} centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsCpu className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          <BsCpu className="me-2" style={{ color: 'var(--color-primary)' }} />
           Chi tiết yêu cầu {request.requestCode}
         </Modal.Title>
       </Modal.Header>

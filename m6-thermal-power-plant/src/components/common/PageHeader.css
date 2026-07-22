@@ -18,23 +18,23 @@
 
 .page-header-icon {
   font-size: 1.5rem;
-  color: var(--color-primary-500);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
 }
 
 .page-header-title {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  margin: 0;
-  line-height: var(--leading-tight);
+  font-size: var(--text-headline-lg);
+  line-height: var(--text-headline-lg-lh);
+  font-weight: var(--font-semibold);
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-base);
 }
 
 .page-header-subtitle {
-  font-size: var(--text-sm);
-  color: var(--text-tertiary);
-  margin: var(--space-1) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
 }
 
 .page-header-actions {

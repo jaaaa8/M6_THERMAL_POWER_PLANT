@@ -61,7 +61,7 @@ export default function ToolCategoryFormModal({ show, onClose, onSaved, category
           <Form noValidate>
             <Modal.Header closeButton>
               <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-                <BsTags className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+                <BsTags className="me-2" style={{ color: 'var(--color-primary)' }} />
                 {isEdit ? `Cập nhật chủng loại — ${category.categoryCode}` : 'Thêm mới chủng loại'}
               </Modal.Title>
             </Modal.Header>

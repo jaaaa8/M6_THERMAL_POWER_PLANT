@@ -35,7 +35,7 @@ export default function RequestDetailModal({ request, onClose }) {
     <Modal show={!!request} onHide={onClose} centered size="lg" className="request-detail-modal">
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsInfoCircle className="me-2" style={{ color: 'var(--color-primary-600)' }} />
+          <BsInfoCircle className="me-2" style={{ color: 'var(--color-primary)' }} />
           Chi tiết Phiếu yêu cầu sửa chữa
         </Modal.Title>
       </Modal.Header>
@@ -45,7 +45,7 @@ export default function RequestDetailModal({ request, onClose }) {
           {/* Thiết bị */}
           <section className="rdm-section">
             <h6 className="rdm-section-title">
-              <BsInfoCircle className="me-2" style={{ color: 'var(--color-primary-600)' }} />
+              <BsInfoCircle className="me-2" style={{ color: 'var(--color-primary)' }} />
               Thông tin sự cố
             </h6>
             <div className="rdm-grid">
