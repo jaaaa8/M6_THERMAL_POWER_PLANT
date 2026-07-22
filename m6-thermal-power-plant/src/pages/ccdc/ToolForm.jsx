@@ -34,9 +34,26 @@ export default function ToolForm() {
     const [tool, setTool] = useState(null);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [nextCode, setNextCode] = useState('...');
     const [showImport, setShowImport] = useState(false);
+    const [generatedCode, setGeneratedCode] = useState('');
+    const [uploadingImg, setUploadingImg] = useState(false);
     const fileInputRef = useRef(null);
+
+    // Upload ảnh lên Cloudinary rồi lưu URL trả về vào imgPath (thay cho base64 cũ)
+    const handleImageUpload = async (file, setFieldValue) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { toast.warning('Vui lòng chọn file ảnh'); return; }
+        setUploadingImg(true);
+        try {
+            const res = await toolService.uploadImage(file);
+            setFieldValue('imgPath', res.data?.url || '');
+            toast.success('Đã tải ảnh lên');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Tải ảnh thất bại, vui lòng thử lại');
+        } finally {
+            setUploadingImg(false);
+        }
+    };
 
     useEffect(() => {
         let active = true;
@@ -50,7 +67,7 @@ export default function ToolForm() {
                 if (!active) return;
                 setCategories(categoriesRes.data?.data ?? []);
                 if (toolRes) setTool(toolRes.data?.data ?? null);
-                if (nextCodeRes) setNextCode(nextCodeRes.data?.data || 'MCCDC-????');
+                if (nextCodeRes) setGeneratedCode(nextCodeRes.data?.data || '');
             })
             .catch((err) => {
                 if (!active) return;
@@ -82,7 +99,8 @@ export default function ToolForm() {
                 await toolService.update(tool.id, payload);
                 toast.success('Cập nhật CCDC thành công');
             } else {
-                await toolService.create(payload);
+                // Gửi đúng mã đã hiển thị trên form để mã hiện = mã lưu vào DB
+                await toolService.create({ ...payload, toolCode: generatedCode });
                 toast.success('Tạo CCDC thành công');
             }
             goBack();
@@ -161,11 +179,8 @@ export default function ToolForm() {
                                             accept="image/*"
                                             style={{ display: 'none' }}
                                             onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                const reader = new FileReader();
-                                                reader.onload = (ev) => setFieldValue('imgPath', ev.target.result);
-                                                reader.readAsDataURL(file);
+                                                handleImageUpload(e.target.files?.[0], setFieldValue);
+                                                e.target.value = ''; // cho phép chọn lại cùng file
                                             }}
                                         />
                                         <div className="d-flex gap-2">
@@ -173,11 +188,12 @@ export default function ToolForm() {
                                                 type="button"
                                                 variant="outline-primary"
                                                 size="sm"
+                                                disabled={uploadingImg}
                                                 onClick={() => fileInputRef.current?.click()}
                                             >
-                                                <BsUpload className="me-1" /> Chọn ảnh từ máy
+                                                <BsUpload className="me-1" /> {uploadingImg ? 'Đang tải ảnh...' : 'Chọn ảnh từ máy'}
                                             </Button>
-                                            {values.imgPath && (
+                                            {values.imgPath && !uploadingImg && (
                                                 <Button
                                                     type="button"
                                                     variant="outline-danger"
@@ -189,7 +205,11 @@ export default function ToolForm() {
                                             )}
                                         </div>
                                         <div className="form-text mt-1">
-                                            {values.imgPath ? 'Ảnh đã chọn. Nhấn "Chọn ảnh" để đổi ảnh khác.' : 'Nhấn để chọn ảnh từ máy tính (JPG, PNG, WEBP).'}
+                                            {uploadingImg
+                                                ? 'Đang tải ảnh lên Cloudinary...'
+                                                : values.imgPath
+                                                    ? 'Ảnh đã tải lên. Nhấn "Chọn ảnh" để đổi ảnh khác.'
+                                                    : 'Nhấn để chọn ảnh từ máy tính (JPG, PNG, WEBP).'}
                                         </div>
                                     </div>
                                 </div>
@@ -200,7 +220,7 @@ export default function ToolForm() {
                                         <input
                                             type="text"
                                             readOnly
-                                            value={isEdit ? (tool?.toolCode || '') : nextCode}
+                                            value={isEdit ? (tool?.toolCode || '') : (generatedCode || 'Đang lấy mã...')}
                                             className="form-control font-mono bg-light text-muted"
                                         />
                                     </Col>
@@ -290,7 +310,7 @@ export default function ToolForm() {
                                 <Button variant="outline-secondary" type="button" onClick={goBack} disabled={isSubmitting}>
                                     <BsXCircle /> Huỷ bỏ
                                 </Button>
-                                <Button variant="primary" type="submit" disabled={isSubmitting}>
+                                <Button variant="primary" type="submit" disabled={isSubmitting || uploadingImg}>
                                     <BsSave /> {isSubmitting ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Tạo mới'}
                                 </Button>
                             </div>

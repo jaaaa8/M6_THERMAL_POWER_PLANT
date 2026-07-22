@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import {
-  BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
+  BsClipboardCheck, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsPlayCircle,
   BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat,
 } from 'react-icons/bs';
@@ -61,7 +61,10 @@ const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [codeSearch, setCodeSearch] = useState('');   // mã PCT / mã NV tổ trưởng / id
+  const [descSearch, setDescSearch] = useState('');   // mô tả sửa chữa
+  const [fromDate, setFromDate] = useState('');       // startTime từ ngày (yyyy-MM-dd)
+  const [toDate, setToDate] = useState('');           // startTime đến hết ngày
   const [filter, setFilter] = useState('ALL');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -80,7 +83,12 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const fetchWorkOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await workOrderService.getAll(search || undefined, page, pageSize);
+      const res = await workOrderService.getAll({
+        code: codeSearch || undefined,
+        description: descSearch || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      }, page, pageSize);
       const paged = res.data;
       const content = Array.isArray(paged.content) ? paged.content : [];
       setWorkOrders(content);
@@ -92,7 +100,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [codeSearch, descSearch, fromDate, toDate, page]);
 
   useEffect(() => {
     fetchWorkOrders();
@@ -140,7 +148,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         <div>
           <div>{val ? new Date(val).toLocaleString('vi-VN') : '—'}</div>
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-            Dự kiến kết thúc: {row.expectedEndTime ? new Date(row.expectedEndTime).toLocaleString('vi-VN') : '—'}
+            Kết thúc: {row.endTime ? new Date(row.endTime).toLocaleString('vi-VN') : '—'}
           </span>
         </div>
       ),
@@ -230,13 +238,41 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
       {/* ===== SEARCH + FILTERS ===== */}
       <div className="wo-toolbar">
-        <SearchBox
-          value={search}
-          onChange={setSearch}
-          placeholder="Tìm theo mã PCT, mã yêu cầu hoặc nội dung..."
-          onSearch={() => { setPage(0); fetchWorkOrders(); }}
-          icon={<BsSearch />}
-        />
+        {/* SearchBox không có prop onChange/icon — gõ phím gọi onSearch(value);
+            cập nhật state ở đây thì effect [filters, page] tự refetch.
+            4 bộ lọc độc lập kết hợp AND, đổi bộ lọc nào cũng quay về trang 1. */}
+        <div className="wo-toolbar-search">
+          <SearchBox
+            value={codeSearch}
+            placeholder="Tìm theo ID, mã PCT hoặc mã NV tổ trưởng..."
+            onSearch={(val) => { setCodeSearch(val); setPage(0); }}
+          />
+        </div>
+        <div className="wo-toolbar-search">
+          <SearchBox
+            value={descSearch}
+            placeholder="Tìm theo mô tả sửa chữa..."
+            onSearch={(val) => { setDescSearch(val); setPage(0); }}
+          />
+        </div>
+        <label className="wo-toolbar-date">
+          Bắt đầu từ
+          <input
+            type="date"
+            className="form-control form-control-sm"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setPage(0); }}
+          />
+        </label>
+        <label className="wo-toolbar-date">
+          Đến hết ngày
+          <input
+            type="date"
+            className="form-control form-control-sm"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setPage(0); }}
+          />
+        </label>
       </div>
 
       <div className="wo-filter-pills">
@@ -264,7 +300,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         <EmptyState
           icon={<BsClipboardCheck />}
           title="Không có phiếu công tác nào"
-          description={search ? 'Thử từ khoá khác hoặc xoá bộ lọc.' : 'Chưa có PCT nào được tạo.'}
+          description={(codeSearch || descSearch || fromDate || toDate) ? 'Thử từ khoá khác hoặc xoá bộ lọc.' : 'Chưa có PCT nào được tạo.'}
         />
       ) : (
         <>
