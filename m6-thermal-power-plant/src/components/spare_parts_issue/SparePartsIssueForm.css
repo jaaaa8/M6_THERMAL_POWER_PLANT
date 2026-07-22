@@ -723,84 +723,16 @@
     margin: auto;
 }
 
-.spare-table {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.spare-table thead th {
-    background: #f8fafc;
-    font-weight: 600;
-    white-space: nowrap;
-    vertical-align: middle;
-}
-
-.spare-table tbody tr:hover {
-    background: #f8fbff;
-}
-
 .spare-part-image {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--border-color);
+    cursor: zoom-in;
+    transition: transform 0.15s ease;
 }
 
-.unit-badge {
-    background: #e7f5ff;
-    color: #1971c2;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-/* bảng vật tư đã chọn */
-.spare-table th {
-    vertical-align: middle;
-    white-space: nowrap;
-    font-weight: 600;
-}
-
-
-.spare-table td {
-    vertical-align: middle;
-}
-
-
-/* ảnh vật tư */
-.spare-part-image {
-
-    width: 55px;
-    height: 55px;
-
-    object-fit: cover;
-
-    border-radius: 8px;
-
-    border: 1px solid #dee2e6;
-
-}
-
-
-
-/* input số lượng */
-.quantity-input {
-
-    width: 90px;
-
-    text-align: center;
-
-}
-
-
-
-/* badge đơn vị */
-.spare-table .badge {
-
-    font-size: 0.85rem;
-
-    padding: 6px 10px;
-
+.spare-part-image:hover {
+    transform: scale(1.05);
 }
