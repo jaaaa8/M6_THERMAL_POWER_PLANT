@@ -21,58 +21,38 @@ const validationSchema = Yup.object({
     equipmentId: Yup.string()
         .required("Vui lòng chọn thiết bị"),
 
-    systemId: Yup.string().required(
-        "Vui lòng chọn hệ thống"
-    ),
+    systemId: Yup.string()
+        .required("Vui lòng chọn hệ thống"),
 
-    cycleMonths: Yup.number()
-        .required("Chu kỳ bảo dưỡng không được để trống")
-        .min(1, "Chu kỳ phải lớn hơn 0"),
+    cycleMonths: Yup.string()
+        .required("Vui lòng chọn chu kỳ"),
 
     nextDueDate: Yup.string()
         .required("Vui lòng chọn ngày bảo dưỡng"),
 
-    lubricantType: Yup.string()
-        .required("Loại dầu mỡ không được để trống"),
-
     consumableId: Yup.string()
-        .required("Vui lòng chọn vật tư dầu mỡ"),
+        .required("Vui lòng chọn vật tư"),
 
     quantity: Yup.number()
-        .required("Số lượng không được để trống")
-        .min(0.01, "Số lượng phải lớn hơn 0"),
+        .required("Vui lòng nhập số lượng")
+        .min(1, "Số lượng phải lớn hơn 0"),
 });
 
 const INITIAL_VALUES = {
-    sparePartCode: "PXVT-2026-001",
-
-    technicalAssessmentId: "1",
-
     systemId: "",
-
-    workOrderId: "1",
-
-    transactionType: "export",
-
-    issuedBy: "",
-
-    issuedAt: "",
-
-    items: [
-        {
-            sparePartId: "",
-            quantity: 1,
-            unit: "Cái",
-        },
-    ],
+    equipmentId: "",
+    cycleMonths: "",
+    nextDueDate: "",
+    consumableId: "",
+    quantity: 1,
 };
 
-export default function LubricationPlanForm({
-                                                onSuccess,
-                                                onCancel,
-                                                initialData = null,
-                                                isEdit = false,
-                                            }) {
+export function LubricationPlanForm({
+                                        onSuccess,
+                                        onCancel,
+                                        initialData = null,
+                                        isEdit = false,
+                                    }) {
     const [equipmentList, setEquipmentList] = useState([]);
     const [consumableList, setConsumableList] = useState([]);
 
@@ -132,7 +112,7 @@ export default function LubricationPlanForm({
 
     const handleSubmit = async (
         values,
-        { setSubmitting, resetForm }
+        {setSubmitting, resetForm}
     ) => {
         try {
             console.log(values);
@@ -171,8 +151,6 @@ export default function LubricationPlanForm({
             consumableId:
                 initialData.consumableId?.toString() || "",
 
-            quantity:
-                initialData.quantity || "",
         }
         : INITIAL_VALUES;
 
@@ -182,7 +160,7 @@ export default function LubricationPlanForm({
             {/* HEADER */}
             <div className="nhansu-form-header">
                 <div className="nhansu-form-header-icon">
-                    <BsDropletFill />
+                    <BsDropletFill/>
                 </div>
 
                 <div className="nhansu-form-header-text">
@@ -204,281 +182,458 @@ export default function LubricationPlanForm({
                 validationSchema={validationSchema}
                 onSubmit={handleSubmit}
                 enableReinitialize
-            >
-                {({
-                      touched,
-                      errors,
-                      isSubmitting,
-                      resetForm,
-                  }) => (
-                    <Form noValidate>
+            >{({
+                   values,
+                   touched,
+                   errors,
+                   isSubmitting,
+                   resetForm,
+                   setFieldValue,
+               }) => (
+                <Form noValidate>
 
-                        <div className="nhansu-form-body">
+                    <div className="nhansu-form-body">
 
 
-                            {/* THIẾT BỊ */}
-                            <div className="form-section-title">
-                                <BsGearFill />
-                                Thông tin thiết bị
-                            </div>
-
-                            <Row className="mb-3">
-
-                                <Col md={6}>
-                                    <label className="form-label">
-                                        Hệ thống
-                                    </label>
-                                    <span className="required-asterisk">*</span>
-
-                                    <Field
-                                        as="select"
-                                        name="systemId"
-                                        className={`form-select ${
-                                            touched.systemId &&
-                                            errors.systemId
-                                                ? "is-invalid"
-                                                : ""
-                                        }`}
-                                    >
-                                        <option value="">
-                                            Chọn hệ thống
-                                        </option>
-
-                                        {systems.map((item) => (
-                                            <option
-                                                key={item.id}
-                                                value={item.id}
-                                            >
-                                                {item.code} - {item.name}
-                                            </option>
-                                        ))}
-                                    </Field>
-
-                                    <ErrorMessage
-                                        name="systemId"
-                                        component="div"
-                                        className="invalid-feedback"
-                                    />
-                                </Col>
-                                <Col md={6}>
-                                    <label className="form-label">
-                                        Thiết bị
-                                        <span className="required-asterisk">*</span>
-                                    </label>
-
-                                    <Field
-                                        as="select"
-                                        name="equipmentId"
-                                        className={`form-select ${
-                                            touched.equipmentId &&
-                                            errors.equipmentId
-                                                ? "is-invalid"
-                                                : ""
-                                        }`}
-                                    >
-                                        <option value="">
-                                            -- Chọn thiết bị --
-                                        </option>
-
-                                        {equipmentList.map((item) => (
-                                            <option
-                                                key={item.id}
-                                                value={item.id}
-                                            >
-                                                {item.equipmentCode}
-                                                {" - "}
-                                                {item.equipmentName}
-                                            </option>
-                                        ))}
-                                    </Field>
-
-                                    <ErrorMessage
-                                        name="equipmentId"
-                                        component="div"
-                                        className="invalid-feedback"
-                                    />
-                                </Col>
-
-                            </Row>
-
-                            {/* BẢO DƯỠNG */}
-                            <div className="form-section-title">
-                                <BsTools />
-                                Thông tin bảo dưỡng
-                            </div>
-
-                            <Row className="mb-3">
-
-                                <Col md={4}>
-                                    <label className="form-label">
-                                        Chu kỳ (tháng)
-                                        <span className="required-asterisk">*</span>
-                                    </label>
-
-                                    <Field
-                                        name="cycleMonths"
-                                        type="number"
-                                        className={`form-control ${
-                                            touched.cycleMonths &&
-                                            errors.cycleMonths
-                                                ? "is-invalid"
-                                                : ""
-                                        }`}
-                                    />
-
-                                    <ErrorMessage
-                                        name="cycleMonths"
-                                        component="div"
-                                        className="invalid-feedback"
-                                    />
-                                </Col>
-
-                                <Col md={4}>
-                                    <label className="form-label">
-                                        Ngày bảo dưỡng tiếp theo
-                                        <span className="required-asterisk">*</span>
-                                    </label>
-
-                                    <Field
-                                        name="nextDueDate"
-                                        type="date"
-                                        className={`form-control ${
-                                            touched.nextDueDate &&
-                                            errors.nextDueDate
-                                                ? "is-invalid"
-                                                : ""
-                                        }`}
-                                    />
-
-                                    <ErrorMessage
-                                        name="nextDueDate"
-                                        component="div"
-                                        className="invalid-feedback"
-                                    />
-                                </Col>
-
-                                <Col md={4}>
-                                    <label className="form-label">
-                                        Số lượng
-                                        <span className="required-asterisk">*</span>
-                                    </label>
-
-                                    <Field
-                                        name="quantity"
-                                        type="number"
-                                        step="0.01"
-                                        className={`form-control ${
-                                            touched.quantity &&
-                                            errors.quantity
-                                                ? "is-invalid"
-                                                : ""
-                                        }`}
-                                    />
-
-                                    <ErrorMessage
-                                        name="quantity"
-                                        component="div"
-                                        className="invalid-feedback"
-                                    />
-                                </Col>
-
-                            </Row>
-
-                            {/* DẦU MỠ */}
-                            <div className="form-section-title">
-                                <BsDropletFill />
-                                Dầu mỡ sử dụng
-                            </div>
-
-                            <Row>
-
-                                <Col md={6}>
-                                    <label className="form-label">
-                                        Vật tư dầu mỡ
-                                        <span className="required-asterisk">*</span>
-                                    </label>
-
-                                    <Field
-                                        as="select"
-                                        name="consumableId"
-                                        className={`form-select ${
-                                            touched.consumableId &&
-                                            errors.consumableId
-                                                ? "is-invalid"
-                                                : ""
-                                        }`}
-                                    >
-                                        <option value="">
-                                            -- Chọn vật tư --
-                                        </option>
-
-                                        {consumableList.map(
-                                            (item) => (
-                                                <option
-                                                    key={item.id}
-                                                    value={item.id}
-                                                >
-                                                    {item.name}
-                                                </option>
-                                            )
-                                        )}
-                                    </Field>
-
-                                    <ErrorMessage
-                                        name="consumableId"
-                                        component="div"
-                                        className="invalid-feedback"
-                                    />
-                                </Col>
-
-                            </Row>
-
+                        {/* THIẾT BỊ */}
+                        <div className="form-section-title">
+                            <BsGearFill/>
+                            Thông tin thiết bị
                         </div>
 
-                        {/* FOOTER */}
-                        <div className="nhansu-form-footer">
+                        <Row className="mb-3">
 
-                            <Button
-                                variant="outline-secondary"
-                                type="button"
-                                onClick={() => resetForm()}
-                            >
-                                <BsArrowClockwise />
-                                Đặt lại
-                            </Button>
-                            <Link to="/lubrication/plant">
-                                <Button variant="outline-danger">
-                                    <BsXCircle />
-                                    Huỷ bỏ
-                                </Button>
-                            </Link>
+                            <Col md={6}>
+                                <label className="form-label">
+                                    Hệ thống
+                                </label>
+                                <span className="required-asterisk">*</span>
 
-                            {onCancel && (
-                                <Button
-                                    variant="outline-danger"
-                                    type="button"
-                                    onClick={onCancel}
+                                <Field
+                                    as="select"
+                                    name="systemId"
+                                    className={`form-select ${
+                                        touched.systemId &&
+                                        errors.systemId
+                                            ? "is-invalid"
+                                            : ""
+                                    }`}
                                 >
-                                    <BsXCircle />
-                                    Huỷ bỏ
-                                </Button>
-                            )}
+                                    <option value="">
+                                        Chọn hệ thống
+                                    </option>
 
-                            <Button
-                                variant="primary"
-                                type="submit"
-                                disabled={isSubmitting}
-                            >
-                                <BsSave />
-                                {isEdit
-                                    ? "Cập nhật"
-                                    : "Thêm mới"}
-                            </Button>
+                                    {systems.map((item) => (
+                                        <option
+                                            key={item.id}
+                                            value={item.id}
+                                        >
+                                            {item.code} - {item.name}
+                                        </option>
+                                    ))}
+                                </Field>
 
+                                <ErrorMessage
+                                    name="systemId"
+                                    component="div"
+                                    className="invalid-feedback"
+                                />
+                            </Col>
+                            <Col md={6}>
+                                <label className="form-label">
+                                    Thiết bị
+                                    <span className="required-asterisk">*</span>
+                                </label>
+
+                                <Field
+                                    as="select"
+                                    name="equipmentId"
+                                    className={`form-select ${
+                                        touched.equipmentId &&
+                                        errors.equipmentId
+                                            ? "is-invalid"
+                                            : ""
+                                    }`}
+                                >
+                                    <option value="">
+                                        -- Chọn thiết bị --
+                                    </option>
+
+                                    {equipmentList.map((item) => (
+                                        <option
+                                            key={item.id}
+                                            value={item.id}
+                                        >
+                                            {item.equipmentCode}
+                                            {" - "}
+                                            {item.equipmentName}
+                                        </option>
+                                    ))}
+                                </Field>
+
+                                <ErrorMessage
+                                    name="equipmentId"
+                                    component="div"
+                                    className="invalid-feedback"
+                                />
+                            </Col>
+
+                        </Row>
+
+                        {/* BẢO DƯỠNG */}
+                        <div className="form-section-title">
+                            <BsTools/>
+                            Thông tin bảo dưỡng
                         </div>
 
-                    </Form>
-                )}
+                        <Row className="mb-3">
+
+                            <Col md={4}>
+                                <label className="form-label">
+                                    Chu kỳ bảo dưỡng
+                                    <span className="required-asterisk">*</span>
+                                </label>
+
+                                <Field
+                                    as="select"
+                                    name="cycleMonths"
+                                    className={`form-select ${
+                                        touched.cycleMonths &&
+                                        errors.cycleMonths
+                                            ? "is-invalid"
+                                            : ""
+                                    }`}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+
+                                        setFieldValue("cycleMonths", value);
+
+                                        if (!value) {
+                                            setFieldValue(
+                                                "nextDueDate",
+                                                ""
+                                            );
+                                            return;
+                                        }
+
+                                        const nextDate = new Date();
+
+                                        nextDate.setDate(
+                                            nextDate.getDate() +
+                                            Number(value)
+                                        );
+
+                                        setFieldValue(
+                                            "nextDueDate",
+                                            nextDate
+                                                .toISOString()
+                                                .split("T")[0]
+                                        );
+                                    }}
+                                >
+                                    <option value="">
+                                        Chọn chu kỳ
+                                    </option>
+
+                                    <option value="7">
+                                        1 tuần
+                                    </option>
+
+                                    <option value="30">
+                                        1 tháng
+                                    </option>
+
+                                    <option value="90">
+                                        3 tháng
+                                    </option>
+
+                                    <option value="180">
+                                        6 tháng
+                                    </option>
+                                </Field>
+
+                                <ErrorMessage
+                                    name="cycleMonths"
+                                    component="div"
+                                    className="invalid-feedback"
+                                />
+                            </Col>
+
+                            <Col md={4}>
+                                <label className="form-label">
+                                    Ngày bảo dưỡng tiếp theo
+                                    <span className="required-asterisk">*</span>
+                                </label>
+
+                                <Field
+                                    name="nextDueDate"
+                                    type="date"
+                                    readOnly
+                                    className={`form-control ${
+                                        touched.nextDueDate &&
+                                        errors.nextDueDate
+                                            ? "is-invalid"
+                                            : ""
+                                    }`}
+                                />
+
+                                <ErrorMessage
+                                    name="nextDueDate"
+                                    component="div"
+                                    className="invalid-feedback"
+                                />
+                            </Col>
+
+                        </Row>
+
+                        {/* DẦU MỠ */}
+                        <div className="form-section-title">
+                            <BsDropletFill/>
+                            Dầu mỡ sử dụng
+                        </div>
+
+                        <Row>
+
+                            <Col md={12}>
+
+                                <label className="form-label">
+                                    Vật tư dầu mỡ
+                                    <span className="required-asterisk">*</span>
+                                </label>
+
+                                <div className="table-responsive">
+
+                                    <table className="table table-hover table-bordered align-middle">
+
+                                        <thead className="table-primary">
+
+                                        <tr>
+
+                                            <th width="70">
+                                                Chọn
+                                            </th>
+
+                                            <th width="100">
+                                                Ảnh
+                                            </th>
+
+                                            <th width="180">
+                                                Mã vật tư
+                                            </th>
+
+                                            <th>
+                                                Tên vật tư
+                                            </th>
+
+                                            <th width="140">
+                                                Đơn vị
+                                            </th>
+
+                                            <th width="160">
+                                                Trạng thái
+                                            </th>
+
+                                            <th width="140">
+                                                Số lượng
+                                            </th>
+
+                                        </tr>
+
+                                        </thead>
+
+                                        <tbody>
+
+                                        {consumableList.length === 0 ? (
+
+                                            <tr>
+                                                <td
+                                                    colSpan="7"
+                                                    className="text-center"
+                                                >
+                                                    Không có dữ liệu
+                                                </td>
+                                            </tr>
+
+                                        ) : (
+
+                                            consumableList.map(item => {
+
+                                                const selected =
+                                                    values.consumableId?.toString() ===
+                                                    item.id.toString();
+
+                                                return (
+
+                                                    <tr
+                                                        key={item.id}
+                                                        className={
+                                                            selected
+                                                                ? "table-info"
+                                                                : ""
+                                                        }
+                                                    >
+
+                                                        <td className="text-center">
+
+                                                            <input
+                                                                type="radio"
+                                                                name="selectedConsumable"
+                                                                checked={
+                                                                    selected
+                                                                }
+                                                                onChange={() =>
+                                                                    setFieldValue(
+                                                                        "consumableId",
+                                                                        item.id
+                                                                    )
+                                                                }
+                                                            />
+
+                                                        </td>
+
+                                                        <td className="text-center">
+
+                                                            <img
+                                                                src={
+                                                                    item.imgPath ||
+                                                                    "/images/no-image.png"
+                                                                }
+                                                                alt={
+                                                                    item.name
+                                                                }
+                                                                style={{
+                                                                    width: "60px",
+                                                                    height: "60px",
+                                                                    objectFit: "cover",
+                                                                    borderRadius: "8px",
+                                                                    border:
+                                                                        "1px solid #dee2e6"
+                                                                }}
+                                                            />
+
+                                                        </td>
+
+                                                        <td>
+                                                            {
+                                                                item.consumableCode
+                                                            }
+                                                        </td>
+
+                                                        <td>
+                                                            {item.name}
+                                                        </td>
+
+                                                        <td>
+
+                                    <span className="badge bg-info">
+
+                                        {
+                                            item.unit?.unitName ||
+                                            item.unitName ||
+                                            item.unit ||
+                                            "-"
+                                        }
+
+                                    </span>
+
+                                                        </td>
+
+                                                        <td>
+    <span
+        className={`badge ${
+            item.status === "ACTIVE"
+                ? "bg-success"
+                : "bg-secondary"
+        }`}
+    >
+        {
+            item.status === "ACTIVE"
+                ? "Đang sử dụng"
+                : "Ngừng sử dụng"
+        }
+    </span>
+                                                        </td>
+
+                                                        <td>
+                                                            {selected && (
+                                                                <Field
+                                                                    type="number"
+                                                                    min="1"
+                                                                    name="quantity"
+                                                                    className="form-control"
+                                                                    placeholder="SL"
+                                                                />
+                                                            )}
+                                                        </td>
+
+                                                    </tr>
+                                                );
+                                            })
+
+                                        )}
+
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+
+                                <ErrorMessage
+                                    name="consumableId"
+                                    component="div"
+                                    className="text-danger mt-2"
+                                />
+
+                            </Col>
+
+                        </Row>
+
+                    </div>
+
+                    {/* FOOTER */}
+                    <div className="nhansu-form-footer">
+
+                        <Button
+                            variant="outline-secondary"
+                            type="button"
+                            onClick={() => resetForm()}
+                        >
+                            <BsArrowClockwise/>
+                            Đặt lại
+                        </Button>
+                        <Link to="/lubrication/plant">
+                            <Button variant="outline-danger">
+                                <BsXCircle/>
+                                Huỷ bỏ
+                            </Button>
+                        </Link>
+
+                        {onCancel && (
+                            <Button
+                                variant="outline-danger"
+                                type="button"
+                                onClick={onCancel}
+                            >
+                                <BsXCircle/>
+                                Huỷ bỏ
+                            </Button>
+                        )}
+
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            disabled={isSubmitting}
+                        >
+                            <BsSave/>
+                            {isEdit
+                                ? "Cập nhật"
+                                : "Thêm mới"}
+                        </Button>
+
+                    </div>
+
+                </Form>
+            )}
             </Formik>
         </div>
     );

@@ -28,7 +28,7 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueList.jsx";
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
-import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import {LubricationPlanForm} from "./components/LubricationPlan/LubricationPlanForm.jsx";
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
