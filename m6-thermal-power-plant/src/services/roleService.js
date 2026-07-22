@@ -1,8 +1,3 @@
-import apiClient from './apiClient';
-
-const ROLE_URL = '/api/v1/roles';
-const PERMISSION_URL = '/api/v1/permissions';
-
 
 // Danh mục vai trò + helper phân quyền theo ROLE.
 // (2026-07-20: chuyển hẳn từ mô hình permission sang role-only — xem BE
@@ -52,38 +47,3 @@ export function hasAnyRole(user, roles) {
   const userRoles = user.roles || [];
   return roles.some((r) => userRoles.includes(r));
 }
-
-/**
- * API phân quyền động (role × permission) — phục vụ trang Quản trị
- * /admin/roles. Đây là tầng gọi API, giữ nguyên theo main.
- */
-export const roleService = {
-  /** GET /api/v1/roles → [{id, name}] */
-  getRoles: async () => {
-    const res = await apiClient.get(ROLE_URL);
-    return res.data;
-  },
-
-  /** GET /api/v1/permissions → [{id, code, description}] */
-  getAllPermissions: async () => {
-    const res = await apiClient.get(PERMISSION_URL);
-    return res.data;
-  },
-
-  /** GET /api/v1/roles/{roleId}/permissions → [{id, code, description}] */
-  getRolePermissions: async (roleId) => {
-    const res = await apiClient.get(`${ROLE_URL}/${roleId}/permissions`);
-    return res.data;
-  },
-
-  /**
-   * PUT /api/v1/roles/{roleId}/permissions — thay TOÀN BỘ permission của role.
-   * Backend sẽ bump permission_version cho mọi account giữ role này →
-   * token cũ của họ tự vô hiệu ở request kế tiếp (buộc refresh lấy quyền mới).
-   */
-  updateRolePermissions: async (roleId, permissionIds) => {
-    const res = await apiClient.put(`${ROLE_URL}/${roleId}/permissions`, { permissionIds });
-    return res.data;
-  },
-};
-
