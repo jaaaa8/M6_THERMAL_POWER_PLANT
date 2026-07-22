@@ -88,7 +88,7 @@ export default function ListSystem() {
             cursor: "pointer",
           }}
           onClick={() =>
-            navigate(`/equipment/equipments/${row.id}`)
+            navigate(`/equipment/equipments/system/${row.id}`)
           }
         >
           {value}
@@ -105,7 +105,11 @@ export default function ListSystem() {
             cursor: "pointer",
           }}
           onClick={() =>
-            navigate(`/equipment/equipments/${row.id}`)
+            navigate(`/equipment/equipments/system/${row.id}`, {
+              state: {
+                systemName: row.name
+              }
+            })
           }
         >
           {value}

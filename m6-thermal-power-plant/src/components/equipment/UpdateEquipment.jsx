@@ -16,25 +16,22 @@ export default function UpdateEquipment() {
   const fileInputRef = useRef(null);
 
   const [equipmentData, setEquipmentData] = useState(null);
-  const [systems, setSystems] = useState([]);
+  const [equipmentTypes, setEquipmentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingSystems, setLoadingSystems] = useState(true);
 
-  // Fetch systems for dropdown
   useEffect(() => {
-    const fetchSystems = async () => {
+    const fetchTypes = async () => {
       try {
-        const res = await systemService.getAll('', '', 0, 1000);
-        setSystems(res.data?.content || []);
+        const res = await equipmentService.getEquipmentTypes();
+        setEquipmentTypes(res.data);
       } catch (e) {
-        console.error('Lỗi tải hệ thống:', e);
-      } finally {
-        setLoadingSystems(false);
+        console.log(e);
+        toast.error("Không tải được loại thiết bị");
       }
     };
-    fetchSystems();
-  }, []);
 
+    fetchTypes();
+  }, []);
   // Fetch current equipment details
   useEffect(() => {
     const fetchEquipment = async () => {
@@ -56,19 +53,11 @@ export default function UpdateEquipment() {
 
   // Validation Schema
   const equipmentSchema = Yup.object().shape({
-    kksCode: Yup.string()
-      .required('Mã KKS là bắt buộc')
-      .matches(/^[A-Z0-9_-]+$/, 'Mã KKS chỉ gồm chữ hoa, số và dấu gạch ngang/gạch dưới')
-      .min(3, 'Mã KKS tối thiểu 3 ký tự'),
-
-    equipmentName: Yup.string()
-      .required('Tên thiết bị là bắt buộc')
-      .min(3, 'Tên thiết bị tối thiểu 3 ký tự'),
-
-    systemId: Yup.string()
-      .required('Vui lòng chọn hệ thống'),
-
-    equipmentType: Yup.string()
+    name: Yup.string()
+      .required("Tên thiết bị là bắt buộc")
+      .min(10, "Tên thiết bị phải từ 10 ký tự")
+      .max(255),
+    equipmentTypeId: Yup.string()
       .required('Vui lòng chọn loại thiết bị'),
 
     status: Yup.string()
@@ -80,7 +69,7 @@ export default function UpdateEquipment() {
     manufacturer: Yup.string()
       .max(100, 'Nhà sản xuất tối đa 100 ký tự'),
 
-    installYear: Yup.number()
+    installationYear: Yup.number()
       .typeError('Năm lắp đặt phải là số')
       .integer('Năm lắp đặt phải là số nguyên')
       .min(1900, 'Năm lắp đặt từ 1900 trở đi')
@@ -92,15 +81,36 @@ export default function UpdateEquipment() {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const selectedSystem = systems.find(s => s.id === Number(values.systemId));
-      const payload = {
-        ...equipmentData, // Keep existing parameters and properties
-        ...values,
-        systemId: Number(values.systemId),
-        systemName: selectedSystem ? selectedSystem.name : equipmentData.systemName
-      };
+      const formData = new FormData();
+      formData.append(
+        "equipment",
+        new Blob(
+          [
+            JSON.stringify({
+              name: values.name,
+              equipmentTypeId: Number(values.equipmentTypeId),
+              status: values.status,
+              manufacturer: values.manufacturer,
+              model: values.model,
+              installationYear:
+                values.installationYear
+                  ? Number(values.installationYear)
+                  : null,
+              description: values.description,
+              imageUrls: values.imageUrls
 
-      await equipmentService.update(id, payload);
+            })
+          ],
+          {
+            type: "application/json"
+          }
+        )
+      );
+      values.newImages.forEach(file => {
+        formData.append("images", file);
+      });
+
+      await equipmentService.update(id, formData);
       toast.success('Cập nhật thiết bị thành công!');
       navigate('/equipment/equipments');
     } catch (error) {
@@ -124,16 +134,23 @@ export default function UpdateEquipment() {
 
   // Pre-fill initial values
   const initialValues = {
-    kksCode: equipmentData?.kksCode || '',
-    equipmentName: equipmentData?.equipmentName || '',
-    systemId: equipmentData?.systemId || '',
-    equipmentType: equipmentData?.equipmentType || 'Bơm',
-    status: equipmentData?.status || 'ACTIVE',
-    model: equipmentData?.model || '',
-    manufacturer: equipmentData?.manufacturer || '',
-    installYear: equipmentData?.installYear || new Date().getFullYear(),
-    description: equipmentData?.description || '',
-    imageUrl: equipmentData?.imageUrl || ''
+    name: equipmentData?.name || "",
+    equipmentTypeId:
+      equipmentData?.equipmentTypeId || "",
+    status:
+      equipmentData?.status || "ACTIVE",
+    manufacturer:
+      equipmentData?.manufacturer || "",
+    model:
+      equipmentData?.model || "",
+    installationYear:
+      equipmentData?.installationYear || "",
+    description:
+      equipmentData?.description || "",
+    imageUrls:
+      equipmentData?.imageUrls || [],
+    newImages: []
+
   };
 
   return (
@@ -168,31 +185,41 @@ export default function UpdateEquipment() {
             setFieldValue
           }) => {
             const handleImageChange = (e) => {
-              const file = e.target.files[0];
-              if (file) {
+              const files = Array.from(e.target.files);
+              const valid = files.filter(file => {
                 if (file.size > 2 * 1024 * 1024) {
-                  toast.error('Kích thước ảnh không vượt quá 2MB');
-                  return;
+                  toast.error(file.name + " quá 2MB");
+                  return false;
                 }
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  setFieldValue('imageUrl', reader.result);
-                };
-                reader.readAsDataURL(file);
-              }
-            };
+                return true;
+              });
+              setFieldValue(
+                "newImages",
+                [
+                  ...values.newImages,
+                  ...valid
+                ]
+              );
+            }
 
             const triggerFileSelect = () => {
               fileInputRef.current.click();
             };
+            const removeOldImage = (index) => {
+              setFieldValue(
+                "imageUrls",
+                values.imageUrls.filter((_, i) => i !== index)
 
-            const removeImage = (e) => {
-              e.stopPropagation();
-              setFieldValue('imageUrl', '');
-              if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
-            };
+              );
+            }
+            const removeNewImage = (index) => {
+              setFieldValue(
+                "newImages",
+                values.newImages.filter((_, i) => i !== index)
+
+              );
+
+            }
 
             return (
               <FormikForm onSubmit={handleSubmit}>
@@ -203,85 +230,106 @@ export default function UpdateEquipment() {
                     onClick={triggerFileSelect}
                   >
                     <input
+                      multiple
                       type="file"
+                      accept="image/*"
                       ref={fileInputRef}
                       className="d-none"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
+                      onChange={handleImageChange} />
                     <BsCloudUpload className="image-upload-icon" />
                     <span className="fw-semibold">Kéo thả ảnh hoặc</span>
                     <span className="text-primary fw-bold" style={{ textDecoration: 'underline' }}>Chọn ảnh</span>
                     <span className="text-muted small mt-1">PNG, JPG, JPEG (tối đa 2MB)</span>
                   </div>
+                  <div className="d-flex flex-wrap gap-3">
 
-                  <div className="image-preview-container">
-                    {values.imageUrl ? (
-                      <>
+                    {values.imageUrls.map((url, index) => (
+
+                      <div
+                        key={index}
+                        className="position-relative"
+                      >
+
                         <img
-                          className="image-preview-img"
-                          src={values.imageUrl}
-                          alt="Preview"
+                          src={url}
+                          width={150}
+                          height={150}
+                          className="rounded border"
+                          style={{ objectFit: "cover" }}
                         />
-                        <button
+
+                        <Button
                           type="button"
-                          className="image-preview-remove"
-                          onClick={removeImage}
-                          title="Xóa ảnh"
+                          variant="danger"
+                          size="sm"
+                          onClick={() => removeOldImage(index)}
                         >
                           <BsX />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="image-preview-placeholder">
-                        <BsCpu />
-                        <span>Chưa có ảnh</span>
+                        </Button>
+
                       </div>
-                    )}
+
+                    ))}
+
+                    {values.newImages.map((file, index) => (
+                      <div
+                        key={index}
+                        className="position-relative"
+                      >
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt="preview"
+                          width={150}
+                          height={150}
+                          className="rounded border"
+                          style={{ objectFit: "cover" }}
+                        />
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          onClick={() => removeNewImage(index)}
+                        >
+                          <BsX />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
+
                 </div>
 
                 <Row className="g-4">
                   {/* Mã KKS */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="kksCode" className="required">
-                        Mã KKS
-                      </Form.Label>
+                      <Form.Label>Mã KKS</Form.Label>
                       <Form.Control
-                        id="kksCode"
-                        name="kksCode"
-                        type="text"
-                        placeholder="VD: 10LAA01AP001..."
-                        value={values.kksCode}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        isInvalid={touched.kksCode && !!errors.kksCode}
+                        plaintext
+                        readOnly
+                        defaultValue={equipmentData?.kksCode}
                       />
-                      <Form.Control.Feedback type="invalid">
-                        {errors.kksCode}
-                      </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
 
                   {/* Tên thiết bị */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="equipmentName" className="required">
+                      <Form.Label htmlFor="name" className="required">
                         Tên thiết bị
                       </Form.Label>
+
                       <Form.Control
-                        id="equipmentName"
-                        name="equipmentName"
+                        id="name"
+                        name="name"
                         type="text"
-                        placeholder="VD: Bơm nước cấp A..."
-                        value={values.equipmentName}
+                        value={values.name}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.equipmentName && !!errors.equipmentName}
+                        isInvalid={touched.name && !!errors.name}
                       />
+
                       <Form.Control.Feedback type="invalid">
-                        {errors.equipmentName}
+                        {errors.name}
                       </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
@@ -289,51 +337,48 @@ export default function UpdateEquipment() {
                   {/* Hệ thống */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="systemId" className="required">
-                        Hệ thống
-                      </Form.Label>
-                      <Form.Select
-                        id="systemId"
-                        name="systemId"
-                        value={values.systemId}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        isInvalid={touched.systemId && !!errors.systemId}
-                        disabled={loadingSystems}
-                      >
-                        <option value="">Chọn hệ thống...</option>
-                        {systems.map(s => (
-                          <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                        ))}
-                      </Form.Select>
-                      <Form.Control.Feedback type="invalid">
-                        {errors.systemId}
-                      </Form.Control.Feedback>
+                      <Form.Label>Hệ thống</Form.Label>
+
+                      <Form.Control
+                        type="text"
+                        value={equipmentData?.systemName || ""}
+                        readOnly
+                        disabled
+                      />
                     </Form.Group>
                   </Col>
 
                   {/* Loại thiết bị */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="equipmentType" className="required">
+                      <Form.Label htmlFor="equipmentTypeId" className="required">
                         Loại thiết bị
                       </Form.Label>
+
                       <Form.Select
-                        id="equipmentType"
-                        name="equipmentType"
-                        value={values.equipmentType}
+                        id="equipmentTypeId"
+                        name="equipmentTypeId"
+                        value={values.equipmentTypeId}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.equipmentType && !!errors.equipmentType}
+                        isInvalid={
+                          touched.equipmentTypeId &&
+                          !!errors.equipmentTypeId
+                        }
                       >
-                        <option value="Bơm">Bơm</option>
-                        <option value="Van">Van</option>
-                        <option value="Động cơ">Động cơ</option>
-                        <option value="Đo lường">Đo lường</option>
-                        <option value="Khác">Khác</option>
+                        <option value="">Chọn loại thiết bị</option>
+
+                        {equipmentTypes.map(type => (
+                          <option
+                            key={type.id}
+                            value={type.id}
+                          >
+                            {type.name}
+                          </option>
+                        ))}
                       </Form.Select>
                       <Form.Control.Feedback type="invalid">
-                        {errors.equipmentType}
+                        {errors.equipmentTypeId}
                       </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
@@ -411,21 +456,24 @@ export default function UpdateEquipment() {
                   {/* Năm lắp đặt */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="installYear">
+                      <Form.Label htmlFor="installationYear">
                         Năm lắp đặt
                       </Form.Label>
+
                       <Form.Control
-                        id="installYear"
-                        name="installYear"
+                        id="installationYear"
+                        name="installationYear"
                         type="number"
-                        placeholder="VD: 2020..."
-                        value={values.installYear}
+                        value={values.installationYear}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.installYear && !!errors.installYear}
+                        isInvalid={
+                          touched.installationYear &&
+                          !!errors.installationYear
+                        }
                       />
                       <Form.Control.Feedback type="invalid">
-                        {errors.installYear}
+                        {errors.installationYear}
                       </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
