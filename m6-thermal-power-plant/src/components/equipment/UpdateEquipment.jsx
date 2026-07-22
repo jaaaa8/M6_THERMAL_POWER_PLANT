@@ -41,7 +41,7 @@ export default function UpdateEquipment() {
       } catch (e) {
         console.error(e);
         toast.error('Không tìm thấy thiết bị cần chỉnh sửa');
-        navigate('/equipment/equipments');
+        navigate('/equipment/equipments/system/' + res.data.systemId);
       } finally {
         setLoading(false);
       }
@@ -112,7 +112,7 @@ export default function UpdateEquipment() {
 
       await equipmentService.update(id, formData);
       toast.success('Cập nhật thiết bị thành công!');
-      navigate('/equipment/equipments');
+      navigate('/equipment/equipments/system/' + equipmentData.systemId);
     } catch (error) {
       console.error(error);
       toast.error(

@@ -28,6 +28,7 @@ const routeLabels = {
   maintenance: 'Bảo dưỡng',
   plans: 'Kế hoạch',
   history: 'Lịch sử',
+  edit: 'Cập nhật thiết bị'
 };
 
 export default function AppBreadcrumb() {

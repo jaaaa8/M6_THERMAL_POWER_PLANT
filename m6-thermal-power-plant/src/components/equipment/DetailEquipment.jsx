@@ -145,7 +145,7 @@ export default function DetailEquipment() {
             </Button>
             <Button
               variant="outline-secondary"
-              onClick={() => navigate('/equipment/equipments')}
+              onClick={() => navigate(`/equipment/equipments/system/${selectedEqData.systemId}`)}
               className="d-inline-flex align-items-center gap-2"
             >
               <BsArrowLeft />

@@ -1,8 +1,4 @@
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-=======
-import { getAllRepairHistories } from "../../services/repairHistoryService";
->>>>>>> b4fcb2689e83dc59cab7c0901e437af43ebf04b9
 import {
     Table,
     Button,
@@ -161,9 +157,7 @@ export default function RepairHistoryTab({ equipmentId }) {
                                                                     </tr>
 
                                                                 </thead>
-
                                                                 <tbody>
-
                                                                     {item.details.map((d, i) => (
 
                                                                         <tr key={d.id}>
