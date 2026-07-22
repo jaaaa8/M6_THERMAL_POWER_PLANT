@@ -7,15 +7,24 @@ import PageHeader from '../common/PageHeader';
 import StatusBadge from '../common/StatusBadge';
 import { toast } from 'react-toastify';
 import './style/ListEquipment.css';
+import {
+  pdf
+} from "@react-pdf/renderer";
+import EquipmentPdf from "./EquipmentPDF";
 import './style/DetailEquipment.css';
 import TechnicalParameterTab from "./TechnicalParameterTab";
 import RepairHistoryTab from "../repair_history/RepairHistoryList";
 import LubricationHistoryTab from "./LubricationHistoryTab";
 import * as parameterService from "../../services/equipment/parameterService";
+import * as repairHistoryService
+  from "../../services/repairHistoryService";
+
+import * as lubricationService
+  from "../../services/equipment/lubricationService";
 export default function DetailEquipment() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedEqData, setSelectedEqData] = useState(null);
 
@@ -23,7 +32,30 @@ export default function DetailEquipment() {
 
   const [currentImage, setCurrentImage] = useState(0);
 
+  const getPdfData = async () => {
 
+    const repairRes =
+      await repairHistoryService.getByEquipment(id);
+
+
+    const maintenanceRes =
+      await lubricationService.getByEquipment(id);
+
+
+    return {
+
+      ...selectedEqData,
+
+      repairHistories:
+        repairRes.data,
+
+
+      maintenanceHistories:
+        maintenanceRes.data
+
+    };
+
+  };
   // Fetch equipment detail
   const fetchEquipmentDetail = async () => {
     setLoading(true);
@@ -58,16 +90,72 @@ export default function DetailEquipment() {
     }
   }, [id]);
 
-  // PDF Export placeholder
-  const handleExportPdf = () => {
-    toast.info('Tính năng xuất PDF đang được xử lý...');
+  const handlePreviewPdf = async () => {
+    try {
+      const pdfData =
+        await getPdfData();
+      const blob =
+        await pdf(
+          <EquipmentPdf
+            equipment={pdfData}
+          />
+        ).toBlob();
+      const url =
+        URL.createObjectURL(blob);
+      window.open(
+        url,
+        "_blank"
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "Không thể tạo file PDF"
+      );
+    }
   };
 
+  const handleDownloadPdf = async () => {
+
+
+    const pdfData =
+      await getPdfData();
+
+
+    const blob =
+      await pdf(
+        <EquipmentPdf
+          equipment={pdfData}
+        />
+      ).toBlob();
+
+
+    const url =
+      URL.createObjectURL(blob);
+
+
+    const a =
+      document.createElement("a");
+
+
+    a.href = url;
+
+
+    a.download =
+      `equipment-${id}.pdf`;
+
+
+    a.click();
+
+
+    URL.revokeObjectURL(url);
+
+  };
   // Helper resolving system name from systems list
   const getSystemName = (sysId) => {
     const sys = systems.find(s => s.id === Number(sysId));
     return sys ? sys.name : 'Chưa phân loại';
   };
+
 
   // Status mapping
   const getStatusProps = (status) => {
@@ -139,9 +227,24 @@ export default function DetailEquipment() {
         ]}
         actions={
           <div className="d-flex gap-2">
-            <Button variant="outline-primary" onClick={handleExportPdf} className="d-inline-flex align-items-center gap-2">
+            <Button
+              variant="outline-success"
+              className="d-flex align-items-center gap-2"
+              onClick={handlePreviewPdf}
+            >
               <BsFileEarmarkPdf />
+              Xem trước PDF
+            </Button>
+            <Button
+              variant="primary"
+              className="d-flex align-items-center gap-2"
+              onClick={handleDownloadPdf}
+            >
+
+              <BsFileEarmarkPdf />
+
               Xuất PDF
+
             </Button>
             <Button
               variant="outline-secondary"
@@ -154,6 +257,43 @@ export default function DetailEquipment() {
           </div>
         }
       />
+      {
+        showPreview && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              background: "#0008",
+              zIndex: 9999
+            }}
+          >
+            <div
+              style={{
+                width: "80%",
+                height: "90%",
+                margin: "30px auto",
+                background: "#fff"
+              }}
+            >
+              <button
+                onClick={() => setShowPreview(false)}
+              >
+                Đóng
+              </button>
+              <PDFViewer
+                width="100%"
+                height="95%">
+                <EquipmentPdf
+                  equipment={selectedEqData}
+                />
+              </PDFViewer>
+            </div>
+          </div>
+        )
+      }
 
       <div className="detail-layout">
         {/* Left Pane */}
@@ -253,12 +393,10 @@ export default function DetailEquipment() {
               className={`detail-tab-btn ${detailTab === 'maintenance-history' ? 'active' : ''}`}
               onClick={() =>
                 setDetailTab("lubrication-history")
-              }
-            >
+              }>
               Lịch sử bảo dưỡng
             </button>
           </div>
-
           <div className="detail-tab-content">
             {detailTab === 'general' && (
               <div>
@@ -301,7 +439,6 @@ export default function DetailEquipment() {
                 </Table>
               </div>
             )}
-
             {detailTab === "tech-param" && (
               <TechnicalParameterTab
                 equipmentId={id}
@@ -310,17 +447,12 @@ export default function DetailEquipment() {
               />
             )}
             {detailTab === "repair-history" && (
-
               <RepairHistoryTab
                 equipmentId={id}
               />
-
             )}
-
-
             {
               detailTab === "lubrication-history" && (
-
                 <LubricationHistoryTab
                   equipmentId={id}
                 />
