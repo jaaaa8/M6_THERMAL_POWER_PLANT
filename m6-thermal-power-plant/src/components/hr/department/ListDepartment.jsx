@@ -16,18 +16,20 @@ export default function ListDepartment() {
 
   // Lọc
   const [searchName, setSearchName] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState({ name: '' });
+  const [searchCode, setSearchCode] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({ name: '', code: '' });
 
   // Modals
   const [deleteModal, setDeleteModal] = useState({ show: false, data: null });
 
   const handleApplyFilter = () => {
-    setAppliedFilters({ name: searchName });
+    setAppliedFilters({ name: searchName, code: searchCode });
   };
 
   const handleClearFilters = () => {
     setSearchName('');
-    setAppliedFilters({ name: '' });
+    setSearchCode('');
+    setAppliedFilters({ name: '', code: '' });
   };
 
   const fetchData = async () => {
@@ -53,7 +55,8 @@ export default function ListDepartment() {
     let result = data.filter(item => {
       if (!item) return false;
       const matchName = (item.name || '').toLowerCase().includes((appliedFilters.name || '').toLowerCase());
-      return matchName;
+      const matchCode = (item.departmentCode || '').toLowerCase().includes((appliedFilters.code || '').toLowerCase());
+      return matchName && matchCode;
     });
     return result.map((item, index) => ({ ...item, stt: index + 1 }));
   }, [data, appliedFilters]);
@@ -74,6 +77,18 @@ export default function ListDepartment() {
 
       <div className="surface-card p-4 mb-4 filter-container">
         <Row className="g-2 align-items-end">
+          <Col lg={3} md={6} xs={12}>
+            <Form.Group>
+              <Form.Label className="fs-7 text-secondary mb-1">Mã phòng ban</Form.Label>
+              <Form.Control
+                type="text"
+                size="sm"
+                placeholder="Nhập mã phòng ban..."
+                value={searchCode}
+                onChange={(e) => setSearchCode(e.target.value)}
+              />
+            </Form.Group>
+          </Col>
           <Col lg={3} md={6} xs={12}>
             <Form.Group>
               <Form.Label className="fs-7 text-secondary mb-1">Tên phòng ban</Form.Label>

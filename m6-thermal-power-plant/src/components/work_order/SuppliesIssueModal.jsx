@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Tabs, Tab, Table, Badge } from 'react-bootstrap';
 import {
-  BsBoxSeam, BsSearch, BsTrash, BsSave, BsXCircle,
-  BsTools, BsDroplet, BsClockHistory, BsPlusLg,
-  BsChevronDown, BsChevronUp,
+  BsBoxSeam, BsSearch, BsTrash, BsSave,
+  BsClockHistory, BsPlusLg,
+  BsChevronDown, BsChevronUp, BsPrinter,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
+import { openPdfBlob, blobErrorMessage } from './pdfUtils';
 import { workOrderService } from '../../services/workOrderService';
-import * as sparePartService from '../../services/sparePartService';
 import * as consumableService from '../../services/consumableService';
 
 /**
@@ -23,20 +23,9 @@ function extractErrorMessage(err) {
   return err.message || 'Lỗi không xác định';
 }
 
-/** Cấu hình riêng cho từng loại phiếu — 2 luồng ĐỘC LẬP, không còn gộp chung. */
+/** Cấu hình luồng cấp vật tư — CHỈ còn vật tư tiêu hao (luồng vật tư thay thế
+ *  đã bỏ khỏi nút "Cấp vật tư"; phiếu thay thế đi theo nghiệp vụ kho riêng). */
 const ISSUE_TYPES = {
-  spareParts: {
-    itemIdField: 'sparePartId',
-    searchFn: (name) => sparePartService.search({ name, page: 0, size: 10 }),
-    itemCodeKey: 'sparePartCode',
-    lineNameKey: 'sparePartName',
-    lineCodeKey: 'sparePartCode',
-    label: 'vật tư thay thế',
-    typeLabel: 'Thay thế',
-    badgeBg: 'info',
-    create: workOrderService.createSparePartsIssue,
-    list: workOrderService.getSparePartsIssues,
-  },
   consumables: {
     itemIdField: 'consumableId',
     searchFn: (name) => consumableService.search({ name, page: 0, size: 10 }),
@@ -52,9 +41,9 @@ const ISSUE_TYPES = {
 };
 
 /**
- * SuppliesIssueModal — 2 luồng cấp vật tư ĐỘC LẬP cho MỘT phiếu công tác: vật
- * tư thay thế và vật tư tiêu hao mỗi loại có nút tạo phiếu + lịch sử riêng
- * (2 endpoint backend riêng, không còn 1 request gộp cả hai loại).
+ * SuppliesIssueModal — cấp VẬT TƯ TIÊU HAO cho MỘT phiếu công tác: tab tạo
+ * phiếu + tab lịch sử (endpoint /consumable-issues; luồng vật tư thay thế đã
+ * bỏ khỏi modal này).
  *
  * @param {boolean}  props.show
  * @param {object}   props.workOrder - {id, orderCode, status}
@@ -62,8 +51,6 @@ const ISSUE_TYPES = {
  * @param {Function} props.onCreated - (createdIssue, type) => void
  */
 export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated }) {
-  const [activeType, setActiveType] = useState('spareParts');
-
   if (!workOrder) return null;
 
   return (
@@ -71,41 +58,27 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
           <BsBoxSeam className="me-2" style={{ color: 'var(--color-primary-500)' }} />
-          Cấp vật tư — PCT <span className="font-mono">{workOrder.orderCode}</span>
+          Cấp vật tư tiêu hao — PCT <span className="font-mono">{workOrder.orderCode}</span>
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
-        <Tabs activeKey={activeType} onSelect={(k) => setActiveType(k)} className="mb-3">
-          <Tab eventKey="spareParts" title={<span><BsTools className="me-1" />Vật tư thay thế</span>}>
-            <SupplyIssuePanel
-              key={`spareParts-${workOrder.id}`}
-              show={show}
-              workOrder={workOrder}
-              config={ISSUE_TYPES.spareParts}
-              onCreated={(created) => onCreated?.(created, 'spareParts')}
-              onClose={onClose}
-            />
-          </Tab>
-          <Tab eventKey="consumables" title={<span><BsDroplet className="me-1" />Vật tư tiêu hao</span>}>
-            <SupplyIssuePanel
-              key={`consumables-${workOrder.id}`}
-              show={show}
-              workOrder={workOrder}
-              config={ISSUE_TYPES.consumables}
-              onCreated={(created) => onCreated?.(created, 'consumables')}
-              onClose={onClose}
-            />
-          </Tab>
-        </Tabs>
+        <SupplyIssuePanel
+          key={`consumables-${workOrder.id}`}
+          show={show}
+          workOrder={workOrder}
+          config={ISSUE_TYPES.consumables}
+          onCreated={(created) => onCreated?.(created, 'consumables')}
+          onClose={onClose}
+        />
       </Modal.Body>
     </Modal>
   );
 }
 
 /* ============================================================
-   PANEL — luồng tạo phiếu + lịch sử của MỘT loại vật tư (độc lập hoàn toàn
-   với loại còn lại: state riêng, submit riêng, PDF riêng).
+   PANEL — luồng tạo phiếu + lịch sử của một loại vật tư (nhận config để
+   không phụ thuộc cứng vào loại cụ thể).
    ============================================================ */
 function SupplyIssuePanel({ show, workOrder, config, onCreated, onClose }) {
   const [activeSubTab, setActiveSubTab] = useState('create');
@@ -215,6 +188,7 @@ function SupplyIssuePanel({ show, workOrder, config, onCreated, onClose }) {
                 key={issue.id}
                 issue={issue}
                 config={config}
+                workOrderId={workOrder.id}
                 expanded={expandedIssueIds.includes(issue.id)}
                 onToggle={() => toggleExpanded(issue.id)}
               />
@@ -374,7 +348,23 @@ function SupplyLinePicker({ title, searchFn, codeKey, lines, setLines }) {
    CARD — MỘT phiếu cấp vật tư trong lịch sử (mã phiếu — thời điểm — người
    cấp) + nút xem chi tiết (mặc định thu gọn).
    ============================================================ */
-function IssueCard({ issue, config, expanded, onToggle }) {
+function IssueCard({ issue, config, workOrderId, expanded, onToggle }) {
+  const [printing, setPrinting] = useState(false);
+
+  // In phiếu đề nghị cấp phát vật tư: backend render theo mẫu giấy + upload đè
+  // bản lưu Cloudinary (phiếu bất biến nên bản in luôn khớp bản lưu).
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const res = await workOrderService.exportConsumableIssuePdf(workOrderId, issue.id);
+      openPdfBlob(res.data);
+    } catch (err) {
+      toast.error(`Không thể in phiếu cấp vật tư: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <div className="border rounded p-2 mb-2">
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-1">
@@ -387,6 +377,15 @@ function IssueCard({ issue, config, expanded, onToggle }) {
           </span>
         </span>
         <span className="d-flex gap-1">
+          <Button
+            variant="outline-primary"
+            size="sm"
+            disabled={printing}
+            title="In phiếu đề nghị cấp phát vật tư theo mẫu giấy"
+            onClick={handlePrint}
+          >
+            <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In phiếu'}
+          </Button>
           <Button variant="outline-secondary" size="sm" onClick={onToggle}>
             {expanded ? <BsChevronUp className="me-1" /> : <BsChevronDown className="me-1" />}
             {expanded ? 'Thu gọn' : 'Chi tiết'}

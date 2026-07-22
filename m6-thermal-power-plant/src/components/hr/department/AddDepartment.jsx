@@ -10,6 +10,9 @@ import PageHeader from '../../common/PageHeader';
 import './style/AddDepartment.css';
 
 const DepartmentSchema = Yup.object().shape({
+  maPhongBan: Yup.string()
+    .required('Vui lòng nhập mã phòng ban')
+    .matches(/^[A-Z0-9]{4}$/, 'Mã phòng ban phải gồm đúng 4 ký tự chữ in hoa hoặc số'),
   tenPhongBan: Yup.string()
     .required('Vui lòng nhập tên phòng ban')
     .min(3, 'Tên quá ngắn, ít nhất 3 ký tự')
@@ -27,6 +30,7 @@ export default function AddDepartment({ onCancel }) {
   
   const [loading, setLoading] = useState(false);
   const [initialValues, setInitialValues] = useState({
+    maPhongBan: '',
     tenPhongBan: '',
     moTa: ''
   });
@@ -36,6 +40,7 @@ export default function AddDepartment({ onCancel }) {
       if (location.state?.initialData) {
         const data = location.state.initialData;
         setInitialValues({
+          maPhongBan: data.departmentCode || data.maPhongBan || '',
           tenPhongBan: data.name || data.tenPhongBan || '',
           moTa: data.description || data.moTa || ''
         });
@@ -47,6 +52,7 @@ export default function AddDepartment({ onCancel }) {
             const data = res.data?.data || res.data;
             if (data) {
               setInitialValues({
+                maPhongBan: data.departmentCode || data.maPhongBan || '',
                 tenPhongBan: data.name || data.tenPhongBan || '',
                 moTa: data.description || data.moTa || ''
               });
@@ -75,7 +81,8 @@ export default function AddDepartment({ onCancel }) {
       }
     } catch (error) {
       console.error(error);
-      toast.error('Có lỗi xảy ra, vui lòng thử lại');
+      const serverMessage = error.response?.data?.message || error.response?.data || error.message;
+      toast.error(typeof serverMessage === 'string' ? serverMessage : 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       setSubmitting(false);
     }
@@ -138,6 +145,28 @@ export default function AddDepartment({ onCancel }) {
           }) => (
             <FormikForm onSubmit={handleSubmit} className="department-form">
               <Row className="g-4">
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label htmlFor="maPhongBan" className="required">
+                      Mã phòng ban
+                    </Form.Label>
+                    <Form.Control
+                      id="maPhongBan"
+                      name="maPhongBan"
+                      type="text"
+                      placeholder="Nhập mã phòng ban (4 ký tự chữ in hoa hoặc số)..."
+                      value={values.maPhongBan}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      isInvalid={touched.maPhongBan && errors.maPhongBan}
+                      disabled={isEditMode}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.maPhongBan}
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                </Col>
+
                 <Col md={12}>
                   <Form.Group>
                     <Form.Label htmlFor="tenPhongBan" className="required">
