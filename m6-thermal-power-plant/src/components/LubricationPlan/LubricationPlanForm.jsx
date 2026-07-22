@@ -3,6 +3,10 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Row, Col, Button } from "react-bootstrap";
 import { toast } from "react-toastify";
+import lubricationPlanService from "../../services/lubricationPlanService";
+import * as systemService from "../../services/equipment/systemService";
+import * as equipmentService from "../../services/equipment/equipmentService.js";
+import * as consumableService from "../../services/consumableService";
 
 import {
     BsGearFill,
@@ -14,7 +18,7 @@ import {
 } from "react-icons/bs";
 
 import "./LubricationPlanForm.css";
-import {Link} from "react-router-dom";
+import {Link, useNavigate } from "react-router-dom";
 
 
 const validationSchema = Yup.object({
@@ -39,12 +43,21 @@ const validationSchema = Yup.object({
 });
 
 const INITIAL_VALUES = {
+
     systemId: "",
+
     equipmentId: "",
+
     cycleMonths: "",
+
     nextDueDate: "",
+
     consumableId: "",
+
     quantity: 1,
+
+    status: "NOT_LUBRICATED"
+
 };
 
 export function LubricationPlanForm({
@@ -53,8 +66,16 @@ export function LubricationPlanForm({
                                         initialData = null,
                                         isEdit = false,
                                     }) {
+    const [systemList, setSystemList] = useState([]);
+
     const [equipmentList, setEquipmentList] = useState([]);
+
     const [consumableList, setConsumableList] = useState([]);
+
+    const [loadingEquipment, setLoadingEquipment] = useState(false);
+
+    const [loadingConsumable, setLoadingConsumable] = useState(false);
+    const navigate = useNavigate();
 
     const systems = [
         {
@@ -75,47 +96,182 @@ export function LubricationPlanForm({
     ];
 
     useEffect(() => {
-        // Demo dữ liệu cứng
-        setEquipmentList([
-            {
-                id: 1,
-                equipmentCode: "TB-001",
-                equipmentName: "Bơm nước làm mát",
-            },
-            {
-                id: 2,
-                equipmentCode: "TB-002",
-                equipmentName: "Turbine số 1",
-            },
-            {
-                id: 3,
-                equipmentCode: "TB-003",
-                equipmentName: "Máy nghiền than",
-            },
-        ]);
 
-        setConsumableList([
-            {
-                id: 1,
-                name: "Dầu Shell Omala S2"
-            },
-            {
-                id: 2,
-                name: "Mỡ SKF LGMT 2"
-            },
-            {
-                id: 3,
-                name: "Dầu Mobil DTE 25"
-            },
-        ]);
+        loadSystems();
+
     }, []);
+
+
+
+    const loadSystems = async () => {
+
+        try {
+
+            const res =
+                await systemService.getAllSystems(
+                    "",
+                    "ACTIVE",
+                    0,
+                    100
+                );
+
+
+            setSystemList(
+                res.data.content || res.data || []
+            );
+
+
+        } catch(error){
+
+            console.error(
+                "Lỗi load hệ thống:",
+                error
+            );
+
+            toast.error(
+                "Không tải được danh sách hệ thống"
+            );
+
+        }
+
+    };
+
+    const loadEquipmentBySystem = async (
+        systemId,
+        setFieldValue
+    ) => {
+
+        try {
+
+            setLoadingEquipment(true);
+
+
+            setEquipmentList([]);
+
+            setConsumableList([]);
+
+
+            setFieldValue(
+                "equipmentId",
+                ""
+            );
+
+            setFieldValue(
+                "consumableId",
+                ""
+            );
+
+
+            const res =
+                await equipmentService.getBySystem(
+                    systemId
+                );
+
+
+            setEquipmentList(
+                res.data.content ||
+                res.data ||
+                []
+            );
+
+
+        } catch(error){
+
+            console.error(
+                error
+            );
+
+            toast.error(
+                "Không tải được thiết bị"
+            );
+
+
+        } finally {
+
+            setLoadingEquipment(false);
+
+        }
+
+    };
+
+    const loadConsumableByKks = async (
+        kksCode
+    ) => {
+
+        try {
+
+            setLoadingConsumable(true);
+
+
+            setConsumableList([]);
+
+
+            const res =
+                await consumableService.search({
+
+                    keyword: kksCode,
+
+                    status:"ACTIVE",
+
+                    page:0,
+
+                    size:50
+
+                });
+
+
+            setConsumableList(
+                res.data.content ||
+                res.data ||
+                []
+            );
+
+
+        } catch(error){
+
+            console.error(error);
+
+            toast.error(
+                "Không tìm thấy vật tư"
+            );
+
+
+        } finally {
+
+            setLoadingConsumable(false);
+
+        }
+
+    };
 
     const handleSubmit = async (
         values,
-        {setSubmitting, resetForm}
+        { setSubmitting, resetForm }
     ) => {
         try {
-            console.log(values);
+
+            const payload = {
+                lubricationCode: `LP-${Date.now()}`,
+
+                equipment: {
+                    id: Number(values.equipmentId)
+                },
+
+                cycleDays: Number(values.cycleMonths),
+
+                nextDueDate: values.nextDueDate,
+
+                status: "NOT_LUBRICATED",
+
+                consumable: {
+                    id: Number(values.consumableId)
+                },
+
+                quantity: Number(values.quantity)
+            };
+
+            const response =
+                await lubricationPlanService.create(payload);
 
             toast.success(
                 isEdit
@@ -123,33 +279,53 @@ export function LubricationPlanForm({
                     : "Thêm mới kế hoạch bảo dưỡng thành công"
             );
 
-            resetForm();
-            onSuccess?.();
-        } catch {
+            onSuccess?.(response);
+
+            setTimeout(() => {
+                navigate("/lubrication/plant");
+            }, 1000);
+
+        } catch (error) {
+
+            console.error(error);
+
             toast.error(
+                error?.response?.data?.message ||
                 "Có lỗi xảy ra khi lưu dữ liệu"
             );
+
         } finally {
+
             setSubmitting(false);
+
         }
     };
 
     const mergedInitialValues = initialData
         ? {
+
+            systemId:
+                initialData.equipment?.system?.id || "",
+
+
             equipmentId:
-                initialData.equipmentId?.toString() || "",
+                initialData.equipment?.id?.toString() || "",
+
 
             cycleMonths:
-                initialData.cycleMonths || "",
+                initialData.cycleDays || "",
+
 
             nextDueDate:
                 initialData.nextDueDate || "",
 
-            lubricantType:
-                initialData.lubricantType || "",
 
             consumableId:
-                initialData.consumableId?.toString() || "",
+                initialData.consumable?.id?.toString() || "",
+
+
+            quantity:
+                initialData.quantity || 1
 
         }
         : INITIAL_VALUES;
@@ -212,23 +388,43 @@ export function LubricationPlanForm({
                                 <Field
                                     as="select"
                                     name="systemId"
-                                    className={`form-select ${
-                                        touched.systemId &&
-                                        errors.systemId
-                                            ? "is-invalid"
-                                            : ""
-                                    }`}
+                                    className="form-select"
+
+                                    onChange={(e)=>{
+
+                                        const systemId =
+                                            e.target.value;
+
+
+                                        setFieldValue(
+                                            "systemId",
+                                            systemId
+                                        );
+
+
+                                        if(systemId){
+
+                                            loadEquipmentBySystem(
+                                                systemId,
+                                                setFieldValue
+                                            );
+
+                                        }
+
+                                    }}
                                 >
                                     <option value="">
                                         Chọn hệ thống
                                     </option>
 
-                                    {systems.map((item) => (
+                                    {systemList.map((item) => (
                                         <option
                                             key={item.id}
                                             value={item.id}
                                         >
-                                            {item.code} - {item.name}
+                                            {item.code}
+                                            {" - "}
+                                            {item.name}
                                         </option>
                                     ))}
                                 </Field>
@@ -246,17 +442,55 @@ export function LubricationPlanForm({
                                 </label>
 
                                 <Field
+
                                     as="select"
+
                                     name="equipmentId"
-                                    className={`form-select ${
-                                        touched.equipmentId &&
-                                        errors.equipmentId
-                                            ? "is-invalid"
-                                            : ""
-                                    }`}
+
+                                    className="form-select"
+
+
+                                    onChange={(e)=>{
+
+
+                                        const equipmentId =
+                                            e.target.value;
+
+
+                                        setFieldValue(
+                                            "equipmentId",
+                                            equipmentId
+                                        );
+
+
+                                        const equipment =
+                                            equipmentList.find(
+                                                x =>
+                                                    x.id === Number(equipmentId)
+                                            );
+
+
+                                        if(
+                                            equipment &&
+                                            equipment.kksCode
+                                        ){
+
+                                            loadConsumableByKks(
+                                                equipment.kksCode
+                                            );
+
+                                        }
+
+
+                                    }}
+
                                 >
                                     <option value="">
-                                        -- Chọn thiết bị --
+                                        {
+                                            loadingEquipment
+                                                ? "Đang tải thiết bị..."
+                                                : "-- Chọn thiết bị --"
+                                        }
                                     </option>
 
                                     {equipmentList.map((item) => (
@@ -264,9 +498,9 @@ export function LubricationPlanForm({
                                             key={item.id}
                                             value={item.id}
                                         >
-                                            {item.equipmentCode}
+                                            {item.kksCode}
                                             {" - "}
-                                            {item.equipmentName}
+                                            {item.name}
                                         </option>
                                     ))}
                                 </Field>
@@ -387,9 +621,24 @@ export function LubricationPlanForm({
                         </Row>
 
                         {/* DẦU MỠ */}
-                        <div className="form-section-title">
-                            <BsDropletFill/>
-                            Dầu mỡ sử dụng
+                        <div className="card shadow-sm border-0">
+
+                            <div className="card-header bg-info text-white d-flex align-items-center">
+
+                                <BsDropletFill className="me-2"/>
+
+                                <span>Danh sách dầu mỡ sử dụng</span>
+
+                                <span className="ms-auto badge bg-light text-dark">
+            {consumableList.length} vật tư
+        </span>
+
+                            </div>
+
+                            <div className="card-body p-0">
+                                {/* table */}
+                            </div>
+
                         </div>
 
                         <Row>
@@ -433,7 +682,7 @@ export function LubricationPlanForm({
                                                 Trạng thái
                                             </th>
 
-                                            <th width="140">
+                                            <th width="160">
                                                 Số lượng
                                             </th>
 
@@ -443,7 +692,7 @@ export function LubricationPlanForm({
 
                                         <tbody>
 
-                                        {consumableList.length === 0 ? (
+                                        {loadingConsumable  ? (
 
                                             <tr>
                                                 <td
@@ -468,8 +717,16 @@ export function LubricationPlanForm({
                                                         key={item.id}
                                                         className={
                                                             selected
-                                                                ? "table-info"
+                                                                ? "table-primary fw-bold"
                                                                 : ""
+                                                        }
+                                                        style={
+                                                            selected
+                                                                ? {
+                                                                    borderLeft:
+                                                                        "4px solid #0d6efd"
+                                                                }
+                                                                : {}
                                                         }
                                                     >
 
@@ -555,14 +812,15 @@ export function LubricationPlanForm({
                                                         </td>
 
                                                         <td>
-                                                            {selected && (
+                                                            {selected && values.consumableId && (
+
                                                                 <Field
                                                                     type="number"
                                                                     min="1"
                                                                     name="quantity"
                                                                     className="form-control"
-                                                                    placeholder="SL"
                                                                 />
+
                                                             )}
                                                         </td>
 
@@ -591,43 +849,36 @@ export function LubricationPlanForm({
                     </div>
 
                     {/* FOOTER */}
-                    <div className="nhansu-form-footer">
+                    <div
+                        className="nhansu-form-footer d-flex justify-content-end gap-2 border-top pt-3"
+                    >
+
+                        <Link to="/lubrication/plant">
+                            <Button
+                                variant="outline-danger"
+                                type="button"
+                            >
+                                <BsXCircle className="me-1"/>
+                                Huỷ bỏ
+                            </Button>
+                        </Link>
 
                         <Button
                             variant="outline-secondary"
                             type="button"
                             onClick={() => resetForm()}
                         >
-                            <BsArrowClockwise/>
+                            <BsArrowClockwise className="me-1"/>
                             Đặt lại
                         </Button>
-                        <Link to="/lubrication/plant">
-                            <Button variant="outline-danger">
-                                <BsXCircle/>
-                                Huỷ bỏ
-                            </Button>
-                        </Link>
-
-                        {onCancel && (
-                            <Button
-                                variant="outline-danger"
-                                type="button"
-                                onClick={onCancel}
-                            >
-                                <BsXCircle/>
-                                Huỷ bỏ
-                            </Button>
-                        )}
 
                         <Button
                             variant="primary"
                             type="submit"
                             disabled={isSubmitting}
                         >
-                            <BsSave/>
-                            {isEdit
-                                ? "Cập nhật"
-                                : "Thêm mới"}
+                            <BsSave className="me-1"/>
+                            {isEdit ? "Cập nhật" : "Lưu kế hoạch"}
                         </Button>
 
                     </div>
