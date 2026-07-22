@@ -4,10 +4,10 @@ import { Row, Col, Form, Button } from 'react-bootstrap';
 import { BsPersonPlusFill, BsFilter, BsEye, BsPencil, BsTrash, BsKey, BsLock, BsUnlock, BsArrowClockwise } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { employeeService } from '../../../services/hr/employeeService';
-import { accountService } from '../../../services/hr/accountService';
+
 import PageHeader from '../../common/PageHeader';
 import DataTable from '../../common/DataTable';
-import StatusBadge from '../../common/StatusBadge';
+
 import DetailEmployee from './DetailEmployee';
 import DeleteEmployee from './DeleteEmployee';
 import GrantAccountModal from './GrantAccountModal';

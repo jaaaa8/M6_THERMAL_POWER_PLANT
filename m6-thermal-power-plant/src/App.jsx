@@ -28,7 +28,7 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueList.jsx";
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
-import LubricationPlanForm from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import {LubricationPlanForm} from "./components/LubricationPlan/LubricationPlanForm.jsx";
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
@@ -41,7 +41,6 @@ import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 import RoleManagementPage from "./pages/RoleManagementPage.jsx";
 import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 import ToolList from './pages/ccdc/ToolList.jsx';
-import CreateWorkerAccountPage from './pages/ccdc/CreateWorkerAccountPage.jsx';
 import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
@@ -129,7 +128,6 @@ function App() {
             <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
             <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
-            <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
