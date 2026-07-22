@@ -44,7 +44,7 @@ const INITIAL_VALUES = {
     status: "NOT_LUBRICATED",
 };
 
-export default function LubricationPlanForm({
+export function LubricationPlanForm({
     onSuccess,
     onCancel,
     initialData = null,
@@ -57,10 +57,6 @@ export default function LubricationPlanForm({
     const [loadingConsumable, setLoadingConsumable] = useState(false);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        loadSystems();
-    }, []);
-
     const loadSystems = async () => {
         try {
             const res = await systemService.getAllSystems("", "ACTIVE", 0, 100);
@@ -71,6 +67,10 @@ export default function LubricationPlanForm({
         }
     };
 
+
+    useEffect(() => {
+        loadSystems();
+    }, []);
     const loadEquipmentBySystem = async (systemId, setFieldValue) => {
         try {
             setLoadingEquipment(true);

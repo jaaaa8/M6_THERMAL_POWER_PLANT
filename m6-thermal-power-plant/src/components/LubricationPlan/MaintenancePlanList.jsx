@@ -62,11 +62,6 @@ export default function MaintenancePlanList() {
         totalElements: 0,
     });
 
-    useEffect(() => {
-        loadData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pagination.page]);
-
     const loadData = async (
         keyword = search,
         searchStatus = status,
@@ -94,6 +89,11 @@ export default function MaintenancePlanList() {
         }
     };
 
+
+    useEffect(() => {
+        loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pagination.page]);
     const handleSearchClick = () => loadData(search, status, 0);
 
     const handleResetSearch = async () => {
