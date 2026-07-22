@@ -43,7 +43,7 @@ export default function DetailDepartment({ data, onClose }) {
           <div className="info-grid">
             <div className="info-item full-width">
               <span className="info-label">Mã phòng ban</span>
-              <span className="info-value">PB-{String(data.id).padStart(3, '0')}</span>
+              <span className="info-value">{data.departmentCode || data.maPhongBan || `PB-${String(data.id).padStart(3, '0')}`}</span>
             </div>
             
             <div className="info-item full-width mt-3">
@@ -55,6 +55,6 @@ export default function DetailDepartment({ data, onClose }) {
           </div>
         </div>
       </Modal.Body>
-    </Modal>
+    </Modal>  
   );
 }

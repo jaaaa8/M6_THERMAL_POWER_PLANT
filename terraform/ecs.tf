@@ -160,7 +160,16 @@ resource "aws_ecs_service" "api" {
   task_definition                    = aws_ecs_task_definition.api.arn
   desired_count                      = var.api_desired_count
   launch_type                        = "FARGATE"
-  health_check_grace_period_seconds  = 120
+  # 180s: app boot ~75s + ALB cần 2 lần health check (2×30s) mới "healthy" ≈ 135–165s.
+  # 120s cũ hơi sát → có lúc ECS giết task đang boot. 180s cho biên an toàn.
+  health_check_grace_period_seconds  = 180
+
+  # Circuit breaker: deploy hỏng (task không healthy) sẽ TỰ HUỶ + rollback về bản
+  # tốt gần nhất, thay vì treo mãi khiến "aws ecs wait services-stable" timeout.
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets          = [aws_subnet.public_1.id, aws_subnet.public_2.id]

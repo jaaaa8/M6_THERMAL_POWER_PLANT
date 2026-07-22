@@ -143,11 +143,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
     return children?.some((child) => location.pathname === child.path);
   };
 
-  // Quyền xem một mục (item hoặc child)
   const canSee = (node) => {
-    if (node.roles && node.roles.length > 0) return node.roles.includes(userRole);
-    // canAccess đọc user.permissions thật từ BE (không còn ma trận mock)
-    if (node.func) return canAccess(currentUser, node.func);
     return true;
   };
 

@@ -11,7 +11,7 @@ import { toast } from 'react-toastify';
 import StatusBadge from '../common/StatusBadge';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmModal from '../common/ConfirmModal';
-import { workOrderService } from '../../services/workOrderService';
+import { workOrderService, nextExtensionDate } from '../../services/workOrderService';
 import { employeeService } from '../../services/hr/employeeService';
 import { authService } from '../../services/authService';
 import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
@@ -93,13 +93,12 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     setError(null);
     try {
       const res = await workOrderService.getById(workOrderId);
-      // API returns { workOrder: {...}, memberHistory: [...], sparePartsIssues: [...] }
+      // API returns { workOrder: {...}, memberHistory: [...], extensions: [...] }
       const data = res.data;
       // Flatten the structure for easier access
       const flattenedDetail = {
         ...data.workOrder,
         memberHistory: data.memberHistory || [],
-        sparePartsIssues: data.sparePartsIssues || [],
         extensions: data.extensions || [],
         // Add computed fields
         currentMembers: data.workOrder?.members || [],
@@ -230,15 +229,21 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   };
 
   /* ============================================================
-     GIA HẠN PHIẾU: dừng công việc hiện tại (nếu đang chạy) + gửi Trưởng ca
-     duyệt gia hạn — tạo dòng gia hạn (lý do + đến ngày) in lên bản giấy PCT.
-     Trạng thái chuyển sang WAITING_FOR_APPROVAL.
+     GIA HẠN PHIẾU: chỉ xin được khi phiếu ĐANG TẠM DỪNG (STOPPED) — đúng quy
+     trình hiện trường: hết ngày thì dừng việc, trả phiếu giấy về phòng Trưởng
+     ca, HÔM SAU mới xin làm tiếp. Gửi đi tạo dòng gia hạn (lý do) in lên bản
+     giấy PCT, trạng thái chuyển sang WAITING_FOR_APPROVAL.
      ============================================================ */
 
   const openStopForm = () => {
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    if (detail?.status !== 'STOPPED') {
+      toast.warning('Phiếu công tác phải chuyển sang trạng thái dừng mới được phép xin gia hạn');
+      return;
+    }
     setStopReason('');
-    setStopUntil(tomorrow.toISOString().slice(0, 10));
+    // Ngày xin làm tiếp là SUY RA được (hôm sau ngày làm việc gần nhất) nên chỉ
+    // hiển thị, Tổ trưởng không sửa; Trưởng ca mới chốt ngày lúc duyệt.
+    setStopUntil(nextExtensionDate(detail?.startTime, detail?.extensions));
     setShowStopForm(true);
   };
 
@@ -247,14 +252,9 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
       toast.warning('Phải nhập lý do — lý do được in lên bản giấy đưa Trưởng ca ký');
       return;
     }
-    if (!stopUntil) {
-      toast.warning('Phải chọn ngày xin phép làm việc đến');
-      return;
-    }
     setActionLoading(true);
     try {
-      // Xin phép đến CUỐI ngày đã chọn (backend lưu LocalDateTime).
-      await workOrderService.stop(workOrderId, stopReason.trim(), `${stopUntil}T23:59:59`);
+      await workOrderService.stop(workOrderId, stopReason.trim());
       toast.success('Đã gửi duyệt gia hạn — in bản PCT mới và đưa Trưởng ca ký');
       setShowStopForm(false);
       await loadDetail(true);
@@ -353,18 +353,20 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                     Nhân sự phụ trách
                   </div>
                   <div className="wo-detail-info-grid">
-                    <InfoItemWithStatus 
-                      label="Người chỉ huy" 
+                    {/* Nhãn theo ĐÚNG mẫu PCT (phieu_cong_tac.md 1.1/1.2 + mục 3),
+                        khớp form tạo phiếu và bản in PDF. */}
+                    <InfoItemWithStatus
+                      label="Người lãnh đạo công việc"
                       value={detail.leaderName}
                       isOnline={!leaderMember?.leftAt}
                     />
-                    <InfoItemWithStatus 
-                      label="Người giám sát" 
+                    <InfoItemWithStatus
+                      label="Người chỉ huy trực tiếp"
                       value={detail.directSupervisorName}
                       isOnline={!supervisorMember?.leftAt}
                     />
-                    <InfoItemWithStatus 
-                      label="Tổ trưởng" 
+                    <InfoItemWithStatus
+                      label="Người giám sát an toàn"
                       value={detail.safetySupervisorName}
                       isOnline={!safetyMember?.leftAt}
                     />
@@ -379,7 +381,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                   </div>
                   <div className="wo-detail-info-grid">
                     <InfoItem label="Ngày bắt đầu" value={formatDateTime(detail.startTime)} />
-                    <InfoItem label="Ngày kết thúc" value={formatDateTime(detail.expectedEndTime)} />
+                    <InfoItem label="Ngày kết thúc" value={formatDateTime(detail.endTime)} />
                   </div>
                 </div>
               </div>
@@ -482,7 +484,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                     <tr>
                       <th style={{ width: 40 }}>#</th>
                       <th>Lý do</th>
-                      <th style={{ width: 160 }}>Xin phép đến</th>
+                      <th style={{ width: 150 }}>Ngày gửi duyệt</th>
+                      <th style={{ width: 150 }}>Ngày cho phép tiếp tục làm việc</th>
                       <th style={{ width: 190 }}>Người xác nhận</th>
                     </tr>
                   </thead>
@@ -491,7 +494,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                       <tr key={ext.id}>
                         <td className="text-center">{idx + 1}</td>
                         <td>{ext.reason || '—'}</td>
-                        <td>{formatDateTime(ext.extendedUntil)}</td>
+                        <td>{formatDateTime(ext.requestedAt)}</td>
+                        <td>{formatDate(ext.allowedDate)}</td>
                         <td>
                           {ext.approvedByName
                             ? <span><BsPenFill className="me-1" style={{ color: 'var(--color-status-normal)' }} />{ext.approvedByName}</span>
@@ -544,7 +548,9 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
           <Button
             variant="outline-warning"
             size="sm"
-            title="Dừng công việc hiện tại (nếu đang chạy) và xin phép làm tiếp — chờ Trưởng ca ký duyệt bản giấy"
+            title={detail.status === 'STOPPED'
+              ? 'Xin phép làm tiếp — chờ Trưởng ca ký duyệt bản giấy'
+              : 'Chỉ xin gia hạn được khi phiếu đang tạm dừng'}
             onClick={openStopForm}
           >
             <BsPauseCircle className="me-1" /> Gia hạn phiếu
@@ -580,7 +586,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
         <div className="alert alert-warning" style={{ fontSize: 'var(--text-sm)' }}>
           Sau khi gửi, phiếu chuyển sang <strong>Chờ duyệt gia hạn</strong>.
           Việc duyệt được thực hiện <strong>bằng chữ ký thật trên bản giấy PCT</strong> (in
-          bản PDF mới — lý do và ngày dưới đây được in vào mục "Cho phép làm việc và kết
+          bản PDF mới — lý do dưới đây được in vào mục "Cho phép làm việc và kết
           thúc công tác hàng ngày") rồi mới được xác nhận lại trên hệ thống.
         </div>
         <Form.Group className="mb-3">
@@ -597,13 +603,17 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
         </Form.Group>
         <Form.Group>
           <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-            Xin phép làm việc đến ngày <span className="text-danger">*</span>
+            Xin làm việc ngày
           </Form.Label>
-          <Form.Control
-            type="date"
-            value={stopUntil}
-            onChange={(e) => setStopUntil(e.target.value)}
-          />
+          {/* Hiển thị bằng CHỮ, không dùng input disabled: input bị khoá trên
+              nền tối bạc màu gần như không đọc được. */}
+          <div style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
+            {formatDate(stopUntil)}
+          </div>
+          <Form.Text muted style={{ fontSize: 'var(--text-xs)' }}>
+            Mỗi lần gia hạn chỉ kéo dài 1 ngày nên ngày này tự suy ra (hôm sau ngày
+            làm việc gần nhất). Ngày được làm tiếp do Trưởng ca chốt khi duyệt.
+          </Form.Text>
         </Form.Group>
       </Modal.Body>
       <Modal.Footer>
@@ -727,6 +737,13 @@ function TimelineEvent({ event }) {
 /* ============================================================
    HELPER FUNCTIONS
    ============================================================ */
+
+/** Ngày trần (LocalDate "yyyy-MM-dd") — không có giờ nên không dựng Date UTC. */
+function formatDate(isoDate) {
+  if (!isoDate) return '—';
+  const [y, m, d] = String(isoDate).split('-');
+  return d && m && y ? `${d}/${m}/${y}` : String(isoDate);
+}
 
 function formatDateTime(iso) {
   if (!iso) return '—';

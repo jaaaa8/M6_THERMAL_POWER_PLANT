@@ -5,6 +5,7 @@ import * as Yup from 'yup';
 import { BsTags, BsInfoCircle, BsImage } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import * as unitService from '../../services/unitService'
+import * as consumableService from '../../services/consumableService'
 
 const validationSchema = Yup.object().shape({
     code: Yup.string().nullable(),
@@ -30,6 +31,7 @@ const validationSchema = Yup.object().shape({
 export default function ConsumableFormModal({ show, onHide, editingItem, onSubmit }) {
 
     const [units, setUnits] = useState([]);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     useEffect(() => {
         if (show) {
@@ -211,12 +213,18 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
 
                                     {(values.imgPath ? values.imgPath.split('|').filter(Boolean) : []).length < 3 && (
                                         <div
-                                            className="border rounded d-flex flex-column align-items-center justify-content-center bg-light cursor-pointer"
-                                            style={{ width: '100px', height: '100px', borderStyle: 'dashed', borderColor: errors.imgPath && touched.imgPath ? 'var(--color-danger-500)' : '#dee2e6' }}
-                                            onClick={() => document.getElementById('consumable-image-upload').click()}
+                                            className="border rounded d-flex flex-column align-items-center justify-content-center bg-light"
+                                            style={{
+                                                width: '100px', height: '100px', borderStyle: 'dashed',
+                                                borderColor: errors.imgPath && touched.imgPath ? 'var(--color-danger-500)' : '#dee2e6',
+                                                cursor: uploadingImage ? 'wait' : 'pointer', opacity: uploadingImage ? 0.6 : 1,
+                                            }}
+                                            onClick={() => !uploadingImage && document.getElementById('consumable-image-upload').click()}
                                         >
                                             <BsImage style={{ fontSize: '1.2rem', color: '#6c757d' }} />
-                                            <span style={{ fontSize: '10px', color: '#6c757d', marginTop: '4px' }}>Thêm ảnh</span>
+                                            <span style={{ fontSize: '10px', color: '#6c757d', marginTop: '4px' }}>
+                                                {uploadingImage ? 'Đang tải...' : 'Thêm ảnh'}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -225,22 +233,26 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                     type="file"
                                     accept="image/*"
                                     className="d-none"
-                                    onChange={(event) => {
+                                    disabled={uploadingImage}
+                                    onChange={async (event) => {
                                         const file = event.currentTarget.files[0];
-                                        if (file) {
-                                            if (file.size > 2 * 1024 * 1024) {
-                                                toast.error("Kích thước ảnh không vượt quá 2MB");
-                                                return;
-                                            }
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
-                                                const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
-                                                const updatedList = [...currentImgs, reader.result];
-                                                setFieldValue('imgPath', updatedList.join('|'));
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
                                         event.target.value = '';
+                                        if (!file) return;
+                                        if (file.size > 2 * 1024 * 1024) {
+                                            toast.error("Kích thước ảnh không vượt quá 2MB");
+                                            return;
+                                        }
+                                        setUploadingImage(true);
+                                        try {
+                                            const res = await consumableService.uploadImage(file);
+                                            const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
+                                            const updatedList = [...currentImgs, res.data.url];
+                                            setFieldValue('imgPath', updatedList.join('|'));
+                                        } catch (error) {
+                                            toast.error(error.response?.data?.message || 'Không thể upload ảnh lên Cloudinary');
+                                        } finally {
+                                            setUploadingImage(false);
+                                        }
                                     }}
                                 />
                                 {errors.imgPath && touched.imgPath && (

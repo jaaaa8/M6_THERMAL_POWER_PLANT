@@ -14,7 +14,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import RepairRequest from './components/repair_request/RepairRequest.jsx';
+import RepairRequestPage from './pages/RepairRequestPage.jsx';
 import WorkOrderList from './components/work_order/WorkOrderList.jsx';
 import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
@@ -52,6 +52,7 @@ import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
 import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
 import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
+import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
 
 function App() {
   return (
@@ -108,7 +109,7 @@ function App() {
             <Route path="/equipment/parameter" element={<ManageMaster />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/repair/yeu-cau" element={<RepairRequest />} />
+            <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
@@ -131,7 +132,7 @@ function App() {
             <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/lubrication/plant" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
+            <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
             <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
             <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
             <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />

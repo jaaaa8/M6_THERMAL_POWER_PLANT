@@ -13,6 +13,8 @@ import StatusBadge from '../../components/common/StatusBadge';
 import ToolRejectModal from '../../components/ccdc/ToolRejectModal';
 import ToolReturnModal from '../../components/ccdc/ToolReturnModal';
 import { toolBorrowLogService } from '../../services/toolService';
+import { authService } from '../../services/authService';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import './ToolLoanManagementPage.css';
 
 
@@ -66,6 +68,14 @@ export default function ToolLoanManagementPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  /* --- Real-time: có yêu cầu mượn mới thì tự tải lại bảng (không cần bấm Làm mới) --- */
+  const currentAccountId = authService.getCurrentUser()?.accountId;
+  useWebSocket(currentAccountId, (notif) => {
+    if (notif?.link === '/ccdc/muon-tra') {
+      loadData();
+    }
+  });
 
   /* --- Lọc theo trạng thái --- */
   const filtered = useMemo(() => {

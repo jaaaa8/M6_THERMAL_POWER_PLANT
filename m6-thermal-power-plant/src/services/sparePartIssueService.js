@@ -3,8 +3,15 @@ import apiClient from "./apiClient";
 const BASE_URL = "/api/v1/spare-parts-issue";
 
 const sparePartIssueService = {
-    getAll: async () => {
-        const response = await apiClient.get(BASE_URL);
+    search: async (params) => {
+
+        const response = await apiClient.get(
+            "/api/v1/spare-parts-issue/search",
+            {
+                params
+            }
+        );
+
         return response.data;
     },
 

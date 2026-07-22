@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import {
-  BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
+  BsClipboardCheck, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsPlayCircle,
-  BsEye, BsBoxSeam, BsPrinter, BsPencilSquare, BsArrowRepeat,
+  BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -17,7 +17,6 @@ import WorkOrderStatusModal from './WorkOrderStatusModal';
 import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
-import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
 
@@ -62,14 +61,16 @@ const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [codeSearch, setCodeSearch] = useState('');   // mã PCT / mã NV tổ trưởng / id
+  const [descSearch, setDescSearch] = useState('');   // mô tả sửa chữa
+  const [fromDate, setFromDate] = useState('');       // startTime từ ngày (yyyy-MM-dd)
+  const [toDate, setToDate] = useState('');           // startTime đến hết ngày
   const [filter, setFilter] = useState('ALL');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
   const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
-  const [printingIssueId, setPrintingIssueId] = useState(null);
   const [editTarget, setEditTarget] = useState(null);     // dòng đang sửa thông tin
   const [statusTarget, setStatusTarget] = useState(null); // dòng đang đổi trạng thái
   const pageSize = 20;
@@ -82,7 +83,12 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const fetchWorkOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await workOrderService.getAll(search || undefined, page, pageSize);
+      const res = await workOrderService.getAll({
+        code: codeSearch || undefined,
+        description: descSearch || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      }, page, pageSize);
       const paged = res.data;
       const content = Array.isArray(paged.content) ? paged.content : [];
       setWorkOrders(content);
@@ -94,7 +100,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [codeSearch, descSearch, fromDate, toDate, page]);
 
   useEffect(() => {
     fetchWorkOrders();
@@ -142,7 +148,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         <div>
           <div>{val ? new Date(val).toLocaleString('vi-VN') : '—'}</div>
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-            Dự kiến kết thúc: {row.expectedEndTime ? new Date(row.expectedEndTime).toLocaleString('vi-VN') : '—'}
+            Kết thúc: {row.endTime ? new Date(row.endTime).toLocaleString('vi-VN') : '—'}
           </span>
         </div>
       ),
@@ -155,24 +161,6 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
       },
     },
   ];
-
-  /* --- In phiếu đề nghị cấp phát vật tư (PDF, mở tab mới) --- */
-  const handlePrintSuppliesIssue = async (row) => {
-    // Phiếu đã kết thúc → mở thẳng bản lưu đóng băng, khỏi render lại.
-    if (isTerminalStatus(row.status) && row.suppliesPdfPath) {
-      window.open(row.suppliesPdfPath, '_blank');
-      return;
-    }
-    setPrintingIssueId(row.id);
-    try {
-      const res = await workOrderService.exportSuppliesIssuePdf(row.id);
-      openPdfBlob(res.data);
-    } catch (err) {
-      toast.error(`Không thể in phiếu cấp vật tư: ${await blobErrorMessage(err)}`, { autoClose: 8000 });
-    } finally {
-      setPrintingIssueId(null);
-    }
-  };
 
   /* --- Hành động dòng --- */
   function renderActions(row) {
@@ -218,15 +206,6 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         >
           <BsBoxSeam className="me-1" /> Cấp vật tư
         </Button>
-        <Button
-          variant="outline-secondary"
-          size="sm"
-          title="In phiếu đề nghị cấp phát vật tư (PDF)"
-          disabled={printingIssueId === row.id}
-          onClick={() => handlePrintSuppliesIssue(row)}
-        >
-          <BsPrinter className="me-1" /> {printingIssueId === row.id ? 'Đang in...' : 'In VT'}
-        </Button>
       </div>
     );
   }
@@ -259,13 +238,41 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
       {/* ===== SEARCH + FILTERS ===== */}
       <div className="wo-toolbar">
-        <SearchBox
-          value={search}
-          onChange={setSearch}
-          placeholder="Tìm theo mã PCT, mã yêu cầu hoặc nội dung..."
-          onSearch={() => { setPage(0); fetchWorkOrders(); }}
-          icon={<BsSearch />}
-        />
+        {/* SearchBox không có prop onChange/icon — gõ phím gọi onSearch(value);
+            cập nhật state ở đây thì effect [filters, page] tự refetch.
+            4 bộ lọc độc lập kết hợp AND, đổi bộ lọc nào cũng quay về trang 1. */}
+        <div className="wo-toolbar-search">
+          <SearchBox
+            value={codeSearch}
+            placeholder="Tìm theo ID, mã PCT hoặc mã NV tổ trưởng..."
+            onSearch={(val) => { setCodeSearch(val); setPage(0); }}
+          />
+        </div>
+        <div className="wo-toolbar-search">
+          <SearchBox
+            value={descSearch}
+            placeholder="Tìm theo mô tả sửa chữa..."
+            onSearch={(val) => { setDescSearch(val); setPage(0); }}
+          />
+        </div>
+        <label className="wo-toolbar-date">
+          Bắt đầu từ
+          <input
+            type="date"
+            className="form-control form-control-sm"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setPage(0); }}
+          />
+        </label>
+        <label className="wo-toolbar-date">
+          Đến hết ngày
+          <input
+            type="date"
+            className="form-control form-control-sm"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setPage(0); }}
+          />
+        </label>
       </div>
 
       <div className="wo-filter-pills">
@@ -293,11 +300,11 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         <EmptyState
           icon={<BsClipboardCheck />}
           title="Không có phiếu công tác nào"
-          description={search ? 'Thử từ khoá khác hoặc xoá bộ lọc.' : 'Chưa có PCT nào được tạo.'}
+          description={(codeSearch || descSearch || fromDate || toDate) ? 'Thử từ khoá khác hoặc xoá bộ lọc.' : 'Chưa có PCT nào được tạo.'}
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={550} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">
