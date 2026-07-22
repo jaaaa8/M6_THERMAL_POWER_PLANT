@@ -47,9 +47,27 @@
   font-weight: var(--font-medium);
 }
 
-/* --- Toolbar --- */
+/* --- Toolbar: 2 ô tìm kiếm + 2 ô ngày trên một hàng, xuống dòng khi hẹp --- */
 .wo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
+}
+
+.wo-toolbar-search {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+.wo-toolbar-date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-medium);
 }
 
 /* --- Filter pills --- */

@@ -11,11 +11,12 @@ const routeLabels = {
   employees: 'Nhân viên',
   new: 'Thêm mới',
   accounts: 'Tài khoản & Quyền',
-  equipment: 'Thiết bị',
+  equipment: 'Hệ thống & Thiết bị ',
   equipments: 'Danh sách thiết bị',
   units: 'Đơn vị đo lường',
   systems: 'Hệ thống',
   system: 'Hệ thống',
+  parameter: 'Quản lý thông số',
   repair: 'Sửa chữa',
   requests: 'Yêu cầu Sửa chữa',
   'yeu-cau': 'Yêu cầu Sửa chữa',
@@ -29,6 +30,7 @@ const routeLabels = {
   maintenance: 'Bảo dưỡng',
   plans: 'Kế hoạch',
   history: 'Lịch sử',
+  edit: 'Cập nhật thiết bị'
 };
 
 export default function AppBreadcrumb() {
@@ -57,7 +59,10 @@ export default function AppBreadcrumb() {
               {isLast ? (
                 <span className="breadcrumb-current">{label}</span>
               ) : (
-                <Link to={routeTo} className="breadcrumb-link">
+                <Link
+                  to={segment === 'equipment' ? '/equipment/system' : routeTo}
+                  className="breadcrumb-link"
+                >
                   {label}
                 </Link>
               )}

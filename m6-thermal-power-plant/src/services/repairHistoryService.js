@@ -16,3 +16,5 @@ export const getRepairHistoryById = async (id) => {
     const response = await apiClient.get(`${API_URL}/${id}`);
     return response.data;
 };
+export const getByEquipment = (equipmentId) =>
+    apiClient.get(`${API_URL}/equipment/${equipmentId}`);

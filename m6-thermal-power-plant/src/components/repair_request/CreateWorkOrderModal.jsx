@@ -45,7 +45,6 @@ const validationSchema = Yup.object({
     .required('Vui lòng chọn người giám sát an toàn'),
   startTime: Yup.string()
     .required('Vui lòng nhập thời gian bắt đầu'),
-  expectedEndTime: Yup.string().nullable(),
 });
 
 /**
@@ -89,7 +88,8 @@ export default function ModalCreateWorkOrder({
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
   // Danh sách nhân viên KÈM ROLE tài khoản (để lọc Người giám sát an toàn) +
-  // danh sách id đang bận ở phiếu công tác sống khác — tải khi mở modal.
+  // danh sách id đang ở phiếu IN_PROGRESS (chỉ dùng để loại khỏi ô GSAT —
+  // GSAT không được trùng người đang giám sát phiếu đang thực hiện).
   // Prop `employees` (không có role) chỉ là fallback trong lúc chờ tải.
   const [accountEmployees, setAccountEmployees] = useState(null); // null = chưa tải
   const [busyIds, setBusyIds] = useState([]);
@@ -101,7 +101,7 @@ export default function ModalCreateWorkOrder({
       try {
         const [empRes, busyRes] = await Promise.all([
           employeeService.getAllWithAccounts(),
-          workOrderService.getBusyEmployees(),
+          workOrderService.getBusyEmployees(undefined, ['IN_PROGRESS']),
         ]);
         if (cancelled) return;
         const empArr = empRes.data?.data || empRes.data || [];
@@ -119,13 +119,13 @@ export default function ModalCreateWorkOrder({
   // Đã có dữ liệu role chưa? (fallback prop không có role → không lọc GSAT được)
   const roleInfoLoaded = accountEmployees !== null;
 
-  // Chuẩn bị danh sách employee để hiển thị trong select — LOẠI người đang bận
-  // ở phiếu công tác sống khác và người đã nghỉ (isActive = false).
+  // Chuẩn bị danh sách employee để hiển thị trong select — chỉ LOẠI người đã
+  // nghỉ (isActive = false). Người đang bận ở phiếu khác VẪN hiện (permissive);
+  // riêng ô Người giám sát an toàn loại busyIds trong optionsFor.
   const employeeList = useMemo(() => {
     const source = accountEmployees ?? (Array.isArray(employees) ? employees : []);
-    const busy = new Set(busyIds);
     return source
-      .filter((emp) => emp.isActive !== false && !busy.has(emp.id))
+      .filter((emp) => emp.isActive !== false)
       .map((emp) => ({
         id: emp.id,
         label: `${emp.fullName || emp.name || 'Unknown'} · ${emp.positionName || emp.position?.name || emp.chucVu || ''}`,
@@ -133,7 +133,7 @@ export default function ModalCreateWorkOrder({
         position: emp.positionName || emp.position?.name || emp.chucVu || '',
         roles: (emp.roles || []).map((r) => r?.name || r),
       }));
-  }, [accountEmployees, employees, busyIds]);
+  }, [accountEmployees, employees]);
 
   // Lấy danh sách member hiện tại để filter option
   function getAvailableEmployees(excludeIds) {
@@ -152,7 +152,6 @@ export default function ModalCreateWorkOrder({
     directSupervisorId: '',
     safetySupervisorId: '',
     startTime: '',
-    expectedEndTime: '',
     members: [], // [{ employeeId, roleInTask }]
   };
 
@@ -170,7 +169,6 @@ export default function ModalCreateWorkOrder({
               directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
               safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
               startTime: values.startTime || null,
-              expectedEndTime: values.expectedEndTime || null,
               members: values.members.map((m) => ({
                 employeeId: m.employeeId,
                 roleInTask: m.roleInTask || undefined,
@@ -225,24 +223,29 @@ export default function ModalCreateWorkOrder({
             setFieldValue('members', values.members.filter((m) => m.employeeId !== employeeId));
           };
 
-          // Loại chéo giữa các ô: một người không xuất hiện ở 2 vai trò /
-          // vừa giữ vai trò vừa là thành viên trong CÙNG phiếu này.
           const roleFieldIds = {
             leaderId: values.leaderId ? Number(values.leaderId) : null,
             directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
             safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
           };
           const memberIds = values.members.map((m) => m.employeeId);
+          const busy = new Set(busyIds);
 
-          // Ô Người giám sát an toàn CHỈ hiện người có role SAFETY_SUPERVISOR
-          // (khi đã tải được role — fallback prop không có role thì bỏ lọc).
+          // Quy tắc lọc từng ô (user-specified):
+          // - Người LĐ / Chỉ huy trực tiếp ĐƯỢC là CÙNG một người trong 1 phiếu
+          //   (không loại chéo lẫn nhau), chỉ không trùng GSAT/thành viên đã chọn.
+          // - GSAT KHÔNG được trùng: loại người đang ở phiếu IN_PROGRESS (busyIds),
+          //   người đã chọn ở ô khác/thành viên, và CHỈ hiện người có role
+          //   SAFETY_SUPERVISOR (khi đã tải được role — fallback prop thì bỏ lọc).
           const optionsFor = (field) => employeeList.filter((e) => {
             if (memberIds.includes(e.id)) return false;
-            const pickedElsewhere = Object.entries(roleFieldIds)
-              .some(([f, id]) => f !== field && id === e.id);
-            if (pickedElsewhere) return false;
-            if (field === 'safetySupervisorId' && roleInfoLoaded
-                && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
+            if (field === 'safetySupervisorId') {
+              if (busy.has(e.id)) return false;
+              if (roleFieldIds.leaderId === e.id || roleFieldIds.directSupervisorId === e.id) return false;
+              if (roleInfoLoaded && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
+            } else if (roleFieldIds.safetySupervisorId === e.id) {
+              return false;
+            }
             return true;
           });
 
@@ -334,15 +337,11 @@ export default function ModalCreateWorkOrder({
                     <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
                   </Col>
                   <Col md={6}>
-                    <label htmlFor="pct-expectedEndTime" className="form-label">
-                      Dự kiến kết thúc
-                    </label>
-                    <Field
-                      id="pct-expectedEndTime"
-                      name="expectedEndTime"
-                      type="datetime-local"
-                      className="form-control"
-                    />
+                    {/* Không nhập mốc kết thúc: giờ kết thúc là mốc THỰC TẾ, hệ
+                        thống tự ghi khi phiếu chuyển Hoàn thành. */}
+                    <div className="form-text mt-4">
+                      Giờ kết thúc được hệ thống ghi nhận khi phiếu hoàn thành.
+                    </div>
                   </Col>
                 </Row>
 

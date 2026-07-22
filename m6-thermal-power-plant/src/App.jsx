@@ -36,10 +36,11 @@ import ListEquipment from './components/equipment/ListEquipment';
 import AddEquipment from './components/equipment/AddEquipment';
 import UpdateEquipment from './components/equipment/UpdateEquipment';
 import DetailEquipment from './components/equipment/DetailEquipment';
-import ManageUnits from './components/equipment/ManageUnits';
+import ManageMaster from "./components/equipment/ManageMaster";
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
+import RoleManagementPage from "./pages/RoleManagementPage.jsx";
+import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 import ToolList from './pages/ccdc/ToolList.jsx';
-import CreateWorkerAccountPage from './pages/ccdc/CreateWorkerAccountPage.jsx';
 import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory.jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
@@ -51,10 +52,6 @@ import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
 import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
 import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
-// BÀN THỬ Phase 0 — concept UI, xoá cùng src/concept-a|b|c/ khi chốt xong.
-import ConceptA from './concept-a/ConceptA.jsx';
-import ConceptB from './concept-b/ConceptB.jsx';
-import ConceptC from './concept-c/ConceptC.jsx';
 
 function App() {
   return (
@@ -95,11 +92,11 @@ function App() {
               <Route path="/equipment/system/add" element={<AddSystem />} />
               <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
               <Route path="/equipment/equipments" element={<ListEquipment />} />
-              <Route path="/equipment/equipments/add" element={<AddEquipment />} />
+              <Route path="/equipment/equipments/:systemId/add" element={<AddEquipment />} />
               <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
-              <Route path="/equipment/equipments/:systemId" element={<ListEquipment />} />
-              <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
-              <Route path="/equipment/equipments/units" element={<ManageUnits />} />
+              <Route path="/equipment/equipments/system/:systemId" element={<ListEquipment />} />
+              <Route path="/equipment/equipments/:id" element={<DetailEquipment />} />
+              <Route path="/equipment/parameter" element={<ManageMaster />} />
             </Route>
 
             {/* --- Sửa chữa: Yêu cầu Sửa chữa (cả 4 role sửa chữa) --- */}
@@ -137,11 +134,9 @@ function App() {
               <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
               <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
             </Route>
-            {/* Tạo tài khoản công nhân — CCDC lẫn Nhân sự đều được tạo */}
-            <Route
-              path="/ccdc/tao-nhan-su"
-              element={<ProtectedRoute allowedRoles={['TOOLS_STOREKEEPER', 'HR_STAFF']}><CreateWorkerAccountPage /></ProtectedRoute>}
-            />
+            {/* --- Admin --- */}
+            <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['ADMIN']}><RoleManagementPage /></ProtectedRoute>} />
+            <Route path="/admin/accounts/create" element={<ProtectedRoute allowedRoles={['ADMIN']}><CreateAccountPage /></ProtectedRoute>} />
 
             {/* --- Bảo dưỡng (TEAM_LEADER) --- */}
             <Route element={<ProtectedRoute allowedRoles={['TEAM_LEADER']}><Outlet /></ProtectedRoute>}>
@@ -162,13 +157,6 @@ function App() {
             <Route path="/employee/muon-ccdc" element={<EmployeeBorrowForm />} />
             <Route path="/employee/lich-su" element={<EmployeeBorrowHistory />} />
           </Route>
-
-          {/* ======= BÀN THỬ concept UI (Phase 0) — không bọc ProtectedRoute
-                     để trình chủ dự án xem không cần đăng nhập.
-                     Xoá route này + src/concept-a|b|c/ khi chốt xong concept. ======= */}
-          <Route path="/concept-a" element={<ConceptA />} />
-          <Route path="/concept-b" element={<ConceptB />} />
-          <Route path="/concept-c" element={<ConceptC />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />

@@ -215,6 +215,8 @@ export default function SparePartsIssueList() {
         setSelectedIssue(row.rawData);
         setShowDetailModal(true);
     };
+
+
     const renderStatus = (status) => {
         switch (status) {
             case "COMPLETED":

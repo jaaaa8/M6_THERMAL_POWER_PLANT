@@ -45,7 +45,7 @@ const menuSections = [
         icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['WORKSHOP_FOREMAN'],
         children: [
           { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
-          { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
+          { path: '/equipment/parameter', icon: <BsCpu />, label: 'Thông số' },
         ],
       },
     ],

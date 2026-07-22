@@ -5,7 +5,8 @@ import * as Yup from 'yup';
 import { BsTags, BsInfoCircle, BsImage } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import * as unitService from '../../services/unitService'
-import * as consumableService from '../../services/consumableService'
+import { uploadImage } from '../../services/fileUploadService';
+
 
 const validationSchema = Yup.object().shape({
     code: Yup.string().nullable(),
@@ -90,13 +91,6 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                         </Modal.Header>
 
                         <Modal.Body>
-                            <div className="alert alert-info py-2 px-3 d-flex align-items-center mb-3" style={{ fontSize: 'var(--text-xs)' }}>
-                                <BsInfoCircle className="me-2 flex-shrink-0" style={{ fontSize: '1rem' }} />
-                                <div>
-                                    Đơn vị tính liên kết trực tiếp với bảng <code>units</code> của DB. Do backend chưa thiết kế API đơn vị, vui lòng chọn một trong các đơn vị mẫu đã cài sẵn.
-                                </div>
-                            </div>
-
                             <Row className="mb-3">
                                 <Col md={6}>
                                     <label className="form-label">
@@ -106,7 +100,7 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                         name="code"
                                         type="text"
                                         className={`form-control font-mono ${touched.code && errors.code ? 'is-invalid' : ''}`}
-                                        placeholder="Mã tự động sinh"
+                                        placeholder="Mã tự động"
                                         disabled={true}
                                     />
                                     <ErrorMessage name="code" component="div" className="invalid-feedback" />
@@ -236,23 +230,28 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                     disabled={uploadingImage}
                                     onChange={async (event) => {
                                         const file = event.currentTarget.files[0];
+                                        if (file) {
+                                            if (file.size > 2 * 1024 * 1024) {
+                                                toast.error("Kích thước ảnh không vượt quá 2MB");
+                                                return;
+                                            }
+                                            try {
+                                                setUploadingImage(true);
+                                                const uploadToast = toast.info("Đang tải ảnh lên...", { autoClose: false });
+                                                const result = await uploadImage(file);
+                                                toast.dismiss(uploadToast);
+                                                const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
+                                                const updatedList = [...currentImgs, result.secureUrl];
+                                                setFieldValue('imgPath', updatedList.join('|'));
+                                                toast.success("Tải ảnh lên thành công!");
+                                            } catch (error) {
+                                                console.error("Lỗi upload ảnh:", error);
+                                                toast.error("Không thể tải ảnh lên Cloudinary");
+                                            } finally {
+                                                setUploadingImage(false);
+                                            }
+                                        }
                                         event.target.value = '';
-                                        if (!file) return;
-                                        if (file.size > 2 * 1024 * 1024) {
-                                            toast.error("Kích thước ảnh không vượt quá 2MB");
-                                            return;
-                                        }
-                                        setUploadingImage(true);
-                                        try {
-                                            const res = await consumableService.uploadImage(file);
-                                            const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
-                                            const updatedList = [...currentImgs, res.data.url];
-                                            setFieldValue('imgPath', updatedList.join('|'));
-                                        } catch (error) {
-                                            toast.error(error.response?.data?.message || 'Không thể upload ảnh lên Cloudinary');
-                                        } finally {
-                                            setUploadingImage(false);
-                                        }
                                     }}
                                 />
                                 {errors.imgPath && touched.imgPath && (

@@ -19,9 +19,22 @@ const loginSchema = Yup.object({
     .min(6, 'Mật khẩu tối thiểu 6 ký tự'),
 });
 
-// Sau đăng nhập: mọi role về Dashboard "/" (hiện là dữ liệu mẫu — chấp nhận,
-// phân nhánh theo role sau). Riêng WORKER về cổng nhân viên /employee.
-// (Map ROLE_REDIRECT cũ trỏ nhiều route KHÔNG tồn tại → rơi vào 404.)
+/**
+ * Chuyển hướng dựa theo Role backend — màn hình chủ của từng vai trò.
+ * Áp dụng cho role đầu tiên trong mảng `roles[]` trả về từ BE.
+ */
+const ROLE_REDIRECT = {
+  ADMIN: '/',
+  WORKER: '/employee',
+  MATERIALS_STOREKEEPER: '/material/catalog',
+  TOOLS_STOREKEEPER: '/ccdc/muon-tra',
+  WORKSHOP_FOREMAN: '/equipment/system',
+  SHIFT_LEADER: '/repair/yeu-cau',
+  CREW_LEADER: '/repair/yeu-cau',
+  MAINTENANCE_FOREMAN: '/repair/phieu-cong-tac',
+  TEAM_LEADER: '/repair/phieu-cong-tac',
+  SAFETY_SUPERVISOR: '/repair/phieu-cong-tac',
+};
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -36,7 +49,7 @@ export default function LoginPage() {
 
       // Chuyển hướng theo role backend (lấy role đầu tiên).
       const primaryRole = user.roles?.[0];
-      const redirectPath = primaryRole === 'WORKER' ? '/employee' : '/';
+      const redirectPath = ROLE_REDIRECT[primaryRole] || '/';
       navigate(redirectPath, { replace: true });
     } catch (err) {
       const apiMessage = err.response?.data?.message;

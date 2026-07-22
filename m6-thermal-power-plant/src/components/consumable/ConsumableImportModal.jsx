@@ -71,7 +71,7 @@ export default function ConsumableImportModal({ show, onHide, consumableItem, on
                                     name="receiptCode"
                                     type="text"
                                     className={`form-control font-mono ${touched.receiptCode && errors.receiptCode ? 'is-invalid' : ''}`}
-                                    placeholder="Mã tự động sinh"
+                                    placeholder="Mã tự động"
                                     disabled={true}
                                 />
                                 <ErrorMessage name="receiptCode" component="div" className="invalid-feedback" />

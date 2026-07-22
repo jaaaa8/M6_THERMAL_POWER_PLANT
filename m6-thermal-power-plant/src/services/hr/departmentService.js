@@ -7,10 +7,12 @@ export const departmentService = {
   getAll: () => apiClient.get(API_URL),
   getById: (id) => apiClient.get(`${API_URL}/${id}`),
   create: (data) => apiClient.post(API_URL, {
+    departmentCode: data.maPhongBan,
     name: data.tenPhongBan,
     description: data.moTa
   }),
   update: (id, data) => apiClient.put(`${API_URL}/${id}`, {
+    departmentCode: data.maPhongBan,
     name: data.tenPhongBan,
     description: data.moTa
   }),

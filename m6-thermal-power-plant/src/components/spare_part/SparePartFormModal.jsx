@@ -5,6 +5,8 @@ import * as Yup from 'yup';
 import { BsTags, BsInfoCircle, BsImage } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import * as unitService from '../../services/unitService.js'
+import { uploadImage } from '../../services/fileUploadService';
+
 
 const validationSchema = Yup.object().shape({
     code: Yup.string().nullable(),
@@ -103,7 +105,7 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
                                         name="code"
                                         type="text"
                                         className={`form-control font-mono ${touched.code && errors.code ? 'is-invalid' : ''}`}
-                                        placeholder="Mã tự động sinh"
+                                        placeholder="Mã tự động"
                                         disabled={true}
                                     />
                                     <ErrorMessage name="code" component="div" className="invalid-feedback" />
@@ -224,20 +226,25 @@ export default function SparePartFormModal({ show, onHide, editingItem, onSubmit
                                     type="file"
                                     accept="image/*"
                                     className="d-none"
-                                    onChange={(event) => {
+                                    onChange={async (event) => {
                                         const file = event.currentTarget.files[0];
                                         if (file) {
                                             if (file.size > 2 * 1024 * 1024) {
                                                 toast.error("Kích thước ảnh không vượt quá 2MB");
                                                 return;
                                             }
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
+                                            try {
+                                                const uploadToast = toast.info("Đang tải ảnh lên...", { autoClose: false });
+                                                const result = await uploadImage(file);
+                                                toast.dismiss(uploadToast);
                                                 const currentImgs = values.imgPath ? values.imgPath.split('|').filter(Boolean) : [];
-                                                const updatedList = [...currentImgs, reader.result];
+                                                const updatedList = [...currentImgs, result.secureUrl];
                                                 setFieldValue('imgPath', updatedList.join('|'));
-                                            };
-                                            reader.readAsDataURL(file);
+                                                toast.success("Tải ảnh lên thành công!");
+                                            } catch (error) {
+                                                console.error("Lỗi upload ảnh:", error);
+                                                toast.error("Không thể tải ảnh lên Cloudinary");
+                                            }
                                         }
                                         event.target.value = '';
                                     }}

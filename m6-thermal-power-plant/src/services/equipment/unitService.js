@@ -21,3 +21,11 @@ export const deleteUnit = (id) =>
 
 export const updateUnit = (id, data) =>
     apiClient.put(`${UNIT_URL}/${id}`, data);
+
+export const getAllForSelect = () =>
+    apiClient.get(UNIT_URL, {
+        params: {
+            page: 0,
+            size: 1000,
+        },
+    });

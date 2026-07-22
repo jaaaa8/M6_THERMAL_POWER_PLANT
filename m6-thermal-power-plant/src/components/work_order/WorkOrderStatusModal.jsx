@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import {
   BsArrowRepeat, BsXCircle, BsPenFill, BsPlayCircle, BsPauseCircle,
@@ -6,7 +6,7 @@ import {
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import StatusBadge from '../common/StatusBadge';
-import { workOrderService } from '../../services/workOrderService';
+import { workOrderService, nextExtensionDate } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
 
 /**
@@ -35,17 +35,21 @@ const STATUS_MAP = {
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
 
-// MỌI bước chuyển trạng thái PCT (duyệt, mở/đóng hằng ngày, gia hạn, khoá,
-// huỷ) thuộc Trưởng ca/kíp — khớp BE (WorkOrderController + MaintenanceService
-// requireWorkOrderStatusRole). Quản đốc SC/Tổ trưởng chỉ quản lý hồ sơ phiếu.
-const STATUS_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
-const OPERATE_ROLES = STATUS_ROLES;
-const APPROVE_ROLES = STATUS_ROLES;
+/** "2026-07-24" -> "24/07/2026" (ngày trần, không dựng Date để khỏi lệch múi giờ). */
+function toDmy(isoDate) {
+  if (!isoDate) return '—';
+  const [y, m, d] = String(isoDate).split('-');
+  return d && m && y ? `${d}/${m}/${y}` : String(isoDate);
+}
+
+const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
+const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 
 /**
  * Bảng chuyển trạng thái: option hiển thị theo trạng thái hiện tại.
- * roles: nhóm được bấm (gating UI); needsExtension: bắt buộc lý do + ngày
- * (tạo dòng gia hạn in lên bản giấy PCT đưa Trưởng ca ký).
+ * roles: nhóm được bấm (gating UI); needsExtension: bắt buộc lý do (tạo dòng
+ * gia hạn in lên bản giấy PCT đưa Trưởng ca ký); needsAllowedDate: Trưởng ca
+ * chốt NGÀY cho phép làm tiếp khi duyệt.
  */
 const TRANSITIONS = {
   OPEN: [
@@ -78,7 +82,7 @@ const TRANSITIONS = {
     {
       target: 'WAITING_FOR_APPROVAL', roles: OPERATE_ROLES, icon: <BsSendCheck />, variant: 'warning',
       label: 'Gửi duyệt gia hạn', needsExtension: true,
-      desc: 'Xin phép làm tiếp — lý do + ngày được in lên bản giấy PCT đưa Trưởng ca ký.',
+      desc: 'Xin phép làm tiếp — lý do được in lên bản giấy PCT đưa Trưởng ca ký, Trưởng ca chọn ngày khi duyệt.',
     },
     {
       target: 'COMPLETED', roles: OPERATE_ROLES, icon: <BsCheckCircle />, variant: 'success',
@@ -89,7 +93,7 @@ const TRANSITIONS = {
   WAITING_FOR_APPROVAL: [
     {
       target: 'APPROVED', roles: APPROVE_ROLES, icon: <BsPenFill />, variant: 'warning',
-      label: 'Duyệt gia hạn (Trưởng ca đã ký bản giấy)',
+      label: 'Duyệt gia hạn (Trưởng ca đã ký bản giấy)', needsAllowedDate: true,
       desc: 'Chỉ bấm khi ĐANG CẦM bản giấy có chữ ký — tài khoản của bạn được ghi vào mục "Người cho phép".',
     },
   ],
@@ -109,10 +113,29 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
   // tự sạch khi đổi dòng (không cần reset trong effect).
   const [selected, setSelected] = useState(null); // target status đã chọn
   const [reason, setReason] = useState('');
-  const [extendedUntil, setExtendedUntil] = useState(
+  // Ngày Trưởng ca cho phép làm tiếp — mặc định NGÀY MAI (mỗi lần gia hạn chỉ
+  // kéo dài 1 ngày), Trưởng ca đổi được sang ngày xa hơn nếu chưa cô lập xong.
+  const [allowedDate, setAllowedDate] = useState(
     () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
   );
+  const today = new Date().toISOString().slice(0, 10);
   const [saving, setSaving] = useState(false);
+
+  // Ngày làm tiếp suy ra từ lịch sử gia hạn, mà danh sách KHÔNG trả extensions
+  // -> phải lấy chi tiết. Chỉ cần ở 2 bước có dính tới ngày.
+  useEffect(() => {
+    const st = workOrder?.status;
+    if (!show || !workOrder?.id || !['STOPPED', 'WAITING_FOR_APPROVAL'].includes(st)) return undefined;
+    let cancelled = false;
+    workOrderService.getById(workOrder.id)
+      .then((res) => {
+        if (cancelled) return;
+        const computed = nextExtensionDate(res.data?.workOrder?.startTime, res.data?.extensions);
+        if (computed) setAllowedDate(computed);
+      })
+      .catch(() => { /* không lấy được thì giữ mặc định ngày mai */ });
+    return () => { cancelled = true; };
+  }, [show, workOrder?.id, workOrder?.status]);
 
   const userRoles = authService.getCurrentUser()?.roles || [];
   const status = workOrder?.status;
@@ -126,23 +149,20 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
 
   const submit = async () => {
     if (!selectedOption) return;
-    if (selectedOption.needsExtension) {
-      if (!reason.trim()) {
-        toast.warning('Phải nhập lý do — lý do được in lên bản giấy đưa Trưởng ca ký');
-        return;
-      }
-      if (!extendedUntil) {
-        toast.warning('Phải chọn ngày xin phép làm việc đến');
-        return;
-      }
+    if (selectedOption.needsExtension && !reason.trim()) {
+      toast.warning('Phải nhập lý do — lý do được in lên bản giấy đưa Trưởng ca ký');
+      return;
+    }
+    if (selectedOption.needsAllowedDate && !allowedDate) {
+      toast.warning('Phải chọn ngày cho phép tiếp tục làm việc');
+      return;
     }
     setSaving(true);
     try {
       await workOrderService.updateStatus(workOrder.id, {
         targetStatus: selectedOption.target,
-        // Xin phép đến CUỐI ngày đã chọn (backend lưu LocalDateTime).
         reason: selectedOption.needsExtension ? reason.trim() : null,
-        extendedUntil: selectedOption.needsExtension ? `${extendedUntil}T23:59:59` : null,
+        allowedDate: selectedOption.needsAllowedDate ? allowedDate : null,
       });
       toast.success(`${workOrder.orderCode}: ${STATUS_MAP[status]?.label || status} → ${STATUS_MAP[selectedOption.target]?.label || selectedOption.target}`);
       onClose();
@@ -219,7 +239,8 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
               />
             ))}
 
-            {/* Lý do + ngày gia hạn — chỉ khi gửi duyệt gia hạn */}
+            {/* Lý do — chỉ khi Tổ trưởng gửi duyệt gia hạn (KHÔNG chọn ngày ở
+                bước này: ngày làm tiếp do Trưởng ca chốt lúc duyệt). */}
             {selectedOption?.needsExtension && (
               <div className="mt-3 p-3 border rounded" style={{ background: 'var(--color-surface-container)' }}>
                 <Form.Group className="mb-3">
@@ -229,20 +250,46 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
                   <Form.Control
                     as="textarea"
                     rows={2}
-                    placeholder="VD: Khối lượng còn lại nhiều, xin tiếp tục hôm nay..."
+                    placeholder="VD: Khối lượng còn lại nhiều, xin tiếp tục ngày mai..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                   />
                 </Form.Group>
+                <Form.Group className="mt-3">
+                  <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
+                    Xin làm việc ngày
+                  </Form.Label>
+                  {/* Hiển thị bằng CHỮ, không dùng input disabled: input bị khoá
+                      trên nền tối bạc màu gần như không đọc được. */}
+                  <div style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
+                    {toDmy(allowedDate)}
+                  </div>
+                  <Form.Text muted style={{ fontSize: 'var(--text-xs)' }}>
+                    Mỗi lần gia hạn chỉ kéo dài 1 ngày nên ngày này tự suy ra (hôm sau
+                    ngày làm việc gần nhất). Ngày được làm tiếp do Trưởng ca chốt khi duyệt.
+                  </Form.Text>
+                </Form.Group>
+              </div>
+            )}
+
+            {/* Ngày cho phép làm tiếp — chỉ khi Trưởng ca duyệt gia hạn */}
+            {selectedOption?.needsAllowedDate && (
+              <div className="mt-3 p-3 border rounded" style={{ background: 'var(--bg-secondary)' }}>
                 <Form.Group>
                   <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                    Xin phép làm việc đến ngày <span className="text-danger">*</span>
+                    Ngày cho phép tiếp tục làm việc <span className="text-danger">*</span>
                   </Form.Label>
                   <Form.Control
                     type="date"
-                    value={extendedUntil}
-                    onChange={(e) => setExtendedUntil(e.target.value)}
+                    min={today}
+                    value={allowedDate}
+                    onChange={(e) => setAllowedDate(e.target.value)}
                   />
+                  <Form.Text muted style={{ fontSize: 'var(--text-xs)' }}>
+                    Mặc định là ngày Tổ trưởng xin (hôm sau ngày làm việc gần nhất).
+                    Chọn xa hơn nếu chưa cô lập được thiết bị — ngày này được in vào
+                    bảng gia hạn trên bản giấy PCT.
+                  </Form.Text>
                 </Form.Group>
               </div>
             )}
