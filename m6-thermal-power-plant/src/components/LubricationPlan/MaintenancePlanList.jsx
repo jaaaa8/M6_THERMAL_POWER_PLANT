@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Table, Button, Form, Pagination, Modal, Row, Col } from "react-bootstrap";
 import {
     BsEye,
+    BsTrash,
     BsSearch,
     BsArrowClockwise,
     BsPlusLg,
@@ -10,10 +11,12 @@ import {
     BsChevronRight,
 } from "react-icons/bs";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import PageHeader from "../common/PageHeader";
 import StatusBadge from "../common/StatusBadge";
 import LoadingSpinner from "../common/LoadingSpinner";
 import EmptyState from "../common/EmptyState";
+import ConfirmModal from "../common/ConfirmModal";
 import lubricationPlanService from "../../services/lubricationPlanService";
 import "./MaintenancePlanList.css";
 
@@ -55,6 +58,8 @@ export default function MaintenancePlanList() {
     const [loading, setLoading] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     const [pagination, setPagination] = useState({
         page: 0,
         size: PAGE_SIZE,
@@ -111,6 +116,22 @@ export default function MaintenancePlanList() {
     const handleView = (plan) => {
         setSelectedPlan(plan);
         setShowDetail(true);
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            setDeleting(true);
+            await lubricationPlanService.remove(deleteTarget.id);
+            toast.success("Xoá kế hoạch bảo dưỡng thành công");
+            setDeleteTarget(null);
+            loadData(search, status, pagination.page);
+        } catch (error) {
+            console.error(error);
+            toast.error(error?.response?.data?.message || "Không thể xoá kế hoạch");
+        } finally {
+            setDeleting(false);
+        }
     };
     // Dải số trang tối đa 5 nút quanh trang hiện tại (giống DataTable chung của hệ thống)
     const pageNumbers = (() => {
@@ -206,7 +227,7 @@ export default function MaintenancePlanList() {
                                     <th>Vật tư</th>
                                     <th>SL</th>
                                     <th>Trạng thái</th>
-                                    <th style={{ width: 90 }}>Thao tác</th>
+                                    <th style={{ width: 120 }}>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -228,6 +249,14 @@ export default function MaintenancePlanList() {
                                                     onClick={() => handleView(plan)}
                                                 >
                                                     <BsEye />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    title="Xoá"
+                                                    onClick={() => setDeleteTarget(plan)}
+                                                >
+                                                    <BsTrash />
                                                 </button>
                                             </div>
                                         </td>
@@ -403,6 +432,21 @@ export default function MaintenancePlanList() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Xác nhận xoá — dùng ConfirmModal chuẩn hệ thống */}
+            <ConfirmModal
+                show={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleDelete}
+                loading={deleting}
+                title="Xoá kế hoạch bảo dưỡng"
+                message={
+                    deleteTarget
+                        ? `Bạn có chắc muốn xoá kế hoạch "${deleteTarget.lubricationCode}"? Hành động này không thể hoàn tác.`
+                        : ""
+                }
+                confirmText="Xoá"
+            />
         </div>
     );
 }

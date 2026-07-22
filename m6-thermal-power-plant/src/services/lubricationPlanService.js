@@ -72,12 +72,10 @@ const lubricationPlanService = {
 
 
     // xóa
-    remove: async (
-        id
-    ) => {
-
+    // xóa
+    remove: async (id) => {
         const response = await apiClient.delete(
-            `${BASE_URL}/${id}`
+            `${BASE_URL}/delete/${id}`
         );
 
         return response.data;
