@@ -1,56 +1,46 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Row, Col, Form, Button, Spinner } from 'react-bootstrap';
 import { BsArrowLeft, BsCpu, BsCloudUpload, BsX } from 'react-icons/bs';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import * as systemService from '../../services/equipment/systemService';
+import * as systemService
+  from "../../services/equipment/systemService";
+import * as equipmentService from "../../services/equipment/equipmentService";
 import PageHeader from '../common/PageHeader';
 import './style/AddEquipment.css';
 
 export default function AddEquipment() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const [systems, setSystems] = useState([]);
-  const [loadingSystems, setLoadingSystems] = useState(true);
 
-  // Fetch systems for dropdown
+  const [equipmentTypes, setEquipmentTypes] = useState([]);
+
+  // system
+  const { systemId } = useParams();
+
   useEffect(() => {
-    const fetchSystems = async () => {
-      try {
-        const res = await systemService.getAll({
-          name: '',
-          status: '',
-          page: 0,
-          size: 1000,
-        });
-        setSystems(res.data?.content || []);
-      } catch (e) {
-        console.error('Lỗi tải hệ thống:', e);
-        toast.error('Không thể tải danh sách hệ thống');
-      } finally {
-        setLoadingSystems(false);
-      }
-    };
-    fetchSystems();
-  }, []);
 
+    const loadTypes = async () => {
+
+      const res = await equipmentService.getEquipmentTypes();
+
+      setEquipmentTypes(res.data);
+
+    }
+
+    loadTypes();
+
+  }, []);
   // Form validation schema with Yup
   const equipmentSchema = Yup.object().shape({
-    kksCode: Yup.string()
-      .required('Mã KKS là bắt buộc')
-      .matches(/^[A-Z0-9_-]+$/, 'Mã KKS chỉ gồm chữ hoa, số và dấu gạch ngang/gạch dưới')
-      .min(3, 'Mã KKS tối thiểu 3 ký tự'),
 
-    equipmentName: Yup.string()
+    name: Yup.string()
       .required('Tên thiết bị là bắt buộc')
       .min(3, 'Tên thiết bị tối thiểu 3 ký tự'),
 
-    systemId: Yup.string()
-      .required('Vui lòng chọn hệ thống'),
-
-    equipmentType: Yup.string()
+    equipmentTypeId: Yup.string()
       .required('Vui lòng chọn loại thiết bị'),
 
     status: Yup.string()
@@ -62,7 +52,7 @@ export default function AddEquipment() {
     manufacturer: Yup.string()
       .max(100, 'Nhà sản xuất tối đa 100 ký tự'),
 
-    installYear: Yup.number()
+    installationYear: Yup.number()
       .typeError('Năm lắp đặt phải là số')
       .integer('Năm lắp đặt phải là số nguyên')
       .min(1900, 'Năm lắp đặt từ 1900 trở đi')
@@ -73,39 +63,68 @@ export default function AddEquipment() {
   });
 
   const initialValues = {
-    kksCode: '',
-    equipmentName: '',
-    systemId: '',
-    equipmentType: 'Bơm',
+
+    name: '',
+    equipmentTypeId: "",
     status: 'ACTIVE',
     model: '',
     manufacturer: '',
-    installYear: new Date().getFullYear(),
+    installationYear: new Date().getFullYear(),
     description: '',
-    imageUrl: ''
+    images: []
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      // Find systemName from systemId
-      const selectedSystem = systems.find(s => s.id === Number(values.systemId));
-      const payload = {
-        ...values,
-        systemId: Number(values.systemId),
-        systemName: selectedSystem ? selectedSystem.name : '',
-        technicalParameters: [] // Initialize empty technical parameters
+
+      const dto = {
+        name: values.name,
+        equipmentTypeId: Number(values.equipmentTypeId),
+        status: values.status,
+        installationYear: values.installationYear,
+        manufacturer: values.manufacturer,
+        model: values.model,
+        description: values.description
       };
 
-      await equipmentService.create(payload);
-      toast.success('Thêm mới thiết bị thành công!');
-      navigate('/equipment/equipments');
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        error.response?.data?.message || 'Thêm mới thiết bị thất bại'
+      const formData = new FormData();
+
+      formData.append(
+        "equipment",
+        new Blob(
+          [JSON.stringify(dto)],
+          {
+            type: "application/json"
+          }
+        )
       );
+
+      values.images.forEach(file => {
+        formData.append("images", file);
+      });
+
+      const res = await equipmentService.addEquipment(
+        systemId,
+        formData
+      );
+
+      toast.success("Thêm thiết bị thành công");
+
+      navigate(`/equipment/equipments/${res.data.id}`);
+
+    } catch (err) {
+
+      console.log(err);
+
+      toast.error(
+        err.response?.data?.message ??
+        "Thêm thiết bị thất bại"
+      );
+
     } finally {
+
       setSubmitting(false);
+
     }
   };
 
@@ -141,18 +160,19 @@ export default function AddEquipment() {
           }) => {
             // Read image files and convert to base64
             const handleImageChange = (e) => {
-              const file = e.target.files[0];
-              if (file) {
-                if (file.size > 2 * 1024 * 1024) {
-                  toast.error('Kích thước ảnh không vượt quá 2MB');
-                  return;
-                }
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  setFieldValue('imageUrl', reader.result);
-                };
-                reader.readAsDataURL(file);
-              }
+
+              const files = Array.from(e.target.files);
+
+              if (!files.length) return;
+
+              setFieldValue(
+                "images",
+                [
+                  ...values.images,
+                  ...files
+                ]
+              );
+
             };
 
             const triggerFileSelect = () => {
@@ -161,126 +181,90 @@ export default function AddEquipment() {
 
             const removeImage = (e) => {
               e.stopPropagation();
-              setFieldValue('imageUrl', '');
+
+              setFieldValue("images", []);
+
               if (fileInputRef.current) {
-                fileInputRef.current.value = '';
+                fileInputRef.current.value = "";
               }
             };
-
             return (
-              <FormikForm onSubmit={handleSubmit}>
+              <FormikForm>
                 {/* Upload Image Section */}
-                <div className="image-upload-row">
-                  <div
-                    className="image-upload-dropzone"
-                    onClick={triggerFileSelect}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="d-none"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                    <BsCloudUpload className="image-upload-icon" />
-                    <span className="fw-semibold">Kéo thả ảnh hoặc</span>
-                    <span className="text-primary fw-bold" style={{ textDecoration: 'underline' }}>Chọn ảnh</span>
-                    <span className="text-muted small mt-1">PNG, JPG, JPEG (tối đa 2MB)</span>
-                  </div>
+                <div
+                  className="image-upload-dropzone"
+                  onClick={triggerFileSelect}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    hidden
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  <BsCloudUpload className="image-upload-icon" />
+                  <span className="fw-semibold">Kéo thả ảnh hoặc</span>
+                  <span className="text-primary fw-bold" style={{ textDecoration: 'underline' }}>Chọn ảnh</span>
+                  <span className="text-muted small mt-1">PNG, JPG, JPEG (tối đa 2MB)</span>
+                </div>
 
-                  <div className="image-preview-container">
-                    {values.imageUrl ? (
-                      <>
-                        <img
-                          className="image-preview-img"
-                          src={values.imageUrl}
-                          alt="Preview"
-                        />
-                        <button
-                          type="button"
-                          className="image-preview-remove"
-                          onClick={removeImage}
-                          title="Xóa ảnh"
-                        >
-                          <BsX />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="image-preview-placeholder">
-                        <BsCpu />
-                        <span>Chưa có ảnh</span>
-                      </div>
-                    )}
-                  </div>
+                <div className="image-preview-container">
+
+                  {values.images.length === 0 && (
+                    <div className="image-preview-placeholder">
+                      <BsCpu />
+                      <span>Chưa có ảnh</span>
+                    </div>
+                  )}
+
+                  {values.images.map((image, index) => (
+                    <div
+                      key={index}
+                      className="preview-item"
+                    >
+                      <img
+                        src={URL.createObjectURL(image)}
+                        className="image-preview-img"
+                        alt=""
+                      />
+
+                      <button
+                        type="button"
+                        className="image-preview-remove"
+                        onClick={() => {
+                          const list = [...values.images];
+                          list.splice(index, 1);
+                          setFieldValue("images", list);
+                        }}
+                      >
+                        <BsX />
+                      </button>
+                    </div>
+                  ))}
+
                 </div>
 
                 <Row className="g-4">
-                  {/* Mã KKS */}
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label htmlFor="kksCode" className="required">
-                        Mã KKS
-                      </Form.Label>
-                      <Form.Control
-                        id="kksCode"
-                        name="kksCode"
-                        type="text"
-                        placeholder="VD: 10LAA01AP001..."
-                        value={values.kksCode}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        isInvalid={touched.kksCode && !!errors.kksCode}
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        {errors.kksCode}
-                      </Form.Control.Feedback>
-                    </Form.Group>
-                  </Col>
 
                   {/* Tên thiết bị */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="equipmentName" className="required">
+                      <Form.Label htmlFor="name" className="required">
                         Tên thiết bị
                       </Form.Label>
                       <Form.Control
-                        id="equipmentName"
-                        name="equipmentName"
+                        id="name"
+                        name="name"
                         type="text"
                         placeholder="VD: Bơm nước cấp A..."
-                        value={values.equipmentName}
+                        value={values.name}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.equipmentName && !!errors.equipmentName}
+                        isInvalid={touched.name && !!errors.name}
                       />
                       <Form.Control.Feedback type="invalid">
-                        {errors.equipmentName}
-                      </Form.Control.Feedback>
-                    </Form.Group>
-                  </Col>
-
-                  {/* Hệ thống */}
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label htmlFor="systemId" className="required">
-                        Hệ thống
-                      </Form.Label>
-                      <Form.Select
-                        id="systemId"
-                        name="systemId"
-                        value={values.systemId}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        isInvalid={touched.systemId && !!errors.systemId}
-                        disabled={loadingSystems}
-                      >
-                        <option value="">Chọn hệ thống...</option>
-                        {systems.map(s => (
-                          <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                        ))}
-                      </Form.Select>
-                      <Form.Control.Feedback type="invalid">
-                        {errors.systemId}
+                        {errors.name}
                       </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
@@ -288,25 +272,31 @@ export default function AddEquipment() {
                   {/* Loại thiết bị */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="equipmentType" className="required">
+                      <Form.Label htmlFor="equipmentTypeId" className="required">
                         Loại thiết bị
                       </Form.Label>
                       <Form.Select
-                        id="equipmentType"
-                        name="equipmentType"
-                        value={values.equipmentType}
+                        id="equipmentTypeId"
+                        name="equipmentTypeId"
+                        value={values.equipmentTypeId}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.equipmentType && !!errors.equipmentType}
+                        isInvalid={touched.equipmentTypeId && !!errors.equipmentTypeId}
                       >
-                        <option value="Bơm">Bơm</option>
-                        <option value="Van">Van</option>
-                        <option value="Động cơ">Động cơ</option>
-                        <option value="Đo lường">Đo lường</option>
-                        <option value="Khác">Khác</option>
+                        <option value=""> Chọn loại thiết bị </option>
+                        {
+                          equipmentTypes.map(type => (
+                            <option
+                              key={type.id}
+                              value={type.id}
+                            >
+                              {type.name}
+                            </option>
+                          ))
+                        }
                       </Form.Select>
                       <Form.Control.Feedback type="invalid">
-                        {errors.equipmentType}
+                        {errors.equipmentTypeId}
                       </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
@@ -384,21 +374,21 @@ export default function AddEquipment() {
                   {/* Năm lắp đặt */}
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label htmlFor="installYear">
+                      <Form.Label htmlFor="installationYear">
                         Năm lắp đặt
                       </Form.Label>
                       <Form.Control
-                        id="installYear"
-                        name="installYear"
+                        id="installationYear"
+                        name="installationYear"
                         type="number"
                         placeholder="VD: 2020..."
-                        value={values.installYear}
+                        value={values.installationYear}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.installYear && !!errors.installYear}
+                        isInvalid={touched.installationYear && !!errors.installationYear}
                       />
                       <Form.Control.Feedback type="invalid">
-                        {errors.installYear}
+                        {errors.installationYear}
                       </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
@@ -431,7 +421,7 @@ export default function AddEquipment() {
                 <div className="d-flex justify-content-end gap-3 mt-4 border-top pt-4">
                   <Button
                     variant="light"
-                    onClick={() => navigate('/equipment/equipments')}
+                    onClick={() => navigate(`/equipment/equipments?systemId=${systemId}`)}
                     disabled={isSubmitting}
                     className="px-4 d-inline-flex align-items-center gap-2"
                   >

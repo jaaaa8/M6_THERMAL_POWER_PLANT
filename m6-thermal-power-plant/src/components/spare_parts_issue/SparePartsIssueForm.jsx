@@ -1,7 +1,7 @@
 import { useState, useEffect  } from "react";
 import { Formik, Form, Field, ErrorMessage  } from "formik";
 import * as Yup from "yup";
-import {Row, Col, Button, Pagination} from "react-bootstrap";
+import {Row, Col, Button, Modal, Pagination} from "react-bootstrap";
 import { pdf } from "@react-pdf/renderer";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -67,6 +67,7 @@ export default function SparePartsIssueForm({
     const [spareParts, setSpareParts] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [zoomImage, setZoomImage] = useState(null);
     const [pagination, setPagination] = useState({
         page: 0,
         size: 10,
@@ -880,6 +881,20 @@ export default function SparePartsIssueForm({
               </Form>
           )}
         </Formik>
+          <Modal
+              show={!!zoomImage}
+              onHide={() => setZoomImage(null)}
+              centered
+              size="lg"
+          >
+              <Modal.Body className="p-0 text-center">
+                  <img
+                      src={zoomImage}
+                      alt="Xem ảnh"
+                      style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                  />
+              </Modal.Body>
+          </Modal>
       </div>
 
   );

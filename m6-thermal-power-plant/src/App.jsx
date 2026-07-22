@@ -36,12 +36,11 @@ import ListEquipment from './components/equipment/ListEquipment';
 import AddEquipment from './components/equipment/AddEquipment';
 import UpdateEquipment from './components/equipment/UpdateEquipment';
 import DetailEquipment from './components/equipment/DetailEquipment';
-import ManageUnits from './components/equipment/ManageUnits';
+import ManageMaster from "./components/equipment/ManageMaster";
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 import RoleManagementPage from "./pages/RoleManagementPage.jsx";
 import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 import ToolList from './pages/ccdc/ToolList.jsx';
-import CreateWorkerAccountPage from './pages/ccdc/CreateWorkerAccountPage.jsx';
 import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
 import ToolCategory from './pages/ccdc/ToolCategory .jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
@@ -101,21 +100,21 @@ function App() {
             <Route path="/equipment/system/add" element={<AddSystem />} />
             <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
             <Route path="/equipment/equipments" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/add" element={<AddEquipment />} />
+            <Route path="/equipment/equipments/:systemId/add" element={<AddEquipment />} />
             <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
             <Route path="/equipment/equipments" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/:systemId" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
-            <Route path="/equipment/equipments/units" element={<ManageUnits />} />
+            <Route path="/equipment/equipments/system/:systemId" element={<ListEquipment />} />
+            <Route path="/equipment/equipments/:id" element={<DetailEquipment />} />
+            <Route path="/equipment/parameter" element={<ManageMaster />} />
 
             {/* --- Sửa chữa --- */}
             <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
-            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
-            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
-            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
-            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
-            <Route path="/repair/history" element={<RepairHistoryList/>} />
+            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
+            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
+            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList />} />
+            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
+            <Route path="/repair/history" element={<RepairHistoryList />} />
 
             {/* --- Vật tư --- */}
             <Route path="/material/catalog" element={<MaterialCatalogPage />} />
@@ -129,7 +128,6 @@ function App() {
             <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
             <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
-            <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
 
             {/* --- Bảo dưỡng --- */}
             <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
