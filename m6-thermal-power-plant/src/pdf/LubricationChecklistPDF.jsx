@@ -51,10 +51,10 @@ const styles = StyleSheet.create({
 });
 
 export default function LubricationChecklistPDF({
-                                                    equipments,
-                                                }) {
+    equipments,
+}) {
 
-    return ( <Document>
+    return (<Document>
 
         ```
         <Page
@@ -208,5 +208,5 @@ export default function LubricationChecklistPDF({
     </Document>
 
 
-);
+    );
 }
