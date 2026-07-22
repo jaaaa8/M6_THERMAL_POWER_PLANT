@@ -5,7 +5,8 @@ import * as Yup from 'yup';
 import { BsPlusCircle, BsPencilSquare } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { repairRequestService, PRIORITY, PRIORITY_LABEL } from '../../services/repairRequestService';
-import { equipmentService } from '../../services/equipmentService';
+import * as equipmentService from '../../services/equipment/equipmentService';
+import * as systemService from '../../services/equipment/systemService';
 import './CreateRequestModal.css';
 
 /**
@@ -25,25 +26,36 @@ const createRequestSchema = Yup.object({
 });
 
 /**
- * CreateRequestModal — Modal tạo mới hoặc sửa yêu cầu sửa chữa.
- *
- * @param {boolean} props.show
- * @param {Function} props.onClose
- * @param {Function} props.onSuccess - Callback sau khi tạo/sửa thành công
- * @param {object|null} props.editRequest - Nếu truyền vào thì mở ở chế độ sửa
+ * CreateRequestModal — Modal tạo mới yêu cầu sửa chữa.
  */
 export default function CreateRequestModal({ show, onClose, onSuccess, editRequest = null }) {
   const isEditMode = !!editRequest;
+  const [systems, setSystems] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [loadingEquipments, setLoadingEquipments] = useState(false);
-  // Bộ lọc UI theo hệ thống (không gửi lên backend — chỉ để thu hẹp danh sách thiết bị)
-  const [selectedHeThong, setSelectedHeThong] = useState('');
+  const [selectedSystemId, setSelectedSystemId] = useState('');
 
-  const loadEquipments = async () => {
+  // Load danh sách hệ thống
+  const loadSystems = async () => {
+    try {
+      const res = await systemService.getAllSystems('', '', 0, 100);
+      setSystems(res.data?.content || res.data || []);
+    } catch (err) {
+      console.error('Không thể tải danh sách hệ thống', err);
+    }
+  };
+
+  // Load thiết bị — nếu chọn hệ thống thì dùng API lọc theo system, nếu không thì lấy tất cả
+  const loadEquipments = async (systemId) => {
     try {
       setLoadingEquipments(true);
-      const res = await equipmentService.getAll();
-      setEquipments(res.data);
+      let res;
+      if (systemId) {
+        res = await equipmentService.getBySystem(systemId);
+      } else {
+        res = await equipmentService.getAll();
+      }
+      setEquipments(res.data?.content || res.data || []);
     } catch (err) {
       toast.error('Không thể tải danh sách thiết bị');
     } finally {
@@ -53,16 +65,17 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
 
   useEffect(() => {
     if (show) {
-      loadEquipments();
-      setSelectedHeThong('');
+      loadSystems();
+      loadEquipments('');
+      setSelectedSystemId('');
     }
   }, [show]);
 
-  const systemNameOptions = [...new Set(equipments.map((eq) => eq.systemName))];
-
-  const filteredEquipments = selectedHeThong
-    ? equipments.filter((eq) => eq.systemName === selectedHeThong)
-    : equipments;
+  const handleSystemChange = (systemId, setFieldValue) => {
+    setSelectedSystemId(systemId);
+    setFieldValue('equipmentId', '');
+    loadEquipments(systemId);
+  };
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
@@ -86,10 +99,10 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
   };
 
   const priorityOptions = [
-    { value: PRIORITY.THAP, label: PRIORITY_LABEL.THAP, colorClass: 'priority-low' },
-    { value: PRIORITY.TRUNG_BINH, label: PRIORITY_LABEL.TRUNG_BINH, colorClass: 'priority-medium' },
-    { value: PRIORITY.CAO, label: PRIORITY_LABEL.CAO, colorClass: 'priority-high' },
-    { value: PRIORITY.KHAN_CAP, label: PRIORITY_LABEL.KHAN_CAP, colorClass: 'priority-critical' },
+    { value: PRIORITY.LOW, label: PRIORITY_LABEL.LOW, colorClass: 'priority-low' },
+    { value: PRIORITY.NORMAL, label: PRIORITY_LABEL.NORMAL, colorClass: 'priority-medium' },
+    { value: PRIORITY.HIGH, label: PRIORITY_LABEL.HIGH, colorClass: 'priority-high' },
+    { value: PRIORITY.EMERGENCY, label: PRIORITY_LABEL.EMERGENCY, colorClass: 'priority-critical' },
   ];
 
   return (
@@ -126,21 +139,19 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
         }) => (
           <Form onSubmit={formikSubmit} noValidate>
             <Modal.Body>
-              {/* Lọc theo hệ thống (tùy chọn) */}
+              {/* Lọc theo hệ thống */}
               <Form.Group className="mb-4">
                 <Form.Label className="crm-label">Hệ thống</Form.Label>
                 <Form.Select
-                  value={selectedHeThong}
+                  value={selectedSystemId}
                   disabled={loadingEquipments || isEditMode}
-                  onChange={(e) => {
-                    setSelectedHeThong(e.target.value);
-                    // Đổi hệ thống → reset thiết bị đã chọn (tránh thiết bị không thuộc hệ thống mới)
-                    setFieldValue('equipmentId', '');
-                  }}
+                  onChange={(e) => handleSystemChange(e.target.value, setFieldValue)}
                 >
                   <option value="">— Tất cả hệ thống —</option>
-                  {systemNameOptions.map((ht) => (
-                    <option key={ht} value={ht}>{ht}</option>
+                  {systems.map((sys) => (
+                    <option key={sys.id} value={sys.id}>
+                      [{sys.code}] {sys.name}
+                    </option>
                   ))}
                 </Form.Select>
               </Form.Group>
@@ -161,9 +172,9 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                   <option value="">
                     {loadingEquipments ? 'Đang tải thiết bị...' : '— Chọn thiết bị —'}
                   </option>
-                  {filteredEquipments.map((eq) => (
+                  {equipments.map((eq) => (
                     <option key={eq.id} value={eq.id}>
-                      [{eq.kksCode}] {eq.equipmentName} — {eq.systemName}
+                      [{eq.kksCode}] {eq.name}
                     </option>
                   ))}
                 </Form.Select>
@@ -198,7 +209,7 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                 </div>
               </Form.Group>
 
-              {/* Mức độ ưu tiên — Radio Pills */}
+              {/* Mức độ ưu tiên — Radio Buttons có nhãn chữ rõ ràng */}
               <Form.Group className="mb-3">
                 <Form.Label className="crm-label">
                   Mức độ ưu tiên <span className="text-danger">*</span>
@@ -219,7 +230,7 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                         onChange={() => setFieldValue('priority', opt.value)}
                       />
                       <span className="crm-priority-dot" />
-                      {opt.label}
+                      <span className="crm-priority-text">{opt.label}</span>
                     </label>
                   ))}
                 </div>

@@ -1,38 +1,36 @@
-import { useState } from "react";
-import { Formik, Form, Field } from "formik";
+import { useState, useEffect  } from "react";
+import { Formik, Form, Field, ErrorMessage  } from "formik";
 import * as Yup from "yup";
-import { Row, Col, Button } from "react-bootstrap";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import {Row, Col, Button, Modal, Pagination} from "react-bootstrap";
+import { pdf } from "@react-pdf/renderer";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import SparePartsIssuePDF from "../../pdf/SparePartsIssuePDF";
+import sparePartIssueService from "../../services/sparePartIssueService";
+import { workOrderService } from "../../services/workOrderService";
+import * as sparePartService from "../../services/sparePartService";
 
 import {
   BsBoxSeam,
   BsClipboardCheck,
   BsPersonBadge,
-  BsSave,
   BsArrowClockwise,
   BsXCircle,
-  BsFileEarmarkPdf,
+  BsFileEarmarkPdf, BsImage, BsUpcScan, BsRulers, Bs123, BsTrash, BsCartCheckFill
 } from "react-icons/bs";
 
 import "./SparePartsIssueForm.css";
+import {accountService} from "../../services/hr/accountService.js";
 
 const validationSchema = Yup.object({
-  sparePartCode: Yup.string().required(
-      "Mã phiếu không được để trống"
-  ),
 
   workOrderId: Yup.string().required(
       "Vui lòng chọn lệnh công việc"
   ),
 
-  issuedBy: Yup.string().required(
+    issueUsername: Yup.string().required(
       "Vui lòng chọn người cấp phát"
-  ),
-
-  issuedAt: Yup.string().required(
-      "Vui lòng chọn thời gian cấp phát"
   ),
 
   items: Yup.array().min(
@@ -42,118 +40,260 @@ const validationSchema = Yup.object({
 });
 
 const INITIAL_VALUES = {
-  sparePartCode: "PXVT-2026-001",
+  sparePartCode: "",
 
-  technicalAssessmentId: "1",
+  workOrderId: "",
 
-  workOrderId: "1",
-
-  issuedBy: "",
-
-  issuedAt: "",
+    issueUsername: "",
 
   items: [],
 };
 
-const UNITS = [
-  "Cái",
-  "Bộ",
-  "Chiếc",
-  "Kg",
-  "Mét",
-  "Lít",
-  "Cuộn",
-  "Hộp",
-];
+
 
 export default function SparePartsIssueForm({
-                                              onSuccess,
                                               onCancel,
                                             }) {
-  const [keyword, setKeyword] = useState("");
+    const [filters, setFilters] = useState({
+        code: "",
+        name: "",
+        manufacturer: "",
+        price: "",
+        status: "ACTIVE"
+    });
+    const navigate = useNavigate();
 
-  const workOrders = [
-    {
-      id: 1,
-      code: "WO-2026-001",
-    },
-    {
-      id: 2,
-      code: "WO-2026-002",
-    },
-  ];
+    const [workOrders, setWorkOrders] = useState([]);
+    const [spareParts, setSpareParts] = useState([]);
+    const [accounts, setAccounts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [zoomImage, setZoomImage] = useState(null);
+    const [pagination, setPagination] = useState({
+        page: 0,
+        size: 10,
+        totalPages: 0,
+        totalElements: 0
+    });
 
-  const technicalAssessments = [
-    {
-      id: 1,
-      technicalCode: "DGKT-2026-001",
-      assessorName: "Trần Văn B",
-      result:
-          "Động cơ bơm nước làm mát bị mòn vòng bi.",
-      description:
-          "Đề xuất thay vòng bi SKF 6205.",
-    },
-  ];
+    const [searchKey, setSearchKey] = useState(0);
 
-  const spareParts = [
-    {
-      id: 1,
-      code: "VT-001",
-      name: "Vòng bi SKF 6205",
-    },
-    {
-      id: 2,
-      code: "VT-002",
-      name: "Động cơ ABB 5KW",
-    },
-    {
-      id: 3,
-      code: "VT-003",
-      name: "Contactor Schneider LC1D18",
-    },
-  ];
+    useEffect(() => {
+        loadData();
+    }, [pagination.page, searchKey]);
 
-  const employees = [
-    {
-      id: 1,
-      fullName: "Nguyễn Văn A",
-    },
-    {
-      id: 2,
-      fullName: "Trần Văn B",
-    },
-  ];
+    const handleSearch = () => {
+        setPagination(prev => ({
+            ...prev,
+            page: 0
+        }));
 
-  const filteredSpareParts =
-      spareParts.filter(
-          (item) =>
-              item.code
-                  .toLowerCase()
-                  .includes(
-                      keyword.toLowerCase()
-                  ) ||
-              item.name
-                  .toLowerCase()
-                  .includes(
-                      keyword.toLowerCase()
-                  )
-      );
+        setSearchKey(prev => prev + 1);
+    };
+    const handleResetSearch = () => {
 
-  const handleSubmit = async (
-          values,
-          {setSubmitting, resetForm}
-      ) => {
+        setFilters({
+            code: "",
+            name: "",
+            manufacturer: "",
+            price: "",
+            status: "ACTIVE"
+        });
+
+        setPagination(prev => ({
+            ...prev,
+            page: 0
+        }));
+
+        setSearchKey(prev => prev + 1);
+    };
+
+    const loadData = async () => {
         try {
-          console.log(values);
-          onSuccess?.();
+            setLoading(true);
 
-          resetForm();
+            const [
+                workOrderRes,
+                sparePartRes
+            ] = await Promise.all([
+                workOrderService.getAll(),
+                sparePartService.search({
+                    page: pagination.page,
+                    size: pagination.size,
+                    code: filters.code,
+                    name: filters.name,
+                    manufacturer: filters.manufacturer,
+                    price: filters.price || undefined,
+                    status: filters.status || undefined
+                })
+            ]);
+            const accountRes = await accountService.getAll();
+            setAccounts(accountRes.data);
+
+
+
+            console.log(
+                "Work Orders:",
+                workOrderRes.data
+            );
+
+
+            console.log(
+                "Spare Parts:",
+                sparePartRes.data
+            );
+
+            const workOrderData =
+                workOrderRes?.data?.content ??
+                workOrderRes?.data ??
+                [];
+
+            const accountData =
+                accountRes?.data?.content ??
+                accountRes?.data ??
+                [];
+
+            const sparePartData =
+                sparePartRes?.data?.content ?? [];
+
+            setSpareParts(sparePartData);
+
+            setPagination(prev => ({
+                ...prev,
+                totalPages: sparePartRes.data.totalPages,
+                totalElements: sparePartRes.data.totalElements
+            }));
+
+            setWorkOrders(
+                Array.isArray(workOrderData)
+                    ? workOrderData
+                    : []
+            );
+
+            setAccounts(
+                Array.isArray(accountData)
+                    ? accountData
+                    : []
+            );
+        } catch (error) {
+            console.error(error);
+            toast.error("Không thể tải dữ liệu");
         } finally {
-          setSubmitting(false);
+            setLoading(false);
         }
+    };
 
-      }
-  ;
+
+
+    const filteredSpareParts = spareParts;
+
+    const downloadPdf = async (
+        values,
+        fileName,
+        employee
+    ) => {
+        console.log("WORK ORDERS BEFORE PDF", workOrders);
+        console.log("SPARE PARTS BEFORE PDF", spareParts);
+        values.issuedBy = employee;
+        const blob = await pdf(
+            <SparePartsIssuePDF
+                data={values}
+                workOrders={workOrders}
+                spareParts={spareParts}
+            />
+        ).toBlob();
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = `${fileName}.pdf`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+    };
+
+    const handleSubmit = async (
+        values,
+        { setSubmitting }
+    ) => {
+        console.log("FORM VALUES", values);
+        try {
+            const payload = {
+                workOrderId: Number(values.workOrderId),
+
+                issuedBy: {
+                    username: values.issueUsername,
+                },
+
+                issuedAt: new Date()
+                    .toISOString()
+                    .slice(0, 19),
+
+                details: values.items.map(item => ({
+                    sparePartId: Number(item.sparePartId),
+                    quantity: Number(item.quantity),
+                })),
+            };
+
+            console.table(payload);
+
+
+            const savedIssue =
+                await sparePartIssueService.create(payload);
+
+            console.log("Saved Issue:", savedIssue);
+
+            /*
+             * lấy mã phiếu backend sinh
+             */
+            const sparePartCode =
+                savedIssue.issueCode ||
+                `SPARE_PART_${Date.now()}`;
+
+            const employee = savedIssue.issuedBy;
+
+            /*
+             * dùng dữ liệu trả về từ BE để render PDF
+             */
+            await downloadPdf(
+                {
+                    ...values,
+                    issuedAt: payload.issuedAt,
+                    sparePartCode,
+                    employee,
+                },
+                sparePartCode,
+                employee,
+            );
+
+            toast.success(
+                `Tạo phiếu ${sparePartCode} thành công`
+            );
+
+            setTimeout(() => {
+                navigate("/repair/spare-parts-issue");
+            }, 1500);
+        } catch (error) {
+            console.error("Status:", error.response?.status);
+
+            console.error(
+                "Backend Error:",
+                JSON.stringify(error.response?.data, null, 2)
+            );
+
+            toast.error(
+                error.response?.data?.message ||
+                "Không thể tạo phiếu xuất vật tư"
+            );
+        }
+        finally {
+            setSubmitting(false);
+        }
+    };
 
   return (<div className="spare-part-form-card">
         <div className="spare-part-form-header">
@@ -186,39 +326,41 @@ export default function SparePartsIssueForm({
                   </div>
 
                   <Row className="mb-4">
-                    <Col md={4}>
-                      <label className="form-label">
-                        Mã phiếu
-                      </label>
 
-                      <Field
-                          name="sparePartCode"
-                          className="form-control"
-                      />
-                    </Col>
 
-                    <Col md={4}>
-                      <label className="form-label">
-                        Lệnh công việc
-                      </label>
+                      <Col md={4}>
+                          <label className="form-label">
+                              Lệnh công việc
+                          </label>
 
-                      <Field
-                          as="select"
-                          name="workOrderId"
-                          className="form-select"
-                      >
-                        {workOrders.map(
-                            (item) => (
-                                <option
-                                    key={item.id}
-                                    value={item.id}
-                                >
-                                  {item.code}
-                                </option>
-                            )
-                        )}
-                      </Field>
-                    </Col>
+                          <Field
+                              as="select"
+                              name="workOrderId"
+                              className="form-select"
+                          >
+                              <option value={""}>
+                                  Chọn Phiếu Công Tác
+                              </option>
+                              {workOrders.map((workOrder) => (
+                                  <option
+                                      key={workOrder.id}
+                                      value={workOrder.id}
+                                  >
+                                      {
+                                          workOrder.workOrderCode ||
+                                          workOrder.orderCode ||
+                                          `WO-${workOrder.id}`
+                                      }
+                                  </option>
+                              ))}
+                          </Field>
+
+                          <ErrorMessage
+                              name="workOrderId"
+                              component="div"
+                              className="text-danger mt-1"
+                          />
+                      </Col>
                   </Row>
 
                   <div className="form-section-title">
@@ -226,244 +368,435 @@ export default function SparePartsIssueForm({
                     Tìm kiếm vật tư
                   </div>
 
-                  <Row className="mb-3">
-                    <Col md={6}>
-                      <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Nhập mã hoặc tên vật tư..."
-                          value={keyword}
-                          onChange={(e) =>
-                              setKeyword(
-                                  e.target.value
-                              )
-                          }
-                      />
-                    </Col>
-                  </Row>
+                    <Row className="mb-3">
+
+                        <Col md={3}>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Mã vật tư"
+                                value={filters.code}
+                                onChange={(e) =>
+                                    setFilters({
+                                        ...filters,
+                                        code: e.target.value
+                                    })
+                                }
+                            />
+                        </Col>
+
+
+                        <Col md={3}>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Tên vật tư"
+                                value={filters.name}
+                                onChange={(e) =>
+                                    setFilters({
+                                        ...filters,
+                                        name: e.target.value
+                                    })
+                                }
+                            />
+                        </Col>
+
+
+                        <Col md={2}>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Nhà sản xuất"
+                                value={filters.manufacturer}
+                                onChange={(e) =>
+                                    setFilters({
+                                        ...filters,
+                                        manufacturer: e.target.value
+                                    })
+                                }
+                            />
+                        </Col>
+
+
+                        <Col md={2}>
+                            <Button
+                                className="w-100"
+                                onClick={handleSearch}
+                            >
+                                Tìm kiếm
+                            </Button>
+                        </Col>
+
+                        <Col md={2}>
+                            <Button
+                                variant="outline-secondary"
+                                className="w-100"
+                                onClick={handleResetSearch}
+                            >
+                                <BsArrowClockwise />
+                                {" "}
+                                Đặt lại
+                            </Button>
+                        </Col>
+
+                    </Row>
 
                   <div className="table-responsive mb-4">
-                    <table className="table table-bordered table-hover">
-                      <thead className="table-light">
-                      <tr>
-                        <th width="60">
-                          Chọn
-                        </th>
-                        <th>Mã vật tư</th>
-                        <th>Tên vật tư</th>
-                      </tr>
-                      </thead>
+                    <table className="table spare-table align-middle">
+                        <thead className="table-light">
+                        <tr>
+                            <th width="60">Chọn</th>
+                            <th width="90">Ảnh</th>
+                            <th width="140">Mã VT</th>
+                            <th>Tên vật tư</th>
+                            <th width="150">Nhà sản xuất</th>
+                            <th width="120">Đơn vị</th>
+                        </tr>
+                        </thead>
 
-                      <tbody>
-                      {filteredSpareParts.map(
-                          (sp) => {
-                            const checked =
-                                values.items.some(
-                                    (item) =>
-                                        item.sparePartId.toString() ===
-                                        sp.id.toString()
-                                );
-
-                            return (
-                                <tr
-                                    key={sp.id}
-                                >
-                                  <td className="text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={
-                                          checked
-                                        }
-                                        onChange={(
-                                            e
-                                        ) => {
-                                          if (
-                                              e
-                                                  .target
-                                                  .checked
-                                          ) {
-                                            setFieldValue(
-                                                "items",
-                                                [
-                                                  ...values.items,
-                                                  {
-                                                    sparePartId:
-                                                        sp.id.toString(),
-                                                    quantity: 1,
-                                                    unit: "Cái",
-                                                  },
-                                                ]
-                                            );
-                                          } else {
-                                            setFieldValue(
-                                                "items",
-                                                values.items.filter(
-                                                    (
-                                                        item
-                                                    ) =>
-                                                        item.sparePartId.toString() !==
-                                                        sp.id.toString()
-                                                )
-                                            );
-                                          }
-                                        }}
-                                    />
-                                  </td>
-
-                                  <td>
-                                    {
-                                      sp.code
-                                    }
-                                  </td>
-
-                                  <td>
-                                    {
-                                      sp.name
-                                    }
-                                  </td>
+                        <tbody>
+                        {
+                            loading ? (
+                                <tr>
+                                    <td colSpan="8" className="text-center py-4">
+                                        Đang tải dữ liệu...
+                                    </td>
                                 </tr>
-                            );
-                          }
-                      )}
-                      </tbody>
+                            ) : filteredSpareParts.length === 0 ? (
+                                <tr>
+                                    <td colSpan="8" className="text-center py-4">
+                                        Không có dữ liệu
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredSpareParts.map((sp) => {
+
+                                    const checked = values.items.some(
+                                        item =>
+                                            item.sparePartId.toString() ===
+                                            sp.id.toString()
+                                    );
+
+                                    return (
+                                        <tr key={sp.id}>
+                                            <td className="text-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setFieldValue("items", [
+                                                                ...values.items,
+                                                                {
+                                                                    sparePartId: sp.id.toString(),
+                                                                    quantity: 1
+                                                                }
+                                                            ]);
+                                                        } else {
+                                                            setFieldValue(
+                                                                "items",
+                                                                values.items.filter(
+                                                                    item =>
+                                                                        item.sparePartId.toString() !==
+                                                                        sp.id.toString()
+                                                                )
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </td>
+
+                                            <td className="text-center">
+                                                <img
+                                                    src={
+                                                        sp.imgPath ||
+                                                        sp.imageUrl ||
+                                                        "/images/no-image.png"
+                                                    }
+                                                    alt={sp.name}
+                                                    className="spare-part-image"
+                                                />
+                                            </td>
+
+                                            <td>
+                        <span className="fw-semibold text-primary">
+                            {sp.sparePartCode || sp.code}
+                        </span>
+                                            </td>
+
+                                            <td>
+                                                <div className="fw-semibold">
+                                                    {sp.name}
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                {sp.manufacturer || "-"}
+                                            </td>
+
+                                            <td>
+                                                <td>
+                                                    <span className="badge bg-info">
+                                                        {sp.unitName || "-"}
+                                                    </span>
+                                                </td>
+                                            </td>
+
+
+                                        </tr>
+                                    );
+                                })
+                            )
+                        }
+                        </tbody>
                     </table>
                   </div>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
 
-                  <div className="form-section-title">
-                    <BsClipboardCheck/>
-                    Danh sách vật tư cấp phát
-                  </div>
+                        <div>
+                            Hiển thị {spareParts.length} / {pagination.totalElements} vật tư
+                        </div>
 
-                  <div className="table-responsive mb-4">
-                    <table className="table table-bordered align-middle">
-                      <thead className="table-primary">
-                      <tr>
-                        <th>Mã VT</th>
-                        <th>Tên vật tư</th>
-                        <th width="120">
-                          Số lượng
-                        </th>
-                        <th width="150">
-                          Đơn vị
-                        </th>
-                        <th width="100">
-                          Thao tác
-                        </th>
-                      </tr>
-                      </thead>
+                        <Pagination size="sm">
 
-                      <tbody>
-                      {values.items.length ===
-                          0 && (
-                              <tr>
-                                <td
-                                    colSpan={
-                                      5
-                                    }
-                                    className="text-center"
-                                >
-                                  Chưa chọn vật tư
-                                </td>
-                              </tr>
-                          )}
+                            <Pagination.Prev
+                                disabled={pagination.page === 0}
+                                onClick={() =>
+                                    setPagination(prev => ({
+                                        ...prev,
+                                        page: prev.page - 1
+                                    }))
+                                }
+                            />
 
-                      {values.items.map(
-                          (
-                              item,
-                              index
-                          ) => {
-                            const sparePart =
-                                spareParts.find(
-                                    (
-                                        sp
-                                    ) =>
-                                        sp.id.toString() ===
-                                        item.sparePartId.toString()
-                                );
-
-                            return (
-                                <tr
-                                    key={
-                                      index
-                                    }
-                                >
-                                  <td>
-                                    {
-                                      sparePart?.code
-                                    }
-                                  </td>
-
-                                  <td>
-                                    {
-                                      sparePart?.name
-                                    }
-                                  </td>
-
-                                  <td>
-                                    <Field
-                                        type="number"
-                                        min="1"
-                                        name={`items.${index}.quantity`}
-                                        className="form-control"
-                                    />
-                                  </td>
-
-                                  <td>
-                                    <Field
-                                        as="select"
-                                        name={`items.${index}.unit`}
-                                        className="form-select"
-                                    >
-                                      {UNITS.map(
-                                          (
-                                              unit
-                                          ) => (
-                                              <option
-                                                  key={
-                                                    unit
-                                                  }
-                                                  value={
-                                                    unit
-                                                  }
-                                              >
-                                                {
-                                                  unit
-                                                }
-                                              </option>
-                                          )
-                                      )}
-                                    </Field>
-                                  </td>
-
-                                  <td>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline-danger"
+                            {
+                                Array.from({
+                                    length: pagination.totalPages
+                                }).map((_, index) => (
+                                    <Pagination.Item
+                                        key={index}
+                                        active={index === pagination.page}
                                         onClick={() =>
-                                            setFieldValue(
-                                                "items",
-                                                values.items.filter(
-                                                    (
-                                                        _,
-                                                        i
-                                                    ) =>
-                                                        i !==
-                                                        index
-                                                )
-                                            )
+                                            setPagination(prev => ({
+                                                ...prev,
+                                                page: index
+                                            }))
                                         }
                                     >
-                                      Xóa
-                                    </Button>
-                                  </td>
-                                </tr>
-                            );
-                          }
-                      )}
-                      </tbody>
-                    </table>
+                                        {index + 1}
+                                    </Pagination.Item>
+                                ))
+                            }
+
+                            <Pagination.Next
+                                disabled={
+                                    pagination.page >=
+                                    pagination.totalPages - 1
+                                }
+                                onClick={() =>
+                                    setPagination(prev => ({
+                                        ...prev,
+                                        page: prev.page + 1
+                                    }))
+                                }
+                            />
+
+                        </Pagination>
+
+                    </div>
+
+                  <div className="selected-material-header">
+                    <BsCartCheckFill />
+                    <span>Danh sách vật tư xuất kho</span>
                   </div>
+
+                    <div className="table-responsive mb-4">
+                        <table className="table spare-table align-middle">
+                            <thead className="table-light">
+                            <tr>
+                                <th width="90">
+                                    <BsImage />
+                                    {" "}Ảnh
+                                </th>
+
+                                <th width="140">
+                                    <BsUpcScan />
+                                    {" "}Mã VT
+                                </th>
+
+                                <th>
+                                    <BsBoxSeam />
+                                    {" "}Tên vật tư
+                                </th>
+
+                                <th width="120">
+                                    <BsRulers />
+                                    {" "}Đơn vị
+                                </th>
+
+                                <th width="130">
+                                    <Bs123 />
+                                    {" "}Số lượng
+                                </th>
+
+                                <th width="100">
+                                    <BsTrash />
+                                    {" "}Xóa
+                                </th>
+                            </tr>
+                            </thead>
+
+
+                            <tbody>
+
+                            {
+                                values.items.length === 0 ? (
+
+                                    <tr>
+                                        <td
+                                            colSpan="6"
+                                            className="text-center py-4"
+                                        >
+                                            Chưa chọn vật tư
+                                        </td>
+                                    </tr>
+
+                                ) : (
+
+                                    values.items.map((item,index)=>{
+
+                                        const sparePart = spareParts.find(
+                                            sp =>
+                                                sp.id.toString() ===
+                                                item.sparePartId.toString()
+                                        );
+
+
+                                        return (
+
+                                            <tr key={index}>
+
+                                                {/* ẢNH */}
+                                                <td className="text-center">
+
+                                                    <img
+                                                        src={
+                                                            sparePart?.imgPath ||
+                                                            "/images/no-image.png"
+                                                        }
+                                                        alt={
+                                                            sparePart?.name
+                                                        }
+                                                        className="spare-part-image"
+                                                    />
+
+                                                </td>
+
+
+
+                                                {/* MÃ VẬT TƯ */}
+                                                <td>
+
+                                <span className="fw-semibold text-primary">
+
+                                    {
+                                        sparePart?.sparePartCode ||
+                                        "-"
+                                    }
+
+                                </span>
+
+                                                </td>
+
+
+
+                                                {/* TÊN */}
+                                                <td>
+
+                                                    <div className="fw-semibold">
+
+                                                        {
+                                                            sparePart?.name ||
+                                                            "-"
+                                                        }
+
+                                                    </div>
+
+                                                </td>
+
+
+
+                                                {/* ĐƠN VỊ */}
+                                                <td>
+
+                                <span className="badge bg-info">
+
+                                    {
+                                        sparePart?.unitName ||
+                                        "-"
+                                    }
+
+                                </span>
+
+                                                </td>
+
+
+
+                                                {/* SỐ LƯỢNG */}
+                                                <td>
+
+                                                    <Field
+                                                        type="number"
+                                                        min="1"
+                                                        name={`items.${index}.quantity`}
+                                                        className="form-control quantity-input"
+                                                    />
+
+                                                </td>
+
+
+
+                                                {/* XÓA */}
+                                                <td className="text-center">
+
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline-danger"
+                                                        onClick={() =>
+                                                            setFieldValue(
+                                                                "items",
+                                                                values.items.filter(
+                                                                    (_,i)=>i!==index
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        Xóa
+                                                    </Button>
+
+                                                </td>
+
+
+                                            </tr>
+
+                                        );
+
+                                    })
+
+                                )
+                            }
+
+
+                            </tbody>
+
+                        </table>
+                    </div>
+                    <ErrorMessage
+                        name="items"
+                        component="div"
+                        className="text-danger fw-bold mt-2"
+                    />
 
                   <div className="form-section-title">
                     <BsPersonBadge/>
@@ -471,50 +804,38 @@ export default function SparePartsIssueForm({
                   </div>
 
                   <Row>
-                    <Col md={6}>
-                      <label className="form-label">
-                        Người yêu cầu
-                      </label>
+                      <Col md={6}>
+                          <label className="form-label">
+                              Người yêu cầu
+                          </label>
 
-                      <Field
-                          as="select"
-                          name="issuedBy"
-                          className="form-select"
-                      >
-                        <option value="">
-                          Chọn người yêu cầu
-                        </option>
+                          <Field
+                              as="select"
+                              name="issueUsername"
+                              className="form-select"
+                          >
+                              <option value="">
+                                  Chọn người yêu cầu
+                              </option>
 
-                        {employees.map(
-                            (item) => (
-                                <option
-                                    key={
-                                      item.id
-                                    }
-                                    value={
-                                      item.id
-                                    }
-                                >
-                                  {
-                                    item.fullName
-                                  }
-                                </option>
-                            )
-                        )}
-                      </Field>
-                    </Col>
+                              {accounts.map(account => (
+                                  <option
+                                      key={account.username}
+                                      value={account.username}
+                                  >
+                                      {account.username}
+                                  </option>
+                              ))}
+                          </Field>
 
-                    <Col md={6}>
-                      <label className="form-label">
-                        Thời gian yêu cầu
-                      </label>
+                          <ErrorMessage
+                              name="issueUsername"
+                              component="div"
+                              className="text-danger mt-1"
+                          />
+                      </Col>
 
-                      <Field
-                          type="datetime-local"
-                          name="issuedAt"
-                          className="form-control"
-                      />
-                    </Col>
+
                   </Row>
                 </div>
 
@@ -543,63 +864,37 @@ export default function SparePartsIssueForm({
                     Đặt lại
                   </Button>
 
-                  <PDFDownloadLink
-                      document={
-                        <SparePartsIssuePDF
-                            data={
-                              values
-                            }
-                            workOrders={
-                              workOrders
-                            }
-                            spareParts={
-                              spareParts
-                            }
-                            employees={
-                              employees
-                            }
-                            technicalAssessment={
-                              technicalAssessments.find(
-                                  (
-                                      item
-                                  ) =>
-                                      item.id.toString() ===
-                                      values.technicalAssessmentId
-                              )
-                            }
-                        />
-                      }
-                      fileName={`${values.sparePartCode}.pdf`}
-                  >
-                    {({
-                        loading,
-                      }) => (
-                        <Button
-                            type="button"
-                            variant="outline-primary"
-                        >
-                          <BsFileEarmarkPdf/>
-                          {loading
-                              ? "Đang tạo PDF..."
-                              : "Xuất PDF"}
-                        </Button>
-                    )}
-                  </PDFDownloadLink>
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={isSubmitting}
+                    >
+                        <BsFileEarmarkPdf />
 
-                  <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={
-                        isSubmitting
-                      }
-                  >
-                    <BsSave/>
-                    Lưu phiếu
-                  </Button>
+                        {" "}
+
+                        {isSubmitting
+                            ? "Đang xử lý..."
+                            : "Xuất PDF & Lưu"}
+                    </Button>
                 </div>
               </Form>
           )}
         </Formik>
+          <Modal
+              show={!!zoomImage}
+              onHide={() => setZoomImage(null)}
+              centered
+              size="lg"
+          >
+              <Modal.Body className="p-0 text-center">
+                  <img
+                      src={zoomImage}
+                      alt="Xem ảnh"
+                      style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                  />
+              </Modal.Body>
+          </Modal>
       </div>
 
   );

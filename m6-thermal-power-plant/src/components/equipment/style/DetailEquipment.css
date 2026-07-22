@@ -1,0 +1,14 @@
+.detail-img-box img {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+}
+
+.detail-img-box {
+    flex: 1;
+}
+
+.detail-img-box+button,
+button+.detail-img-box {
+    min-width: 38px;
+}

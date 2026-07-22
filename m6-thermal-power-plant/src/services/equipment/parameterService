@@ -1,0 +1,15 @@
+import apiClient from "../apiClient";
+
+const URL = "/api/v1/parameter";
+
+export const getByEquipment = (equipmentId) =>
+    apiClient.get(`${URL}/equipment/${equipmentId}`);
+
+export const create = (data) =>
+    apiClient.post(`${URL}`, data);
+
+export const update = (id, data) =>
+    apiClient.put(`${URL}/${id}`, data);
+
+export const remove = (id) =>
+    apiClient.delete(`${URL}/${id}`);

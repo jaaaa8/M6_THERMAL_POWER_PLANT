@@ -14,7 +14,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import RepairRequest from './components/repair_request/RepairRequest.jsx';
+import RepairRequestPage from './pages/RepairRequestPage.jsx';
 import WorkOrderList from './components/work_order/WorkOrderList.jsx';
 import ListDepartment from './components/hr/department/ListDepartment';
 import AddDepartment from './components/hr/department/AddDepartment';
@@ -36,7 +36,7 @@ import ListEquipment from './components/equipment/ListEquipment';
 import AddEquipment from './components/equipment/AddEquipment';
 import UpdateEquipment from './components/equipment/UpdateEquipment';
 import DetailEquipment from './components/equipment/DetailEquipment';
-import ManageUnits from './components/equipment/ManageUnits';
+import ManageMaster from "./components/equipment/ManageMaster";
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
 import RoleManagementPage from "./pages/RoleManagementPage.jsx";
 import CreateAccountPage from "./pages/CreateAccountPage.jsx";
@@ -50,6 +50,8 @@ import EmployeePage from './pages/employee/EmployeePage.jsx';
 import EmployeeBorrowForm from './pages/employee/EmployeeBorrowForm.jsx';
 import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
+import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
+import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
 
 function App() {
   return (
@@ -98,25 +100,26 @@ function App() {
             <Route path="/equipment/system/add" element={<AddSystem />} />
             <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
             <Route path="/equipment/equipments" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/add" element={<AddEquipment />} />
+            <Route path="/equipment/equipments/:systemId/add" element={<AddEquipment />} />
             <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
-            <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
-            <Route path="/equipment/equipments/units" element={<ManageUnits />} />
+            <Route path="/equipment/equipments" element={<ListEquipment />} />
+            <Route path="/equipment/equipments/system/:systemId" element={<ListEquipment />} />
+            <Route path="/equipment/equipments/:id" element={<DetailEquipment />} />
+            <Route path="/equipment/parameter" element={<ManageMaster />} />
 
             {/* --- Sửa chữa --- */}
-            <Route path="/repair/yeu-cau" element={<RepairRequest />} />
+            <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
             <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
             <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
             <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
             <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList />} />
             <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
+            <Route path="/repair/history" element={<RepairHistoryList />} />
 
             {/* --- Vật tư --- */}
-            <Route path="/material/catalog" element={<MaterialCatalogPage/>} />
+            <Route path="/material/catalog" element={<MaterialCatalogPage />} />
             <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
             <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
-
-
 
             {/* --- CCDC --- */}
             <Route path="/ccdc/danh-sach" element={<ToolList />} />
@@ -127,10 +130,10 @@ function App() {
             <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
 
             {/* --- Bảo dưỡng --- */}
-            <Route path="/bao-duong/ke-hoach" element={<PlaceholderPage title="Kế hoạch Bảo dưỡng" />} />
-            <Route path="/bao-duong/ke-hoach/them-moi" element={<LubricationPlanForm />} />
-            <Route path="/bao-duong/ke-hoach/list" element={<LubricationChecklistPage />} />
-            <Route path="/bao-duong/lich-su" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
+            <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
+            <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
+            <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
           </Route>
 
           {/* ======= Employee Portal ======= */}

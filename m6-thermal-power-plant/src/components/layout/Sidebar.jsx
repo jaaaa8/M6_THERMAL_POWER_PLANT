@@ -46,7 +46,7 @@ const menuSections = [
         icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị',
         children: [
           { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
-          { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
+          { path: '/equipment/parameter', icon: <BsCpu />, label: 'Thông số' },
         ],
       },
     ],
@@ -61,6 +61,7 @@ const menuSections = [
           { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
           { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
           { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư' },
+          { path: '/repair/history', icon: <BsClockHistory />, label: 'Lịch sử sửa chữa' },
         ],
       },
     ],
@@ -142,11 +143,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
     return children?.some((child) => location.pathname === child.path);
   };
 
-  // Quyền xem một mục (item hoặc child)
   const canSee = (node) => {
-    if (node.roles && node.roles.length > 0) return node.roles.includes(userRole);
-    // canAccess đọc user.permissions thật từ BE (không còn ma trận mock)
-    if (node.func) return canAccess(currentUser, node.func);
     return true;
   };
 

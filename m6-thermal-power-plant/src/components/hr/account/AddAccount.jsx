@@ -16,8 +16,8 @@ const AccountSchema = Yup.object().shape({
     .min(8, 'Tên đăng nhập phải chứa từ 8 đến 50 ký tự')
     .max(50, 'Tên đăng nhập phải chứa từ 8 đến 50 ký tự')
     .matches(
-      /^(?=.*[a-z])(?=.*[0-9])[a-z0-9]+$/,
-      'Tên đăng nhập chỉ gồm chữ thường, chữ số và phải có ít nhất 1 chữ cái và 1 chữ số'
+      /^(?=.*[a-z])(?=.*[0-9])[a-z0-9!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~]+$/,
+      'Tên đăng nhập phải chứa chữ thường, chữ số, có thể chứa ký tự đặc biệt và phải có ít nhất 1 chữ cái và 1 chữ số'
     ),
   roleIds: Yup.string()
     .required('Vui lòng chọn vai trò'),

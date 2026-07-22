@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { Row, Col, Button } from 'react-bootstrap';
+import { Row, Col, Button, Modal, Form as BsForm } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+
+import { useNavigate } from "react-router-dom";
 import {
   BsPersonPlusFill,
   BsPersonBadge,
@@ -56,6 +58,176 @@ const INITIAL_VALUES = {
   positionId: '',
 };
 
+function ImageCropModal({ show, imageSrc, onClose, onCropComplete }) {
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    if (show) {
+      setZoom(1);
+      setRotation(0);
+      setOffset({ x: 0, y: 0 });
+    }
+  }, [imageSrc, show]);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    setOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    setOffset({
+      x: e.touches[0].clientX - dragStart.x,
+      y: e.touches[0].clientY - dragStart.y
+    });
+  };
+
+  const handleCrop = () => {
+    const image = new Image();
+    image.src = imageSrc;
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      const size = 300;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.save();
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(zoom, zoom);
+
+      const imgWidth = image.width;
+      const imgHeight = image.height;
+      const maxDim = Math.max(imgWidth, imgHeight);
+      const renderWidth = (imgWidth / maxDim) * size;
+      const renderHeight = (imgHeight / maxDim) * size;
+
+      ctx.drawImage(
+        image,
+        -renderWidth / 2 + offset.x / zoom,
+        -renderHeight / 2 + offset.y / zoom,
+        renderWidth,
+        renderHeight
+      );
+
+      ctx.restore();
+
+      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      onCropComplete(croppedDataUrl);
+    };
+  };
+
+  return (
+    <Modal show={show} onHide={onClose} centered backdrop="static">
+      <Modal.Header closeButton>
+        <Modal.Title className="fs-5 fw-bold text-primary">Căn chỉnh & Cắt ảnh</Modal.Title>
+      </Modal.Header>
+      <Modal.Body className="d-flex flex-column align-items-center px-4">
+        <div 
+          style={{
+            width: '300px',
+            height: '300px',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '2px solid var(--primary-light)',
+            borderRadius: '50%',
+            cursor: 'move',
+            backgroundColor: '#f8f9fa',
+            boxShadow: 'var(--shadow-md)'
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
+        >
+          <img
+            src={imageSrc}
+            alt="To Crop"
+            draggable="false"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg) scale(${zoom})`,
+              maxHeight: '100%',
+              maxWidth: '100%',
+              pointerEvents: 'none',
+              transformOrigin: 'center center'
+            }}
+          />
+        </div>
+        <p className="text-muted mt-3 fs-8 text-center">
+          Nhấp và kéo chuột (hoặc vuốt màn hình) trên ảnh để di chuyển vị trí.
+        </p>
+
+        <div className="w-100 mt-2">
+          <BsForm.Group className="mb-3">
+            <BsForm.Label className="fs-7 fw-semibold text-secondary d-flex justify-content-between">
+              <span>Độ thu phóng (Zoom)</span>
+              <span>{Math.round(zoom * 100)}%</span>
+            </BsForm.Label>
+            <BsForm.Range
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={(e) => setZoom(parseFloat(e.target.value))}
+            />
+          </BsForm.Group>
+
+          <BsForm.Group className="mb-2">
+            <BsForm.Label className="fs-7 fw-semibold text-secondary d-flex justify-content-between">
+              <span>Góc xoay (Rotate)</span>
+              <span>{rotation}°</span>
+            </BsForm.Label>
+            <BsForm.Range
+              min={0}
+              max={360}
+              step={1}
+              value={rotation}
+              onChange={(e) => setRotation(parseInt(e.target.value))}
+            />
+          </BsForm.Group>
+        </div>
+      </Modal.Body>
+      <Modal.Footer className="border-0">
+        <Button variant="outline-secondary" onClick={onClose} className="px-4">Hủy</Button>
+        <Button variant="primary" onClick={handleCrop} className="px-4">Áp dụng</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
+
 export default function AddEmployee({
   onSuccess,
   onCancel,
@@ -66,6 +238,9 @@ export default function AddEmployee({
   const [expertises, setExpertises] = useState([]);
   const [positions, setPositions] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -102,6 +277,10 @@ export default function AddEmployee({
         await employeeService.create(payload);
         toast.success('Thêm mới nhân sự thành công!');
       }
+
+      setTimeout(() => {
+        navigate("/hr/employees");
+      }, 1500);
 
       resetForm();
       onSuccess?.();
@@ -190,9 +369,11 @@ export default function AddEmployee({
                       }
                       const reader = new FileReader();
                       reader.onloadend = () => {
-                        setFieldValue('imgPath', reader.result);
+                        setSelectedImage(reader.result);
+                        setCropModalOpen(true);
                       };
                       reader.readAsDataURL(file);
+                      event.target.value = '';
                     }
                   }}
                 />
@@ -399,6 +580,20 @@ export default function AddEmployee({
                   : 'Thêm mới'}
               </Button>
             </div>
+
+            <ImageCropModal 
+              show={cropModalOpen}
+              imageSrc={selectedImage}
+              onClose={() => {
+                setCropModalOpen(false);
+                setSelectedImage(null);
+              }}
+              onCropComplete={(croppedDataUrl) => {
+                setFieldValue('imgPath', croppedDataUrl);
+                setCropModalOpen(false);
+                setSelectedImage(null);
+              }}
+            />
           </Form>
         )}
       </Formik>

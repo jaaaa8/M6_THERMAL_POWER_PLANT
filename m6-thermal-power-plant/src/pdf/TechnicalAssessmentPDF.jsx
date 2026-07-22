@@ -176,23 +176,17 @@ const styles = StyleSheet.create({
 
 export default function TechnicalAssessmentPDF({
                                                    data,
-                                                   workOrders,
-                                                   assessors,
                                                    systems = [],
                                                    equipments = [],
                                                    spareParts = [],
                                                    images = []
                                                }) {
 
-    const workOrder =
-        workOrders.find(
-            (w) => w.id.toString() === data.workOrderId
-        )?.code || "";
 
     const assessor =
-        assessors.find(
-            (a) => a.username.toString() === data.username
-        )?.fullName || "";
+        data.assessor?.name ||
+        data.assessor?.fullName ||
+        "";
 
     const system =
         systems.find(
@@ -224,20 +218,7 @@ export default function TechnicalAssessmentPDF({
         }
     };
 
-    const getStatusStyle = () => {
-        switch (data.status) {
-            case "PENDING":
-                return styles.statusPending;
-            case "IN_PROGRESS":
-                return styles.statusProgress;
-            case "COMPLETED":
-                return styles.statusCompleted;
-            case "REJECTED":
-                return styles.statusRejected;
-            default:
-                return {};
-        }
-    };
+
 
     return (
         <Document>
@@ -270,14 +251,6 @@ export default function TechnicalAssessmentPDF({
                         </Text>
                     </View>
 
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Lệnh công việc:
-                        </Text>
-                        <Text style={styles.value}>
-                            {workOrder}
-                        </Text>
-                    </View>
 
                     <View style={styles.row}>
                         <Text style={styles.label}>
@@ -315,20 +288,7 @@ export default function TechnicalAssessmentPDF({
                         </Text>
                     </View>
 
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Trạng thái:
-                        </Text>
 
-                        <Text
-                            style={[
-                                styles.value,
-                                getStatusStyle(),
-                            ]}
-                        >
-                            {getStatusLabel()}
-                        </Text>
-                    </View>
 
                 </View>
 

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import {
-  BsClipboardCheck, BsSearch, BsArrowClockwise, BsListUl,
-  BsHourglassSplit, BsCheckCircle, BsXCircle, BsPlayCircle,
-  BsEye,
+  BsClipboardCheck, BsArrowClockwise, BsListUl,
+  BsHourglassSplit, BsCheckCircle, BsPlayCircle,
+  BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -11,7 +11,12 @@ import StatusBadge from '../common/StatusBadge';
 import SearchBox from '../common/SearchBox';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
+import WorkOrderDetailModal from './WorkOrderDetailModal';
+import WorkOrderEditModal from './WorkOrderEditModal';
+import WorkOrderStatusModal from './WorkOrderStatusModal';
+import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
+import { authService } from '../../services/authService';
 import { toast } from 'react-toastify';
 import './WorkOrderList.css';
 
@@ -19,8 +24,11 @@ import './WorkOrderList.css';
    MAP — Trạng thái PCT
    ============================================================ */
 const TRANG_THAI_MAP = {
-  OPEN: { label: 'Mới tạo', status: 'info' },
+  OPEN: { label: 'Chờ duyệt', status: 'info' },
   IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
+  WAITING_FOR_APPROVAL: { label: 'Chờ duyệt gia hạn', status: 'warning' },
+  APPROVED: { label: 'Đã duyệt', status: 'info' },
+  STOPPED: { label: 'Tạm dừng', status: 'inactive' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
@@ -30,11 +38,22 @@ const TRANG_THAI_MAP = {
    ============================================================ */
 const FILTERS = [
   { key: 'ALL', label: 'Tất cả' },
-  { key: 'OPEN', label: 'Mới tạo' },
+  { key: 'OPEN', label: 'Chờ duyệt' },
+  { key: 'APPROVED', label: 'Đã duyệt' },
   { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
+  { key: 'STOPPED', label: 'Tạm dừng' },
+  { key: 'WAITING_FOR_APPROVAL', label: 'Chờ duyệt gia hạn' },
   { key: 'COMPLETED', label: 'Hoàn thành' },
   { key: 'CANCELLED', label: 'Đã huỷ' },
 ];
+
+/**
+ * Gating vai trò (chỉ ở UI, backend không chặn — nhất quán các nút cũ):
+ * nút Sửa dành cho người vận hành; nút Trạng thái mở cho cả người vận hành
+ * lẫn người duyệt (modal tự lọc option theo vai trò).
+ */
+const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
+const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 
 /* ============================================================
    COMPONENT
@@ -42,18 +61,34 @@ const FILTERS = [
 export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [codeSearch, setCodeSearch] = useState('');   // mã PCT / mã NV tổ trưởng / id
+  const [descSearch, setDescSearch] = useState('');   // mô tả sửa chữa
+  const [fromDate, setFromDate] = useState('');       // startTime từ ngày (yyyy-MM-dd)
+  const [toDate, setToDate] = useState('');           // startTime đến hết ngày
   const [filter, setFilter] = useState('ALL');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
+  const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);     // dòng đang sửa thông tin
+  const [statusTarget, setStatusTarget] = useState(null); // dòng đang đổi trạng thái
   const pageSize = 20;
+
+  const userRoles = authService.getCurrentUser()?.roles || [];
+  const canOperate = userRoles.some((r) => OPERATE_ROLES.includes(r));
+  const canChangeStatus = canOperate || userRoles.some((r) => APPROVE_ROLES.includes(r));
 
   /* --- Fetch dữ liệu --- */
   const fetchWorkOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await workOrderService.getAll(search || undefined, page, pageSize);
+      const res = await workOrderService.getAll({
+        code: codeSearch || undefined,
+        description: descSearch || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      }, page, pageSize);
       const paged = res.data;
       const content = Array.isArray(paged.content) ? paged.content : [];
       setWorkOrders(content);
@@ -65,7 +100,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [codeSearch, descSearch, fromDate, toDate, page]);
 
   useEffect(() => {
     fetchWorkOrders();
@@ -79,7 +114,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     const cancelled = workOrders.filter((r) => r.status === 'CANCELLED').length;
     return [
       { key: 'total', label: 'Tổng PCT', value: totalElements, icon: <BsListUl />, color: 'var(--color-primary-500)' },
-      { key: 'open', label: 'Mới tạo', value: open, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
+      { key: 'open', label: 'Chờ duyệt', value: open, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
       { key: 'in_progress', label: 'Đang thực hiện', value: inProgress, icon: <BsPlayCircle />, color: 'var(--color-status-warning)' },
       { key: 'completed', label: 'Hoàn thành', value: completed, icon: <BsCheckCircle />, color: 'var(--color-status-normal)' },
     ];
@@ -108,8 +143,15 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     { key: 'requestCode', label: 'Mã YC', mono: true, width: 130 },
     { key: 'leaderName', label: 'Người LĐ', width: 150 },
     {
-      key: 'startTime', label: 'Bắt đầu', width: 150,
-      render: (val) => val ? new Date(val).toLocaleString('vi-VN') : '—',
+      key: 'startTime', label: 'Thời gian', width: 170,
+      render: (val, row) => (
+        <div>
+          <div>{val ? new Date(val).toLocaleString('vi-VN') : '—'}</div>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+            Kết thúc: {row.endTime ? new Date(row.endTime).toLocaleString('vi-VN') : '—'}
+          </span>
+        </div>
+      ),
     },
     {
       key: 'status', label: 'Trạng thái', width: 140,
@@ -122,15 +164,49 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
   /* --- Hành động dòng --- */
   function renderActions(row) {
+    const finished = row.status === 'COMPLETED' || row.status === 'CANCELLED';
     return (
-      <Button
-        variant="outline-primary"
-        size="sm"
-        title="Xem chi tiết"
-        onClick={() => toast.info(`Chi tiết PCT ${row.orderCode} — đang phát triển`)}
-      >
-        <BsEye className="me-1" /> Xem
-      </Button>
+      <div className="d-flex gap-1">
+        <Button
+          variant="outline-primary"
+          size="sm"
+          title="Xem chi tiết"
+          onClick={() => setSelectedWorkOrderId(row.id)}
+        >
+          <BsEye className="me-1" /> Xem
+        </Button>
+        {canChangeStatus && (
+          <Button
+            variant="outline-warning"
+            size="sm"
+            title={finished ? 'Phiếu đã chốt — không thể chuyển trạng thái' : 'Cập nhật trạng thái phiếu (duyệt / bắt đầu / tạm dừng / hoàn thành / huỷ)'}
+            disabled={finished}
+            onClick={() => setStatusTarget(row)}
+          >
+            <BsArrowRepeat className="me-1" /> Trạng thái
+          </Button>
+        )}
+        {canOperate && (
+          <Button
+            variant="outline-info"
+            size="sm"
+            title={finished ? 'Phiếu đã chốt — không thể sửa' : 'Sửa thông tin phiếu (nhân sự, thời gian, mô tả)'}
+            disabled={finished}
+            onClick={() => setEditTarget(row)}
+          >
+            <BsPencilSquare className="me-1" /> Sửa
+          </Button>
+        )}
+        <Button
+          variant="outline-success"
+          size="sm"
+          title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Cấp vật tư cho PCT'}
+          disabled={finished}
+          onClick={() => setSuppliesIssueTarget(row)}
+        >
+          <BsBoxSeam className="me-1" /> Cấp vật tư
+        </Button>
+      </div>
     );
   }
 
@@ -162,13 +238,41 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
       {/* ===== SEARCH + FILTERS ===== */}
       <div className="wo-toolbar">
-        <SearchBox
-          value={search}
-          onChange={setSearch}
-          placeholder="Tìm theo mã PCT, mã yêu cầu hoặc nội dung..."
-          onSearch={() => { setPage(0); fetchWorkOrders(); }}
-          icon={<BsSearch />}
-        />
+        {/* SearchBox không có prop onChange/icon — gõ phím gọi onSearch(value);
+            cập nhật state ở đây thì effect [filters, page] tự refetch.
+            4 bộ lọc độc lập kết hợp AND, đổi bộ lọc nào cũng quay về trang 1. */}
+        <div className="wo-toolbar-search">
+          <SearchBox
+            value={codeSearch}
+            placeholder="Tìm theo ID, mã PCT hoặc mã NV tổ trưởng..."
+            onSearch={(val) => { setCodeSearch(val); setPage(0); }}
+          />
+        </div>
+        <div className="wo-toolbar-search">
+          <SearchBox
+            value={descSearch}
+            placeholder="Tìm theo mô tả sửa chữa..."
+            onSearch={(val) => { setDescSearch(val); setPage(0); }}
+          />
+        </div>
+        <label className="wo-toolbar-date">
+          Bắt đầu từ
+          <input
+            type="date"
+            className="form-control form-control-sm"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setPage(0); }}
+          />
+        </label>
+        <label className="wo-toolbar-date">
+          Đến hết ngày
+          <input
+            type="date"
+            className="form-control form-control-sm"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setPage(0); }}
+          />
+        </label>
       </div>
 
       <div className="wo-filter-pills">
@@ -196,11 +300,11 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         <EmptyState
           icon={<BsClipboardCheck />}
           title="Không có phiếu công tác nào"
-          description={search ? 'Thử từ khoá khác hoặc xoá bộ lọc.' : 'Chưa có PCT nào được tạo.'}
+          description={(codeSearch || descSearch || fromDate || toDate) ? 'Thử từ khoá khác hoặc xoá bộ lọc.' : 'Chưa có PCT nào được tạo.'}
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} actions={renderActions} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">
@@ -227,6 +331,40 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
           )}
         </>
       )}
+
+      {/* ===== MODAL: CHI TIẾT PCT ===== */}
+      <WorkOrderDetailModal
+        show={!!selectedWorkOrderId}
+        workOrderId={selectedWorkOrderId}
+        onClose={() => setSelectedWorkOrderId(null)}
+        onChanged={fetchWorkOrders}
+      />
+
+      {/* ===== MODAL: CẤP VẬT TƯ CHO PCT ===== */}
+      <SuppliesIssueModal
+        show={!!suppliesIssueTarget}
+        workOrder={suppliesIssueTarget}
+        onClose={() => setSuppliesIssueTarget(null)}
+      />
+
+      {/* ===== MODAL: CẬP NHẬT TRẠNG THÁI PCT =====
+          key theo id → mỗi phiếu là một instance mới, state trong modal tự sạch */}
+      <WorkOrderStatusModal
+        key={`status-${statusTarget?.id ?? 'none'}`}
+        show={!!statusTarget}
+        workOrder={statusTarget}
+        onClose={() => setStatusTarget(null)}
+        onChanged={fetchWorkOrders}
+      />
+
+      {/* ===== MODAL: SỬA THÔNG TIN PCT ===== */}
+      <WorkOrderEditModal
+        key={`edit-${editTarget?.id ?? 'none'}`}
+        show={!!editTarget}
+        workOrder={editTarget}
+        onClose={() => setEditTarget(null)}
+        onChanged={fetchWorkOrders}
+      />
     </div>
   );
 }

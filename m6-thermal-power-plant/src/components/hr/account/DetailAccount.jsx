@@ -67,7 +67,15 @@ export default function DetailAccount({ data, onClose }) {
             <Col md={5} className="border-end border-light">
               <div className="text-center mb-4">
                 <div className="account-avatar mx-auto mb-3">
-                  <BsShieldLock size={48} className="text-primary" />
+                  {account.image ? (
+                    <img 
+                      src={account.image.startsWith('http') ? account.image : `${import.meta.env.VITE_API_BASE_URL || ''}${account.image}`} 
+                      alt={account.username} 
+                      className="w-100 h-100 rounded-circle object-fit-cover"
+                    />
+                  ) : (
+                    <BsShieldLock size={48} className="text-primary" />
+                  )}
                 </div>
                 <h4 className="mb-1">{account.username}</h4>
                 <p className="text-muted mb-2">Tên đăng nhập</p>

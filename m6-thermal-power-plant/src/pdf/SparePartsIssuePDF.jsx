@@ -143,19 +143,33 @@ export default function SparePartsIssuePDF({
                                                data,
                                                workOrders,
                                                spareParts,
-                                               employees,
-                                               technicalAssessment,
                                            }) {
+
+
+    const formatDateVN = (date) => {
+        if (!date) return "";
+
+        const d = new Date(date);
+
+        if (isNaN(d.getTime())) {
+            return date;
+        }
+
+        return d.toLocaleString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
 
     const workOrder =
         workOrders.find(
-            w => w.id.toString() === data.workOrderId
-        )?.code || "";
-
-    const issuedBy =
-        employees.find(
-            e => e.id.toString() === data.issuedBy
-        )?.fullName || "";
+            w => Number(w.id) === Number(data.workOrderId)
+        )?.orderCode || "";
+    console.log("PDF DATA", data);
+    console.log("PDF WORK ORDERS", workOrders);
 
     return (
         <Document>
@@ -205,7 +219,16 @@ export default function SparePartsIssuePDF({
                         </Text>
 
                         <Text style={styles.value}>
-                            {issuedBy}
+                            {
+                                data.issuedBy?.employee?.employeeName ||
+                                ""
+                            }
+
+                            {
+                                data.issuedBy?.username
+                                    ? ` (${data.issuedBy.username})`
+                                    : ""
+                            }
                         </Text>
                     </View>
 
@@ -215,7 +238,7 @@ export default function SparePartsIssuePDF({
                         </Text>
 
                         <Text style={styles.value}>
-                            {data.issuedAt}
+                            {formatDateVN(data.issuedAt)}
                         </Text>
                     </View>
                 </View>
@@ -246,8 +269,8 @@ export default function SparePartsIssuePDF({
                             const sparePart =
                                 spareParts.find(
                                     sp =>
-                                        sp.id.toString() ===
-                                        item.sparePartId
+                                        sp.id?.toString() ===
+                                        item.sparePartId?.toString()
                                 );
 
                             return (
@@ -268,7 +291,7 @@ export default function SparePartsIssuePDF({
                                     </Text>
 
                                     <Text style={styles.cellUnit}>
-                                        {item.unit}
+                                        {sparePart?.unitName || "-"}
                                     </Text>
                                 </View>
                             );
