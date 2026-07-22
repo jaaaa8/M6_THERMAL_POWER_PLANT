@@ -13,7 +13,7 @@ import {
 import {
     BsEye,
     // BsPencil,
-    // BsTrash,
+    BsTrash,
     BsSearch,
     BsPlusCircle,
     BsArrowClockwise
@@ -24,6 +24,7 @@ import {Link} from "react-router-dom";
 import lubricationPlanService from "../../services/lubricationPlanService";
 
 import "../LubricationPlan/LubricationPlanForm.css";
+import { toast } from "react-toastify";
 
 
 export default function MaintenancePlanList() {
@@ -40,7 +41,13 @@ export default function MaintenancePlanList() {
 
     const [showDetail,setShowDetail] = useState(false);
 
-    const [selectedPlan,setSelectedPlan] = useState(null);
+    const [selectedPlan,setSelectedPlan] = useState(null)
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    const [deleteId, setDeleteId] = useState(null);
+
+    const [deleting, setDeleting] = useState(false);
 
 
     const [pagination,setPagination] = useState({
@@ -98,6 +105,50 @@ export default function MaintenancePlanList() {
         setSearch(e.target.value);
 
     };
+
+    const openDeleteModal = (id) => {
+
+        setDeleteId(id);
+
+        setShowDeleteModal(true);
+
+    };
+
+    const confirmDelete = async () => {
+
+        try {
+
+            setDeleting(true);
+
+            await lubricationPlanService.remove(deleteId);
+
+            toast.success("Xóa kế hoạch thành công");
+
+            setShowDeleteModal(false);
+
+            setDeleteId(null);
+
+            loadData(
+                search,
+                status,
+                pagination.page
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error("Xóa kế hoạch thất bại");
+
+        } finally {
+
+            setDeleting(false);
+
+        }
+
+    };
+
+
 
     const handleSearchClick = () => {
         loadData(search, status, 0);
@@ -435,14 +486,13 @@ export default function MaintenancePlanList() {
                                         {/*</Button>*/}
 
 
-                                        {/*<Button*/}
-                                        {/*    size="sm"*/}
-                                        {/*    variant="outline-danger"*/}
-                                        {/*>*/}
-
-                                        {/*    <BsTrash/>*/}
-
-                                        {/*</Button>*/}
+                                        <Button
+                                            size="sm"
+                                            variant="outline-danger"
+                                            onClick={() => openDeleteModal(plan.id)}
+                                        >
+                                            <BsTrash />
+                                        </Button>
 
 
                                     </div>
@@ -849,6 +899,61 @@ export default function MaintenancePlanList() {
 
                 </Modal.Footer>
 
+
+            </Modal>
+
+            <Modal
+                show={showDeleteModal}
+                onHide={() => setShowDeleteModal(false)}
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>
+                        Xác nhận xóa
+                    </Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body>
+
+                    <div className="text-center">
+
+                        <div
+                            className="mb-3"
+                            style={{ fontSize: "50px", color: "#dc3545" }}
+                        >
+                            <BsTrash />
+                        </div>
+
+                        <h5>
+                            Bạn có chắc chắn muốn xóa?
+                        </h5>
+
+                        <p className="text-muted mb-0">
+                            Dữ liệu kế hoạch bôi trơn sẽ bị xóa khỏi hệ thống.
+                        </p>
+
+                    </div>
+
+                </Modal.Body>
+
+                <Modal.Footer>
+
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowDeleteModal(false)}
+                    >
+                        Hủy
+                    </Button>
+
+                    <Button
+                        variant="danger"
+                        onClick={confirmDelete}
+                        disabled={deleting}
+                    >
+                        {deleting ? "Đang xóa..." : "Xác nhận xóa"}
+                    </Button>
+
+                </Modal.Footer>
 
             </Modal>
 

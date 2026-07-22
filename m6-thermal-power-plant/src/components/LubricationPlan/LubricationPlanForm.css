@@ -10,3 +10,174 @@
     font-size:14px;
     color:#6c757d;
 }
+
+/* ================================
+   LUBRICATION TABLE
+================================ */
+
+
+.lubrication-table {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #d9e6f2;
+    background: #ffffff;
+}
+
+
+/* Header */
+.lubrication-table thead th {
+
+    background: linear-gradient(
+            135deg,
+            #0d6efd,
+            #0b5ed7
+    );
+
+    color: white;
+
+    font-weight: 600;
+
+    text-align: center;
+
+    vertical-align: middle;
+
+    padding: 14px;
+
+    border: none;
+
+}
+
+
+/* Body */
+
+.lubrication-table tbody td {
+
+    padding: 12px;
+
+    color: #344054;
+
+    border-color: #edf2f7;
+
+}
+
+
+/* Hover */
+
+.lubrication-table tbody tr:hover {
+
+    background-color: #f1f7ff;
+
+    transition: 0.2s;
+
+}
+
+
+
+/* Dòng được chọn */
+
+.lubrication-row-selected {
+
+    background-color: #e8f1ff !important;
+
+    color: #0d47a1;
+
+}
+
+
+.lubrication-row-selected td:first-child {
+
+    border-left: 5px solid #0d6efd;
+
+}
+
+
+
+/* Radio */
+
+.lubrication-table input[type="radio"] {
+
+    width: 18px;
+
+    height: 18px;
+
+    cursor: pointer;
+
+}
+
+
+
+/* Ảnh vật tư */
+
+.lubrication-table img {
+
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+
+}
+
+
+
+/* Badge đơn vị */
+
+.lubrication-badge-unit {
+
+    background: #e0f2fe;
+
+    color: #0369a1;
+
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    font-weight: 500;
+
+}
+
+
+
+/* trạng thái */
+
+.lubrication-status-active {
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+}
+
+
+.lubrication-status-disable {
+
+    background: #f1f5f9;
+
+    color: #64748b;
+
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+}
+
+
+
+/* Input số lượng */
+
+.lubrication-table .form-control {
+
+    border-radius: 8px;
+
+    border: 1px solid #cbd5e1;
+
+}
+
+
+.lubrication-table .form-control:focus {
+
+    border-color: #0d6efd;
+
+    box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { Row, Col, Button } from "react-bootstrap";
+import { Row, Col, Button, Pagination  } from "react-bootstrap";
 import { toast } from "react-toastify";
 import lubricationPlanService from "../../services/lubricationPlanService";
 import * as systemService from "../../services/equipment/systemService";
@@ -75,29 +75,29 @@ export function LubricationPlanForm({
     const [loadingEquipment, setLoadingEquipment] = useState(false);
 
     const [loadingConsumable, setLoadingConsumable] = useState(false);
+    const [searchConsumableCode, setSearchConsumableCode] = useState("");
+
+    const [searchConsumableName, setSearchConsumableName] = useState("");
+
+    const [appliedConsumableCode, setAppliedConsumableCode] = useState("");
+
+    const [appliedConsumableName, setAppliedConsumableName] = useState("");
     const navigate = useNavigate();
 
-    const systems = [
-        {
-            id: 1,
-            code: "SYS-001",
-            name: "Hệ thống làm mát",
-        },
-        {
-            id: 2,
-            code: "SYS-002",
-            name: "Hệ thống turbine",
-        },
-        {
-            id: 3,
-            code: "SYS-003",
-            name: "Hệ thống nghiền than",
-        },
-    ];
+    const [page, setPage] = useState(0);
+
+    const [size] = useState(10);
+
+    const [totalPages, setTotalPages] = useState(0);
+
+    const [totalElements,setTotalElements] = useState(0);
+
 
     useEffect(() => {
 
         loadSystems();
+
+        loadConsumable(0);
 
     }, []);
 
@@ -136,6 +136,8 @@ export function LubricationPlanForm({
 
     };
 
+
+
     const loadEquipmentBySystem = async (
         systemId,
         setFieldValue
@@ -145,11 +147,7 @@ export function LubricationPlanForm({
 
             setLoadingEquipment(true);
 
-
             setEquipmentList([]);
-
-            setConsumableList([]);
-
 
             setFieldValue(
                 "equipmentId",
@@ -178,6 +176,7 @@ export function LubricationPlanForm({
         } catch(error){
 
             console.error(
+                "Lỗi load thiết bị:",
                 error
             );
 
@@ -194,8 +193,10 @@ export function LubricationPlanForm({
 
     };
 
-    const loadConsumableByKks = async (
-        kksCode
+    const loadConsumable = async (
+        currentPage = 0,
+        code = appliedConsumableCode,
+        name = appliedConsumableName
     ) => {
 
         try {
@@ -203,27 +204,38 @@ export function LubricationPlanForm({
             setLoadingConsumable(true);
 
 
-            setConsumableList([]);
+            const keyword =
+                `${code} ${name}`.trim();
 
 
             const res =
                 await consumableService.search({
 
-                    keyword: kksCode,
+                    keyword,
 
                     status:"ACTIVE",
 
-                    page:0,
+                    page: currentPage,
 
-                    size:50
+                    size
 
                 });
 
 
             setConsumableList(
-                res.data.content ||
-                res.data ||
-                []
+                res.data.content || []
+            );
+
+
+            setTotalPages(
+                res.data.totalPages || 0
+            );
+
+
+            setPage(currentPage);
+
+            setTotalElements(
+                res.data.totalElements || 0
             );
 
 
@@ -232,7 +244,7 @@ export function LubricationPlanForm({
             console.error(error);
 
             toast.error(
-                "Không tìm thấy vật tư"
+                "Không tải được danh sách vật tư"
             );
 
 
@@ -329,6 +341,43 @@ export function LubricationPlanForm({
 
         }
         : INITIAL_VALUES;
+
+    const filteredConsumableList = consumableList;
+
+    const handleSearchConsumable = () => {
+
+        setAppliedConsumableCode(searchConsumableCode);
+
+        setAppliedConsumableName(searchConsumableName);
+
+
+        loadConsumable(
+            0,
+            searchConsumableCode,
+            searchConsumableName
+        );
+
+    };
+
+
+    const handleResetConsumableSearch = () => {
+
+        setSearchConsumableCode("");
+
+        setSearchConsumableName("");
+
+        setAppliedConsumableCode("");
+
+        setAppliedConsumableName("");
+
+
+        loadConsumable(
+            0,
+            "",
+            ""
+        );
+
+    };
 
     return (
         <div className="nhansu-form-card">
@@ -452,9 +501,7 @@ export function LubricationPlanForm({
 
                                     onChange={(e)=>{
 
-
-                                        const equipmentId =
-                                            e.target.value;
+                                        const equipmentId = e.target.value;
 
 
                                         setFieldValue(
@@ -463,24 +510,20 @@ export function LubricationPlanForm({
                                         );
 
 
-                                        const equipment =
-                                            equipmentList.find(
-                                                x =>
-                                                    x.id === Number(equipmentId)
-                                            );
+                                        setSearchConsumableCode("");
+                                        setSearchConsumableName("");
+
+                                        setAppliedConsumableCode("");
+                                        setAppliedConsumableName("");
 
 
-                                        if(
-                                            equipment &&
-                                            equipment.kksCode
-                                        ){
+                                        setPage(0);
 
-                                            loadConsumableByKks(
-                                                equipment.kksCode
-                                            );
-
-                                        }
-
+                                        loadConsumable(
+                                            0,
+                                            "",
+                                            ""
+                                        );
 
                                     }}
 
@@ -630,7 +673,7 @@ export function LubricationPlanForm({
                                 <span>Danh sách dầu mỡ sử dụng</span>
 
                                 <span className="ms-auto badge bg-light text-dark">
-            {consumableList.length} vật tư
+            {totalElements} vật tư
         </span>
 
                             </div>
@@ -645,6 +688,84 @@ export function LubricationPlanForm({
 
                             <Col md={12}>
 
+                                <Row className="mb-3 align-items-end">
+
+                                    <Col md={4}>
+
+                                        <label className="form-label">
+                                            Mã vật tư
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Nhập mã vật tư..."
+
+                                            value={searchConsumableCode}
+
+                                            onChange={(e)=>
+                                                setSearchConsumableCode(
+                                                    e.target.value
+                                                )
+                                            }
+
+                                        />
+
+                                    </Col>
+
+
+                                    <Col md={4}>
+
+                                        <label className="form-label">
+                                            Tên vật tư
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Nhập tên vật tư..."
+
+                                            value={searchConsumableName}
+
+                                            onChange={(e)=>
+                                                setSearchConsumableName(
+                                                    e.target.value
+                                                )
+                                            }
+
+                                        />
+
+                                    </Col>
+
+
+                                    <Col md={4}
+                                         className="d-flex gap-2"
+                                    >
+
+                                        <Button
+                                            variant="primary"
+                                            type="button"
+                                            onClick={handleSearchConsumable}
+                                        >
+                                            🔍 Tìm kiếm
+                                        </Button>
+
+
+                                        <Button
+                                            variant="outline-secondary"
+                                            type="button"
+                                            onClick={handleResetConsumableSearch}
+                                        >
+                                            <BsArrowClockwise/>
+                                            Reset
+                                        </Button>
+
+                                    </Col>
+
+
+                                </Row>
+
+
                                 <label className="form-label">
                                     Vật tư dầu mỡ
                                     <span className="required-asterisk">*</span>
@@ -652,9 +773,9 @@ export function LubricationPlanForm({
 
                                 <div className="table-responsive">
 
-                                    <table className="table table-hover table-bordered align-middle">
+                                    <table className="table lubrication-table table-hover align-middle">
 
-                                        <thead className="table-primary">
+                                        <thead>
 
                                         <tr>
 
@@ -705,7 +826,7 @@ export function LubricationPlanForm({
 
                                         ) : (
 
-                                            consumableList.map(item => {
+                                            filteredConsumableList.map(item => {
 
                                                 const selected =
                                                     values.consumableId?.toString() ===
@@ -717,7 +838,7 @@ export function LubricationPlanForm({
                                                         key={item.id}
                                                         className={
                                                             selected
-                                                                ? "table-primary fw-bold"
+                                                                ? "lubrication-row-selected fw-bold"
                                                                 : ""
                                                         }
                                                         style={
@@ -782,7 +903,7 @@ export function LubricationPlanForm({
 
                                                         <td>
 
-                                    <span className="badge bg-info">
+                                    <span className="badge lubrication-badge-unit">
 
                                         {
                                             item.unit?.unitName ||
@@ -799,8 +920,8 @@ export function LubricationPlanForm({
     <span
         className={`badge ${
             item.status === "ACTIVE"
-                ? "bg-success"
-                : "bg-secondary"
+                ? "lubrication-status-active"
+                : "lubrication-status-disable"
         }`}
     >
         {
@@ -833,6 +954,67 @@ export function LubricationPlanForm({
                                         </tbody>
 
                                     </table>
+
+                                    <Pagination className="justify-content-center mt-3">
+
+                                        <Pagination.First
+                                            disabled={page === 0}
+                                            onClick={() =>
+                                                loadConsumable(0)
+                                            }
+                                        />
+
+
+                                        <Pagination.Prev
+                                            disabled={page === 0}
+                                            onClick={() =>
+                                                loadConsumable(page - 1)
+                                            }
+                                        />
+
+
+                                        {
+                                            Array.from(
+                                                {
+                                                    length: totalPages
+                                                },
+                                                (_, index)=>(
+                                                    <Pagination.Item
+                                                        key={index}
+                                                        active={
+                                                            page === index
+                                                        }
+                                                        onClick={() =>
+                                                            loadConsumable(index)
+                                                        }
+                                                    >
+                                                        {index + 1}
+                                                    </Pagination.Item>
+                                                )
+                                            )
+                                        }
+
+
+                                        <Pagination.Next
+                                            disabled={
+                                                page >= totalPages - 1
+                                            }
+                                            onClick={() =>
+                                                loadConsumable(page + 1)
+                                            }
+                                        />
+
+
+                                        <Pagination.Last
+                                            disabled={
+                                                page >= totalPages - 1
+                                            }
+                                            onClick={() =>
+                                                loadConsumable(totalPages - 1)
+                                            }
+                                        />
+
+                                    </Pagination>
 
                                 </div>
 
