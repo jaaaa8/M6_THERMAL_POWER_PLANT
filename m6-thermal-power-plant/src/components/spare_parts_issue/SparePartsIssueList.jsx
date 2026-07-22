@@ -20,6 +20,8 @@ import DataTable from "../../components/common/DataTable";
 
 import sparePartIssueService from "../../services/sparePartIssueService";
 import { workOrderService } from "../../services/workOrderService";
+import { authService } from "../../services/authService";
+import { hasAnyRole } from "../../services/roleService";
 
 export default function SparePartsIssueList() {
     const [data, setData] = useState([]);
@@ -38,6 +40,9 @@ export default function SparePartsIssueList() {
         totalElements: 0
     });
     const [searchTrigger, setSearchTrigger] = useState(0);
+
+    // Chỉ Tổ trưởng được tạo phiếu xuất vật tư (khớp BE POST /api/v1/spare-parts-issue/add).
+    const canManage = hasAnyRole(authService.getCurrentUser(), ['TEAM_LEADER']);
 
     useEffect(() => {
         loadData();
@@ -250,14 +255,16 @@ export default function SparePartsIssueList() {
 
 
 
-                <Button
-                    as={Link}
-                    to="/repair/spare-parts-issue/add"
-                    size="sm"
-                >
-                    <BsPlusCircle className="me-1" />
-                    Thêm mới
-                </Button>
+                {canManage && (
+                    <Button
+                        as={Link}
+                        to="/repair/spare-parts-issue/add"
+                        size="sm"
+                    >
+                        <BsPlusCircle className="me-1" />
+                        Thêm mới
+                    </Button>
+                )}
             </div>
 
             <div className="card mb-3">

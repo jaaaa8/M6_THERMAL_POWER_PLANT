@@ -200,7 +200,7 @@
   right: -2px;
   width: 16px;
   height: 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 50%;
   display: flex;
   align-items: center;

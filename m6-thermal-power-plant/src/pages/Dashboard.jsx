@@ -25,36 +25,36 @@ import './Dashboard.css';
 const KPI_CONFIG = [
   {
     key: 'totalEquipment', label: 'TỔNG THIẾT BỊ', icon: <BsCpu />,
-    iconBg: '#e8f0fe', iconColor: '#004275',
+    iconBg: 'var(--color-primary-50)', iconColor: 'var(--color-primary)',
   },
   {
     key: 'activeRepairRequests', label: 'YÊU CẦU ĐANG XỬ LÝ', icon: <BsWrenchAdjustable />,
-    iconBg: '#fce8e8', iconColor: '#e53e3e',
+    iconBg: 'var(--color-status-danger-bg)', iconColor: 'var(--color-status-danger)',
   },
   {
     key: 'pendingWorkOrders', label: 'PCT CHỜ DUYỆT', icon: <BsFileEarmarkText />,
-    iconBg: '#e8f5e9', iconColor: '#38a169',
+    iconBg: 'var(--color-status-normal-bg)', iconColor: 'var(--color-status-normal)',
     subtitle: 'Awaiting Approval',
   },
   {
     key: 'overdueToolBorrows', label: 'CCDC QUÁ HẠN', icon: <BsExclamationTriangle />,
-    iconBg: '#fff3e0', iconColor: '#e53e3e',
+    iconBg: 'var(--color-status-warning-bg)', iconColor: 'var(--color-status-danger)',
     subtitle: 'Critical Action Req.', accent: 'danger',
   },
   {
     key: 'lowStockItems', label: 'TỒN KHO THẤP', icon: <BsBoxSeam />,
-    iconBg: '#fce4ec', iconColor: '#c62828',
+    iconBg: 'var(--color-status-danger-bg)', iconColor: 'var(--color-status-danger)',
     subtitle: 'Items below threshold', accent: 'danger',
   },
 ];
 
 /* --- Pie chart colors by equipment status --- */
 const PIE_COLORS = {
-  ACTIVE: '#38a169',
-  MAINTENANCE: '#3182ce',
-  STANDBY: '#a0aec0',
-  FAILURE: '#e53e3e',
-  RETIRED: '#718096',
+  ACTIVE: 'var(--color-status-normal)',
+  MAINTENANCE: 'var(--color-status-info)',
+  STANDBY: 'var(--color-status-inactive)',
+  FAILURE: 'var(--color-status-danger)',
+  RETIRED: 'var(--color-outline)',
 };
 
 /* --- Priority mapping for table badge --- */
@@ -147,7 +147,7 @@ export default function Dashboard() {
   const pieData = (data?.equipmentDistribution || []).map(item => ({
     name: item.label,
     value: item.count,
-    color: PIE_COLORS[item.status] || '#a0aec0',
+    color: PIE_COLORS[item.status] || 'var(--color-status-inactive)',
   }));
 
   const barData = (data?.topRepairedEquipment || []).map(item => ({
@@ -223,12 +223,12 @@ export default function Dashboard() {
                 <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gradYeuCau" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#004275" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#004275" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gradHoanThanh" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38a169" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#38a169" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--color-success)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-success)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -236,8 +236,8 @@ export default function Dashboard() {
                   <YAxis tick={{ fontSize: 12, fill: 'var(--color-outline)' }} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="yeuCau" name="Yêu cầu" stroke="#004275" fill="url(#gradYeuCau)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="hoanThanh" name="Hoàn thành" stroke="#38a169" fill="url(#gradHoanThanh)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="yeuCau" name="Yêu cầu" stroke="var(--color-primary)" fill="url(#gradYeuCau)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="hoanThanh" name="Hoàn thành" stroke="var(--color-success)" fill="url(#gradHoanThanh)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card.Body>

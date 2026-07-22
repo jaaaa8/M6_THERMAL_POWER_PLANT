@@ -18,6 +18,8 @@ import LoadingSpinner from "../common/LoadingSpinner";
 import EmptyState from "../common/EmptyState";
 import ConfirmModal from "../common/ConfirmModal";
 import lubricationPlanService from "../../services/lubricationPlanService";
+import { authService } from "../../services/authService";
+import { hasAnyRole } from "../../services/roleService";
 import "./MaintenancePlanList.css";
 
 /* Ánh xạ trạng thái BE → biến thể StatusBadge của hệ thống */
@@ -59,6 +61,9 @@ export default function MaintenancePlanList() {
     const [showDetail, setShowDetail] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+
+    // Chỉ Tổ trưởng được thêm/xoá kế hoạch bôi trơn (khớp BE @PreAuthorize TEAM_LEADER).
+    const canManage = hasAnyRole(authService.getCurrentUser(), ['TEAM_LEADER']);
     const [deleting, setDeleting] = useState(false);
     const [pagination, setPagination] = useState({
         page: 0,
@@ -151,14 +156,16 @@ export default function MaintenancePlanList() {
                 title="Kế hoạch Bảo dưỡng Dầu mỡ"
                 subtitle="Quản lý kế hoạch bảo dưỡng, bôi trơn theo hệ thống"
                 actions={
-                    <Button
-                        as={Link}
-                        to="/lubrication/plant/add"
-                        variant="primary"
-                        size="sm"
-                    >
-                        <BsPlusLg className="me-1" /> Thêm mới
-                    </Button>
+                    canManage && (
+                        <Button
+                            as={Link}
+                            to="/lubrication/plant/add"
+                            variant="primary"
+                            size="sm"
+                        >
+                            <BsPlusLg className="me-1" /> Thêm mới
+                        </Button>
+                    )
                 }
             />
 
@@ -250,14 +257,16 @@ export default function MaintenancePlanList() {
                                                 >
                                                     <BsEye />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-outline-danger"
-                                                    title="Xoá"
-                                                    onClick={() => setDeleteTarget(plan)}
-                                                >
-                                                    <BsTrash />
-                                                </button>
+                                                {canManage && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-danger"
+                                                        title="Xoá"
+                                                        onClick={() => setDeleteTarget(plan)}
+                                                    >
+                                                        <BsTrash />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

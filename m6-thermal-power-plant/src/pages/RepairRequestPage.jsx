@@ -109,6 +109,11 @@ export default function RepairRequestPage() {
     ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'].includes(r)
   );
 
+  // Vai trò: chỉ MF/TL mới tạo Phiếu công tác từ yêu cầu (khớp BE POST /api/v1/work-orders).
+  const canOperatePCT = userRoles.some((r) =>
+    ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'].includes(r)
+  );
+
   // Phân trang server-side (0-based, khớp Spring Page)
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -381,7 +386,7 @@ export default function RepairRequestPage() {
                         >
                           <BsEye />
                         </button>
-                        {req.status === REQUEST_STATUS.PENDING && (
+                        {req.status === REQUEST_STATUS.PENDING && canOperatePCT && (
                           <button
                             className="btn btn-sm btn-outline-info"
                             onClick={() => setPctTarget(req)}

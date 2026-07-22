@@ -42,7 +42,7 @@ function toDmy(isoDate) {
   return d && m && y ? `${d}/${m}/${y}` : String(isoDate);
 }
 
-const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
+const OPERATE_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
 const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
 
 /**

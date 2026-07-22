@@ -72,12 +72,12 @@
   font-weight: var(--font-semibold);
 }
 
-.stat-card-trend.up { color: #38a169; }
-.stat-card-trend.down { color: #e53e3e; }
+.stat-card-trend.up { color: var(--color-success); }
+.stat-card-trend.down { color: var(--color-danger); }
 
 /* Accent top border for warning/danger */
 .stat-card.accent-danger {
-  border-top: 3px solid #e53e3e;
+  border-top: 3px solid var(--color-danger);
 }
 
 /* --- Chart Cards --- */
