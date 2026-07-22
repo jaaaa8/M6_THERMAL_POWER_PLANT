@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getAllRepairHistories } from "../../services/repairHistoryService";
 import {
     Card,
     Table,
@@ -13,92 +14,114 @@ import { BsEyeFill } from "react-icons/bs";
 export default function RepairHistoryList() {
     const [showModal, setShowModal] = useState(false);
     const [selectedHistory, setSelectedHistory] = useState(null);
+    const [repairHistories, setRepairHistories] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const repairHistories = [
-        {
-            id: 1,
-            workOrder: {
-                orderCode: "PCT-2026-001",
-                leader: {
-                    fullName: "Nguyễn Văn A",
-                },
-            },
-            equipment: {
-                kksCode: "PUMP-001",
-                name: "Bơm nước làm mát",
-                imgPath:
-                    "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=800",
-            },
-            repairDate: "2026-06-15",
-            repairContent:
-                "Thay vòng bi, kiểm tra độ rung và căn chỉnh trục.",
-            repairResult:
-                "Thiết bị hoạt động ổn định sau sửa chữa.",
-            details: [
-                {
-                    id: 1,
-                    quantity: 2,
-                    sparePart: {
-                        sparePartCode: "SP001",
-                        name: "Vòng bi SKF 6205",
-                        imgPath:
-                            "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=500",
-                        unit: {
-                            unitName: "Cái",
-                        },
-                    },
-                },
-                {
-                    id: 2,
-                    quantity: 1,
-                    sparePart: {
-                        sparePartCode: "SP002",
-                        name: "Phớt cơ khí",
-                        imgPath:
-                            "https://images.unsplash.com/photo-1581092160607-ee22731d8a08?w=500",
-                        unit: {
-                            unitName: "Bộ",
-                        },
-                    },
-                },
-            ],
-        },
-        {
-            id: 2,
-            workOrder: {
-                orderCode: "PCT-2026-002",
-                leader: {
-                    fullName: "Trần Văn B",
-                },
-            },
-            equipment: {
-                kksCode: "MOTOR-002",
-                name: "Động cơ quạt gió",
-                imgPath:
-                    "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=800",
-            },
-            repairDate: "2026-06-20",
-            repairContent:
-                "Thay bạc đạn và vệ sinh toàn bộ động cơ.",
-            repairResult:
-                "Động cơ vận hành bình thường.",
-            details: [
-                {
-                    id: 3,
-                    quantity: 2,
-                    sparePart: {
-                        sparePartCode: "SP003",
-                        name: "Bạc đạn NSK",
-                        imgPath:
-                            "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500",
-                        unit: {
-                            unitName: "Cái",
-                        },
-                    },
-                },
-            ],
-        },
-    ];
+    // const repairHistories = [
+    //     {
+    //         id: 1,
+    //         workOrder: {
+    //             orderCode: "PCT-2026-001",
+    //             leader: {
+    //                 fullName: "Nguyễn Văn A",
+    //             },
+    //         },
+    //         equipment: {
+    //             kksCode: "PUMP-001",
+    //             name: "Bơm nước làm mát",
+    //             imgPath:
+    //                 "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=800",
+    //         },
+    //         repairDate: "2026-06-15",
+    //         repairContent:
+    //             "Thay vòng bi, kiểm tra độ rung và căn chỉnh trục.",
+    //         repairResult:
+    //             "Thiết bị hoạt động ổn định sau sửa chữa.",
+    //         details: [
+    //             {
+    //                 id: 1,
+    //                 quantity: 2,
+    //                 sparePart: {
+    //                     sparePartCode: "SP001",
+    //                     name: "Vòng bi SKF 6205",
+    //                     imgPath:
+    //                         "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=500",
+    //                     unit: {
+    //                         unitName: "Cái",
+    //                     },
+    //                 },
+    //             },
+    //             {
+    //                 id: 2,
+    //                 quantity: 1,
+    //                 sparePart: {
+    //                     sparePartCode: "SP002",
+    //                     name: "Phớt cơ khí",
+    //                     imgPath:
+    //                         "https://images.unsplash.com/photo-1581092160607-ee22731d8a08?w=500",
+    //                     unit: {
+    //                         unitName: "Bộ",
+    //                     },
+    //                 },
+    //             },
+    //         ],
+    //     },
+    //     {
+    //         id: 2,
+    //         workOrder: {
+    //             orderCode: "PCT-2026-002",
+    //             leader: {
+    //                 fullName: "Trần Văn B",
+    //             },
+    //         },
+    //         equipment: {
+    //             kksCode: "MOTOR-002",
+    //             name: "Động cơ quạt gió",
+    //             imgPath:
+    //                 "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=800",
+    //         },
+    //         repairDate: "2026-06-20",
+    //         repairContent:
+    //             "Thay bạc đạn và vệ sinh toàn bộ động cơ.",
+    //         repairResult:
+    //             "Động cơ vận hành bình thường.",
+    //         details: [
+    //             {
+    //                 id: 3,
+    //                 quantity: 2,
+    //                 sparePart: {
+    //                     sparePartCode: "SP003",
+    //                     name: "Bạc đạn NSK",
+    //                     imgPath:
+    //                         "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500",
+    //                     unit: {
+    //                         unitName: "Cái",
+    //                     },
+    //                 },
+    //             },
+    //         ],
+    //     },
+    // ];
+
+    useEffect(() => {
+        fetchRepairHistories();
+    }, []);
+
+    const fetchRepairHistories = async () => {
+        try {
+            setLoading(true);
+
+            const response = await getAllRepairHistories();
+
+            console.log("Repair Histories:", response);
+
+            setRepairHistories(response || []);
+        } catch (error) {
+            console.error("Load repair histories failed:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleView = (history) => {
         setSelectedHistory(history);
@@ -138,11 +161,11 @@ export default function RepairHistoryList() {
                                 <td>{index + 1}</td>
                                 <td>
                                     <Badge bg="primary">
-                                        {item.workOrder.orderCode}
+                                        {item.orderCode}
                                     </Badge>
                                 </td>
-                                <td>{item.equipment.kksCode}</td>
-                                <td>{item.equipment.name}</td>
+                                <td>{item.kksCode}</td>
+                                <td>{item.equipmentName}</td>
                                 <td>{item.repairDate}</td>
                                 <td>
                                     <Button
@@ -180,8 +203,8 @@ export default function RepairHistoryList() {
                                 <Col md={4}>
                                     <img
                                         src={
-                                            selectedHistory.equipment
-                                                .imgPath
+                                            selectedHistory.equipmentImg ||
+                                            "https://via.placeholder.com/500x300?text=No+Image"
                                         }
                                         alt=""
                                         className="img-fluid rounded border"
@@ -198,7 +221,7 @@ export default function RepairHistoryList() {
                                             <td>
                                                 {
                                                     selectedHistory
-                                                        .workOrder.orderCode
+                                                        .orderCode
                                                 }
                                             </td>
                                         </tr>
@@ -208,7 +231,7 @@ export default function RepairHistoryList() {
                                             <td>
                                                 {
                                                     selectedHistory
-                                                        .equipment.kksCode
+                                                        .kksCode
                                                 }
                                             </td>
                                         </tr>
@@ -218,7 +241,7 @@ export default function RepairHistoryList() {
                                             <td>
                                                 {
                                                     selectedHistory
-                                                        .equipment.name
+                                                        .equipmentName
                                                 }
                                             </td>
                                         </tr>
@@ -228,8 +251,7 @@ export default function RepairHistoryList() {
                                             <td>
                                                 {
                                                     selectedHistory
-                                                        .workOrder.leader
-                                                        .fullName
+                                                        .leaderName
                                                 }
                                             </td>
                                         </tr>
@@ -286,53 +308,30 @@ export default function RepairHistoryList() {
                                 </thead>
 
                                 <tbody>
-                                {selectedHistory.details.map(
-                                    (detail) => (
-                                        <tr key={detail.id}>
-                                            <td width="90">
-                                                <img
-                                                    src={
-                                                        detail.sparePart
-                                                            .imgPath
-                                                    }
-                                                    alt=""
-                                                    width="60"
-                                                    height="60"
-                                                    style={{
-                                                        objectFit:
-                                                            "cover",
-                                                    }}
-                                                    className="rounded border"
-                                                />
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    detail.sparePart
-                                                        .sparePartCode
+                                {selectedHistory.details?.map((detail) => (
+                                    <tr key={detail.id}>
+                                        <td width="90">
+                                            <img
+                                                src={
+                                                    detail.imgPath ||
+                                                    "https://via.placeholder.com/60"
                                                 }
-                                            </td>
+                                                alt=""
+                                                width="60"
+                                                height="60"
+                                                className="rounded border"
+                                            />
+                                        </td>
 
-                                            <td>
-                                                {
-                                                    detail.sparePart
-                                                        .name
-                                                }
-                                            </td>
+                                        <td>{detail.sparePartCode}</td>
 
-                                            <td>
-                                                {
-                                                    detail.sparePart
-                                                        .unit.unitName
-                                                }
-                                            </td>
+                                        <td>{detail.sparePartName}</td>
 
-                                            <td>
-                                                {detail.quantity}
-                                            </td>
-                                        </tr>
-                                    )
-                                )}
+                                        <td>{detail.unitName}</td>
+
+                                        <td>{detail.quantity}</td>
+                                    </tr>
+                                ))}
                                 </tbody>
                             </Table>
                         </>

@@ -94,6 +94,7 @@ export default function ListEquipment() {
       }
 
       setData(res.data.content);
+      console.log(res.data.content);
       setPage(res.data.number);
       setSize(res.data.size);
       setTotalPages(res.data.totalPages);
@@ -406,7 +407,7 @@ export default function ListEquipment() {
               </thead>
               <tbody>
                 {data.map((row, idx) => {
-                  const statusProps = getStatusProps(row.status);
+                  const statusProps = getStatusProps(row.equipmentStatus);
                   return (
                     <tr key={row.id}>
                       <td className="text-center">

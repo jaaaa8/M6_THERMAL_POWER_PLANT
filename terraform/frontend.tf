@@ -54,6 +54,28 @@ resource "aws_s3_bucket_policy" "frontend" {
   })
 }
 
+# ── CloudFront Function — SPA routing cho React Router ───────────
+# Viết lại các path KHÔNG phải file (không chứa dấu ".") thành /index.html để
+# React Router xử lý client-side. CHỈ gắn vào default behavior (S3), KHÔNG gắn
+# vào /api/* → request API vẫn tới ALB và trả lỗi THẬT (403/404) thay vì bị
+# custom_error_response đổi thành index.html (từng làm vỡ login khi CORS 403).
+resource "aws_cloudfront_function" "spa_routing" {
+  name    = "${var.project_name}-spa-routing"
+  runtime = "cloudfront-js-2.0"
+  comment = "SPA fallback React Router — chỉ áp path không phải /api"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+      if (!uri.includes('.')) {
+        request.uri = '/index.html';
+      }
+      return request;
+    }
+  EOT
+}
+
 # ── CloudFront Distribution ──────────────────────────────────────
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
@@ -92,6 +114,12 @@ resource "aws_cloudfront_distribution" "frontend" {
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
+    # SPA routing: rewrite React route → /index.html (chỉ ở behavior S3 này)
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_routing.arn
+    }
+
     forwarded_values {
       query_string = false
       cookies { forward = "none" }
@@ -123,20 +151,10 @@ resource "aws_cloudfront_distribution" "frontend" {
     max_ttl     = 0
   }
 
-  # React Router — 403/404 fallback về index.html
-  custom_error_response {
-    error_code            = 403
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 10
-  }
-
-  custom_error_response {
-    error_code            = 404
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 10
-  }
+  # KHÔNG dùng custom_error_response cho SPA nữa — nó áp GLOBAL (cả /api/*),
+  # biến 403/404 của API thành index.html khiến frontend không parse được lỗi
+  # (từng làm vỡ login). SPA routing giờ do CloudFront Function xử lý, chỉ ở
+  # behavior S3, nên API giữ nguyên mã lỗi thật.
 
   restrictions {
     geo_restriction { restriction_type = "none" }
