@@ -35,8 +35,12 @@ const STATUS_MAP = {
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
 
-const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
-const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
+// MỌI bước chuyển trạng thái PCT (duyệt, mở/đóng hằng ngày, gia hạn, khoá,
+// huỷ) thuộc Trưởng ca/kíp — khớp BE (WorkOrderController + MaintenanceService
+// requireWorkOrderStatusRole). Quản đốc SC/Tổ trưởng chỉ quản lý hồ sơ phiếu.
+const STATUS_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
+const OPERATE_ROLES = STATUS_ROLES;
+const APPROVE_ROLES = STATUS_ROLES;
 
 /**
  * Bảng chuyển trạng thái: option hiển thị theo trạng thái hiện tại.
@@ -55,7 +59,7 @@ const TRANSITIONS = {
     {
       target: 'IN_PROGRESS', roles: OPERATE_ROLES, icon: <BsPlayCircle />, variant: 'primary',
       label: 'Bắt đầu / tiếp tục làm việc',
-      desc: 'Tổ trưởng đưa đội đến vị trí và bắt đầu (hoặc làm tiếp sau gia hạn).',
+      desc: 'Trưởng ca/kíp mở phiếu cho đội bắt đầu (hoặc làm tiếp sau gia hạn).',
     },
   ],
   IN_PROGRESS: [
@@ -158,7 +162,7 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
     <Modal show={show} onHide={() => !saving && onClose()} centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsArrowRepeat className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          <BsArrowRepeat className="me-2" style={{ color: 'var(--color-primary)' }} />
           Cập nhật trạng thái — {workOrder?.orderCode}
         </Modal.Title>
       </Modal.Header>
@@ -177,9 +181,8 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
           </div>
         ) : options.length === 0 ? (
           <div className="alert alert-secondary" style={{ fontSize: 'var(--text-sm)' }}>
-            Tài khoản của bạn không có quyền chuyển trạng thái phiếu ở bước này
-            {status === 'OPEN' || status === 'WAITING_FOR_APPROVAL'
-              ? ' — cần Trưởng ca / Quản đốc / Admin duyệt.' : '.'}
+            Tài khoản của bạn không có quyền chuyển trạng thái phiếu — chỉ
+            Trưởng ca / Trưởng kíp (hoặc Admin) được duyệt, mở/đóng, khoá phiếu.
           </div>
         ) : (
           <>
@@ -193,7 +196,7 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
                 style={{
                   paddingLeft: '2.5rem',
                   cursor: 'pointer',
-                  borderColor: selected === o.target ? 'var(--color-primary-500)' : undefined,
+                  borderColor: selected === o.target ? 'var(--color-primary)' : undefined,
                 }}
                 checked={selected === o.target}
                 onChange={() => setSelected(o.target)}
@@ -218,7 +221,7 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
 
             {/* Lý do + ngày gia hạn — chỉ khi gửi duyệt gia hạn */}
             {selectedOption?.needsExtension && (
-              <div className="mt-3 p-3 border rounded" style={{ background: 'var(--bg-secondary)' }}>
+              <div className="mt-3 p-3 border rounded" style={{ background: 'var(--color-surface-container)' }}>
                 <Form.Group className="mb-3">
                   <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
                     Lý do gia hạn / xin làm tiếp <span className="text-danger">*</span>

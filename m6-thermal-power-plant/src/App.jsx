@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -38,12 +38,10 @@ import UpdateEquipment from './components/equipment/UpdateEquipment';
 import DetailEquipment from './components/equipment/DetailEquipment';
 import ManageUnits from './components/equipment/ManageUnits';
 import MaterialCatalogPage from "./pages/MaterialCatalogPage.jsx";
-import RoleManagementPage from "./pages/RoleManagementPage.jsx";
-import CreateAccountPage from "./pages/CreateAccountPage.jsx";
 import ToolList from './pages/ccdc/ToolList.jsx';
 import CreateWorkerAccountPage from './pages/ccdc/CreateWorkerAccountPage.jsx';
 import ToolLoanManagementPage from './pages/ccdc/ToolLoanManagementPage.jsx';
-import ToolCategory from './pages/ccdc/ToolCategory .jsx';
+import ToolCategory from './pages/ccdc/ToolCategory.jsx';
 import ToolForm from './pages/ccdc/ToolForm.jsx';
 import ToolBorrowRequestForm from './pages/ccdc/ToolBorrowRequestForm.jsx';
 import EmployeeLayout from './layouts/EmployeeLayout.jsx';
@@ -53,6 +51,10 @@ import EmployeeBorrowHistory from './pages/employee/EmployeeBorrowHistory.jsx';
 import MaterialInventoryPage from "./pages/MaterialInventoryPage.jsx";
 import RepairHistoryList from './components/repair_history/RepairHistoryList.jsx';
 import MaintenancePlanList from "./components/LubricationPlan/MaintenancePlanList.jsx";
+// BÀN THỬ Phase 0 — concept UI, xoá cùng src/concept-a|b|c/ khi chốt xong.
+import ConceptA from './concept-a/ConceptA.jsx';
+import ConceptB from './concept-b/ConceptB.jsx';
+import ConceptC from './concept-c/ConceptC.jsx';
 
 function App() {
   return (
@@ -75,67 +77,79 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-            {/* --- Admin --- */}
-            <Route path="/admin/roles" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <RoleManagementPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/accounts/create" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <CreateAccountPage />
-              </ProtectedRoute>
-            } />
-            {/* --- Nhân sự --- */}
-            <Route path="/hr/departments" element={<ListDepartment />} />
-            <Route path="/hr/departments/create" element={<AddDepartment />} />
-            <Route path="/hr/employees" element={<ListEmployee />} />
-            <Route path="/hr/employees/create" element={<AddEmployee onCancel={() => window.history.back()} />} />
-            <Route path="/hr/employees/edit/:id" element={<UpdateEmployee />} />
-            <Route path="/hr/accounts" element={<ListAccount />} />
-            <Route path="/hr/accounts/create" element={<AddAccount />} />
-            <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
+            {/* --- Nhân sự (HR_STAFF) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['HR_STAFF']}><Outlet /></ProtectedRoute>}>
+              <Route path="/hr/departments" element={<ListDepartment />} />
+              <Route path="/hr/departments/create" element={<AddDepartment />} />
+              <Route path="/hr/employees" element={<ListEmployee />} />
+              <Route path="/hr/employees/create" element={<AddEmployee onCancel={() => window.history.back()} />} />
+              <Route path="/hr/employees/edit/:id" element={<UpdateEmployee />} />
+              <Route path="/hr/accounts" element={<ListAccount />} />
+              <Route path="/hr/accounts/create" element={<AddAccount />} />
+              <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
+            </Route>
 
-            {/* --- Thiết bị --- */}
-            <Route path="/equipment/system" element={<ListSystem />} />
-            <Route path="/equipment/system/add" element={<AddSystem />} />
-            <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
-            <Route path="/equipment/equipments" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/add" element={<AddEquipment />} />
-            <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
-            <Route path="/equipment/equipments" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/:systemId" element={<ListEquipment />} />
-            <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
-            <Route path="/equipment/equipments/units" element={<ManageUnits />} />
+            {/* --- Thiết bị (WORKSHOP_FOREMAN) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN']}><Outlet /></ProtectedRoute>}>
+              <Route path="/equipment/system" element={<ListSystem />} />
+              <Route path="/equipment/system/add" element={<AddSystem />} />
+              <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
+              <Route path="/equipment/equipments" element={<ListEquipment />} />
+              <Route path="/equipment/equipments/add" element={<AddEquipment />} />
+              <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
+              <Route path="/equipment/equipments/:systemId" element={<ListEquipment />} />
+              <Route path="/equipment/equipments/detail/:id" element={<DetailEquipment />} />
+              <Route path="/equipment/equipments/units" element={<ManageUnits />} />
+            </Route>
 
-            {/* --- Sửa chữa --- */}
-            <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
-            <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
-            <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
-            <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
-            <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
-            <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
-            <Route path="/repair/history" element={<RepairHistoryList/>} />
+            {/* --- Sửa chữa: Yêu cầu Sửa chữa (cả 4 role sửa chữa) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['SHIFT_LEADER', 'CREW_LEADER', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER']}><Outlet /></ProtectedRoute>}>
+              <Route path="/repair/yeu-cau" element={<RepairRequestPage />} />
+            </Route>
 
-            {/* --- Vật tư --- */}
-            <Route path="/material/catalog" element={<MaterialCatalogPage />} />
-            <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
-            <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
+            {/* --- Sửa chữa: Phiếu Công tác (vận hành + duyệt) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'SHIFT_LEADER', 'CREW_LEADER']}><Outlet /></ProtectedRoute>}>
+              <Route path="/repair/phieu-cong-tac" element={<WorkOrderList title="Phiếu Công tác" />} />
+            </Route>
 
-            {/* --- CCDC --- */}
-            <Route path="/ccdc/danh-sach" element={<ToolList />} />
-            <Route path="/ccdc/danh-sach/them-moi" element={<ToolForm />} />
-            <Route path="/ccdc/danh-sach/sua/:id" element={<ToolForm />} />
-            <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
-            <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
-            <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
-            <Route path="/ccdc/tao-nhan-su" element={<CreateWorkerAccountPage />} />
+            {/* --- Sửa chữa: Đánh giá KT / Xuất vật tư / Lịch sử (MAINTENANCE_FOREMAN, TEAM_LEADER) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['MAINTENANCE_FOREMAN', 'TEAM_LEADER']}><Outlet /></ProtectedRoute>}>
+              <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
+              <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
+              <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
+              <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
+              <Route path="/repair/history" element={<RepairHistoryList/>} />
+            </Route>
 
-            {/* --- Bảo dưỡng --- */}
-            <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
-            <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
-            <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
-            <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            {/* --- Vật tư (MATERIALS_STOREKEEPER) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['MATERIALS_STOREKEEPER']}><Outlet /></ProtectedRoute>}>
+              <Route path="/material/catalog" element={<MaterialCatalogPage />} />
+              <Route path="/material/import-export/consumable" element={<MaterialInventoryPage key="consumables" type="consumables" />} />
+              <Route path="/material/import-export/sparepart" element={<MaterialInventoryPage key="spareparts" type="spareparts" />} />
+            </Route>
+
+            {/* --- CCDC (TOOLS_STOREKEEPER) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['TOOLS_STOREKEEPER']}><Outlet /></ProtectedRoute>}>
+              <Route path="/ccdc/danh-sach" element={<ToolList />} />
+              <Route path="/ccdc/danh-sach/them-moi" element={<ToolForm />} />
+              <Route path="/ccdc/danh-sach/sua/:id" element={<ToolForm />} />
+              <Route path="/ccdc/chung-loai" element={<ToolCategory />} />
+              <Route path="/ccdc/muon-tra" element={<ToolLoanManagementPage />} />
+              <Route path="/ccdc/muon-tra/lap-phieu" element={<ToolBorrowRequestForm />} />
+            </Route>
+            {/* Tạo tài khoản công nhân — CCDC lẫn Nhân sự đều được tạo */}
+            <Route
+              path="/ccdc/tao-nhan-su"
+              element={<ProtectedRoute allowedRoles={['TOOLS_STOREKEEPER', 'HR_STAFF']}><CreateWorkerAccountPage /></ProtectedRoute>}
+            />
+
+            {/* --- Bảo dưỡng (TEAM_LEADER) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['TEAM_LEADER']}><Outlet /></ProtectedRoute>}>
+              <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
+              <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
+              <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
+              <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
+            </Route>
           </Route>
 
           {/* ======= Employee Portal ======= */}
@@ -148,6 +162,13 @@ function App() {
             <Route path="/employee/muon-ccdc" element={<EmployeeBorrowForm />} />
             <Route path="/employee/lich-su" element={<EmployeeBorrowHistory />} />
           </Route>
+
+          {/* ======= BÀN THỬ concept UI (Phase 0) — không bọc ProtectedRoute
+                     để trình chủ dự án xem không cần đăng nhập.
+                     Xoá route này + src/concept-a|b|c/ khi chốt xong concept. ======= */}
+          <Route path="/concept-a" element={<ConceptA />} />
+          <Route path="/concept-b" element={<ConceptB />} />
+          <Route path="/concept-c" element={<ConceptC />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />
@@ -213,7 +234,7 @@ function NotFoundPage() {
       justifyContent: 'center',
       minHeight: '100vh',
       textAlign: 'center',
-      background: 'var(--bg-body)',
+      background: 'var(--color-surface-bright)',
       padding: '2rem',
     }}>
       <h1 style={{ fontSize: '4rem', fontWeight: 'var(--font-bold)', color: 'var(--text-tertiary)', marginBottom: '0.5rem' }}>

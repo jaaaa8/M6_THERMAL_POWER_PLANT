@@ -1,23 +1,22 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge, BsPersonPlus,
+  BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge,
   BsGearWideConnected, BsListUl, BsCpu,
   BsWrenchAdjustable, BsExclamationTriangle, BsFileEarmarkText, BsClipboard2Check,
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,
   BsDropletHalf, BsCalendar3, BsClockHistory,
-  BsChevronRight, BsShieldLock, BsCheck
+  BsChevronRight, BsShieldLock, BsCheck, BsLightningChargeFill
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
-import { canAccess, SYSTEM_ROLES } from '../../services/roleService';
+import { hasAnyRole, SYSTEM_ROLES } from '../../services/roleService';
 import './Sidebar.css';
 
 /* ============================================================
-   Menu Configuration — Lọc theo ma trận phân quyền (func = mã chức năng).
-   - func: cần quyền XEM chức năng tương ứng (theo roleService).
-   - roles: kiểm tra cứng theo vai trò (cho mục không nằm trong ma trận).
-   - không có cả hai: ai cũng thấy.
+   Menu Configuration — Lọc theo ROLE (xem roleService.hasAnyRole).
+   - roles: danh sách role được thấy mục này (ADMIN luôn thấy mọi mục).
+   - không có roles: ai đã đăng nhập cũng thấy.
    ============================================================ */
 const menuSections = [
   {
@@ -30,7 +29,7 @@ const menuSections = [
     heading: 'Nhân sự',
     items: [
       {
-        icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['ADMIN'],
+        icon: <BsPeople />, label: 'Quản lý Nhân sự', roles: ['HR_STAFF'],
         children: [
           { path: '/hr/departments', icon: <BsBuilding />, label: 'Phòng ban' },
           { path: '/hr/employees', icon: <BsPersonBadge />, label: 'Nhân viên' },
@@ -43,7 +42,7 @@ const menuSections = [
     heading: 'Thiết bị',
     items: [
       {
-        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị',
+        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['WORKSHOP_FOREMAN'],
         children: [
           { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
           { path: '/equipment/equipments', icon: <BsCpu />, label: 'Thiết bị' },
@@ -57,11 +56,11 @@ const menuSections = [
       {
         icon: <BsWrenchAdjustable />, label: 'Sửa chữa',
         children: [
-          { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa' },
-          { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác' },
-          { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật' },
-          { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư' },
-          { path: '/repair/history', icon: <BsClockHistory />, label: 'Lịch sử sửa chữa' },
+          { path: '/repair/yeu-cau', icon: <BsExclamationTriangle />, label: 'Yêu cầu Sửa chữa', roles: ['SHIFT_LEADER', 'CREW_LEADER', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
+          { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'SHIFT_LEADER', 'CREW_LEADER'] },
+          { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
+          { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
+          { path: '/repair/history', icon: <BsClockHistory />, label: 'Lịch sử sửa chữa', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
         ],
       },
     ],
@@ -70,7 +69,7 @@ const menuSections = [
     heading: 'Kho & Vật tư',
     items: [
       {
-        icon: <BsBoxSeam />, label: 'Kho Vật tư',
+        icon: <BsBoxSeam />, label: 'Kho Vật tư', roles: ['MATERIALS_STOREKEEPER'],
         children: [
           { path: '/material/catalog', icon: <BsTags />, label: 'Danh mục Vật tư' },
           { path: '/material/import-export/consumable', icon: <BsArrowLeftRight />, label: 'Nhập / Xuất Tiêu hao' },
@@ -79,7 +78,7 @@ const menuSections = [
         ],
       },
       {
-        icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['ADMIN', 'TOOLS_STOREKEEPER'],
+        icon: <BsTools />, label: 'Công cụ Dụng cụ', roles: ['TOOLS_STOREKEEPER'],
         children: [
           { path: '/ccdc/danh-sach', icon: <BsJournalBookmark />, label: 'Danh sách CCDC' },
           { path: '/ccdc/chung-loai', icon: <BsTags />, label: 'Chủng loại CCDC' },
@@ -92,20 +91,13 @@ const menuSections = [
     heading: 'Bảo dưỡng',
     items: [
       {
-        icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ',
+        icon: <BsDropletHalf />, label: 'Bảo dưỡng Dầu mỡ', roles: ['TEAM_LEADER'],
         children: [
           { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
           { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
           { path: '/lubrication/history', icon: <BsClockHistory />, label: 'Lịch sử' },
         ],
       },
-    ],
-  },
-  {
-    heading: 'Quản trị',
-    items: [
-      { path: '/admin/roles', icon: <BsShieldLock />, label: 'Phân quyền', roles: ['ADMIN'] },
-      { path: '/admin/accounts/create', icon: <BsPersonPlus />, label: 'Tạo tài khoản', roles: ['ADMIN'] },
     ],
   },
 ];
@@ -143,9 +135,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
     return children?.some((child) => location.pathname === child.path);
   };
 
-  const canSee = (node) => {
-    return true;
-  };
+  const canSee = (node) => hasAnyRole(currentUser, node.roles);
 
   const sidebarClasses = [
     'sidebar',
@@ -164,7 +154,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
       <aside className={sidebarClasses}>
         {/* Brand / Logo */}
         <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">⚡</div>
+          <div className="sidebar-brand-icon"><BsLightningChargeFill /></div>
           <div className="sidebar-brand-text">
             <h1>SCMS</h1>
             <span>Nhà máy Nhiệt điện</span>
@@ -174,14 +164,16 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
         {/* Navigation */}
         <nav className="sidebar-nav">
           {menuSections.map((section, sIdx) => {
-            // Lọc các item: item có children → còn ≥1 child xem được; item đơn → canSee
+            // Lọc các item: trước tiên xét role của CHÍNH mục (parent gate),
+            // rồi nếu có children thì lọc tiếp theo role riêng của từng child.
             const visibleItems = section.items
               .map((item) => {
+                if (!canSee(item)) return null;
                 if (item.children) {
                   const visibleChildren = item.children.filter(canSee);
                   return visibleChildren.length > 0 ? { ...item, children: visibleChildren } : null;
                 }
-                return canSee(item) ? item : null;
+                return item;
               })
               .filter(Boolean);
 

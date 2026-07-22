@@ -48,12 +48,12 @@ const FILTERS = [
 ];
 
 /**
- * Gating vai trò (chỉ ở UI, backend không chặn — nhất quán các nút cũ):
- * nút Sửa dành cho người vận hành; nút Trạng thái mở cho cả người vận hành
- * lẫn người duyệt (modal tự lọc option theo vai trò).
+ * Gating vai trò (khớp BE @PreAuthorize — chốt 2026-07-20):
+ * - Sửa hồ sơ phiếu: Quản đốc SC / Tổ trưởng (OPERATE).
+ * - Chuyển trạng thái (duyệt/mở/đóng/khoá/huỷ): Trưởng ca / Trưởng kíp (STATUS).
  */
-const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
-const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
+const OPERATE_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
+const STATUS_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
 
 /* ============================================================
    COMPONENT
@@ -74,7 +74,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
   const userRoles = authService.getCurrentUser()?.roles || [];
   const canOperate = userRoles.some((r) => OPERATE_ROLES.includes(r));
-  const canChangeStatus = canOperate || userRoles.some((r) => APPROVE_ROLES.includes(r));
+  const canChangeStatus = userRoles.some((r) => STATUS_ROLES.includes(r));
 
   /* --- Fetch dữ liệu --- */
   const fetchWorkOrders = useCallback(async () => {
@@ -105,7 +105,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     const completed = workOrders.filter((r) => r.status === 'COMPLETED').length;
     const cancelled = workOrders.filter((r) => r.status === 'CANCELLED').length;
     return [
-      { key: 'total', label: 'Tổng PCT', value: totalElements, icon: <BsListUl />, color: 'var(--color-primary-500)' },
+      { key: 'total', label: 'Tổng PCT', value: totalElements, icon: <BsListUl />, color: 'var(--color-primary)' },
       { key: 'open', label: 'Chờ duyệt', value: open, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
       { key: 'in_progress', label: 'Đang thực hiện', value: inProgress, icon: <BsPlayCircle />, color: 'var(--color-status-warning)' },
       { key: 'completed', label: 'Hoàn thành', value: completed, icon: <BsCheckCircle />, color: 'var(--color-status-normal)' },
@@ -189,6 +189,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
             <BsPencilSquare className="me-1" /> Sửa
           </Button>
         )}
+        {canOperate && (
         <Button
           variant="outline-success"
           size="sm"
@@ -198,6 +199,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         >
           <BsBoxSeam className="me-1" /> Cấp vật tư
         </Button>
+        )}
       </div>
     );
   }

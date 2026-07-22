@@ -1,8 +1,7 @@
-// Service phân quyền: role + permission (login production OK sau fix CORS backend 2026-07-06).
-import apiClient from './apiClient';
-
-const ROLE_URL = '/api/v1/roles';
-const PERMISSION_URL = '/api/v1/permissions';
+// Danh mục vai trò + helper phân quyền theo ROLE.
+// (2026-07-20: chuyển hẳn từ mô hình permission sang role-only — xem BE
+//  SecurityConfig#roleHierarchy. "Phân quyền" giờ = gán đúng ROLE cho account;
+//  không còn màn cấu hình role×permission động.)
 
 /**
  * Danh sách vai trò trong hệ thống (mã EN khớp DB, label VN).
@@ -20,69 +19,30 @@ export const SYSTEM_ROLES = [
   { id: 8, roleCode: 'TEAM_LEADER', roleName: 'Tổ trưởng' },
   { id: 9, roleCode: 'SAFETY_SUPERVISOR', roleName: 'Giám sát An toàn' },
   { id: 10, roleCode: 'ADMIN', roleName: 'Quản trị viên' },
+  { id: 11, roleCode: 'HR_STAFF', roleName: 'Nhân sự' },
 ];
 
-/**
- * Map mã chức năng (dùng ở Sidebar/ProtectedRoute qua prop `func`/`requireFunction`)
- * → permission code cần có để XEM chức năng đó (khớp bảng permissions trong DB).
- * Một chức năng có thể chấp nhận nhiều permission (có 1 trong số đó là đủ).
- */
-const FEATURE_VIEW_PERMISSIONS = {
-  EMPLOYEE: ['EMPLOYEE_VIEW'],
-  DEPARTMENT: ['DEPARTMENT_VIEW'],
-  ACCOUNT: ['ACCOUNT_VIEW'],
-  EQUIPMENT_SYSTEM: ['EQUIPMENT_SYSTEM_VIEW'],
-  EQUIPMENT: ['EQUIPMENT_VIEW'],
-  REPAIR_REQUEST: ['REPAIR_REQUEST_VIEW'],
-  WORK_ORDER: ['WORK_ORDER_VIEW'],
-  TECHNICAL_ASSESSMENT: ['TECHNICAL_ASSESSMENT_VIEW'],
-  MATERIAL: ['CONSUMABLE_CATALOG_VIEW', 'SPARE_PART_CATALOG_VIEW', 'INVENTORY_VIEW'],
-  TOOL: ['TOOL_VIEW'],
-  MAINTENANCE: ['LUBRICATION_PLAN_VIEW', 'LUBRICATION_HISTORY_VIEW'],
-};
+/** ADMIN luôn full quyền (khớp RoleHierarchy phía BE: ROLE_ADMIN implies mọi role khác). */
+export function isAdmin(user) {
+  return !!user?.roles?.includes('ADMIN');
+}
 
 /**
- * Kiểm tra user hiện tại có quyền XEM một chức năng hay không.
- * Đọc từ user.permissions (backend trả về trong login/me) — KHÔNG còn mock.
+ * Kiểm tra user hiện tại có thuộc 1 trong các role cho phép hay không.
+ * ADMIN luôn qua, bất kể danh sách `roles` truyền vào — mirror đúng
+ * RoleHierarchy phía BE nên không cần liệt kê ADMIN ở từng nơi gọi.
  *
- * Lưu ý: đây chỉ là lớp UX (ẩn/hiện menu). Chặn thật sự nằm ở backend
- * (@PreAuthorize) — user sửa localStorage cũng chỉ thấy nút, bấm vào vẫn 401/403.
+ * Lưu ý: đây là lớp UX (ẩn/hiện menu, gate route). Chặn thật sự nằm ở
+ * backend (@PreAuthorize hasAnyRole) — user sửa localStorage cũng chỉ thấy
+ * menu/route, gọi API vẫn bị 403.
+ *
+ * @param {object|null} user
+ * @param {string[]} [roles] - danh sách role được phép; rỗng/undefined = ai đã đăng nhập cũng qua.
  */
-export function canAccess(user, featureCode) {
-  return true;
+export function hasAnyRole(user, roles) {
+  if (!user) return false;
+  if (!roles || roles.length === 0) return true;
+  if (isAdmin(user)) return true;
+  const userRoles = user.roles || [];
+  return roles.some((r) => userRoles.includes(r));
 }
-
-/** Kiểm tra user có 1 permission code cụ thể (dùng để ẩn/hiện nút hành động). */
-export function hasPermission(user, permissionCode) {
-  return true;
-}
-
-export const roleService = {
-  /** GET /api/v1/roles → [{id, name}] */
-  getRoles: async () => {
-    const res = await apiClient.get(ROLE_URL);
-    return res.data;
-  },
-
-  /** GET /api/v1/permissions → [{id, code, description}] */
-  getAllPermissions: async () => {
-    const res = await apiClient.get(PERMISSION_URL);
-    return res.data;
-  },
-
-  /** GET /api/v1/roles/{roleId}/permissions → [{id, code, description}] */
-  getRolePermissions: async (roleId) => {
-    const res = await apiClient.get(`${ROLE_URL}/${roleId}/permissions`);
-    return res.data;
-  },
-
-  /**
-   * PUT /api/v1/roles/{roleId}/permissions — thay TOÀN BỘ permission của role.
-   * Backend sẽ bump permission_version cho mọi account giữ role này →
-   * token cũ của họ tự vô hiệu ở request kế tiếp (buộc refresh lấy quyền mới).
-   */
-  updateRolePermissions: async (roleId, permissionIds) => {
-    const res = await apiClient.put(`${ROLE_URL}/${roleId}/permissions`, { permissionIds });
-    return res.data;
-  },
-};

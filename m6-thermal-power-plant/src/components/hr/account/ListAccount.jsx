@@ -114,7 +114,7 @@ export default function ListAccount() {
           ) : (
             <div 
               className="text-primary rounded-circle d-flex align-items-center justify-content-center fw-semibold fs-7" 
-              style={{ width: '32px', height: '32px', backgroundColor: 'var(--primary-light)' }}
+              style={{ width: '32px', height: '32px', backgroundColor: 'var(--color-secondary-container)' }}
             >
               {val ? val.trim()[0].toUpperCase() : 'U'}
             </div>

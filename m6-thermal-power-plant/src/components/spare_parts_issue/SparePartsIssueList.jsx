@@ -571,7 +571,7 @@ export default function SparePartsIssueList() {
                                                                 height: "60px",
                                                                 objectFit: "cover",
                                                                 borderRadius: "8px",
-                                                                border: "1px solid #dee2e6"
+                                                                border: "1px solid var(--border-color)"
                                                             }}
                                                             onError={(e) => {
                                                                 e.target.src = "https://png.pngtree.com/png-vector/20240805/ourlarge/pngtree-gear-machinery-metal-three-dimensional-png-image_13284500.png";

@@ -18,6 +18,8 @@ const routeLabels = {
   system: 'Hệ thống',
   repair: 'Sửa chữa',
   requests: 'Yêu cầu Sửa chữa',
+  'yeu-cau': 'Yêu cầu Sửa chữa',
+  'phieu-cong-tac': 'Phiếu Công tác',
   'work-orders': 'Phiếu Công tác',
   assessments: 'Đánh giá Kỹ thuật',
   materials: 'Vật tư',

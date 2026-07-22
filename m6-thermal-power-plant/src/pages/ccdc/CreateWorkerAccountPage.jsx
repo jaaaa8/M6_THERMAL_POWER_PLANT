@@ -128,14 +128,14 @@ export default function CreateWorkerAccountPage() {
             {created && (
                 <div style={{
                     maxWidth: 560, marginTop: 20,
-                    background: 'var(--bg-surface)',
-                    border: '2px solid var(--color-primary-400)',
+                    background: 'var(--color-surface)',
+                    border: '2px solid var(--color-primary)',
                     borderRadius: 'var(--radius-xl)',
                     padding: '20px 24px',
                     boxShadow: 'var(--shadow-lg)',
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                        <BsCheckCircle style={{ color: 'var(--color-status-success)', fontSize: '1.3rem' }} />
+                        <BsCheckCircle style={{ color: 'var(--color-status-normal)', fontSize: '1.3rem' }} />
                         <span style={{ fontWeight: 'var(--font-bold)', color: 'var(--text-primary)' }}>
                             Tạo thành công — Thông tin đăng nhập
                         </span>
@@ -154,7 +154,7 @@ export default function CreateWorkerAccountPage() {
                         <div key={key} style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '10px 14px', marginBottom: 8,
-                            background: 'var(--bg-body)', borderRadius: 'var(--radius-lg)',
+                            background: 'var(--color-surface-bright)', borderRadius: 'var(--radius-lg)',
                             border: '1px solid var(--border-color)',
                         }}>
                             <div>
@@ -170,14 +170,14 @@ export default function CreateWorkerAccountPage() {
                                 onClick={() => copyText(key, value)}
                                 title="Sao chép"
                             >
-                                {copied[key] ? <BsClipboardCheck style={{ color: 'var(--color-status-success)' }} /> : <BsClipboard />}
+                                {copied[key] ? <BsClipboardCheck style={{ color: 'var(--color-status-normal)' }} /> : <BsClipboard />}
                             </button>
                         </div>
                     ))}
 
                     <div style={{
                         marginTop: 12, padding: '10px 14px',
-                        background: 'rgba(var(--color-primary-rgb, 59,130,246), 0.08)',
+                        background: 'var(--color-secondary-container)',
                         borderRadius: 'var(--radius-lg)',
                         fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
                     }}>

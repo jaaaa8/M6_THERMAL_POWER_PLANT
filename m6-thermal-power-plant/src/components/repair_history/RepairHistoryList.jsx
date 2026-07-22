@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAllRepairHistories } from "../../services/repairHistoryService";
 import {
-    Card,
     Table,
     Button,
     Modal,
@@ -9,99 +8,17 @@ import {
     Col,
     Badge,
 } from "react-bootstrap";
-import { BsEyeFill } from "react-icons/bs";
+import { BsEyeFill, BsClockHistory } from "react-icons/bs";
+import PageHeader from "../common/PageHeader";
+import LoadingSpinner from "../common/LoadingSpinner";
+import EmptyState from "../common/EmptyState";
+import "./repairHistoryList.css";
 
 export default function RepairHistoryList() {
     const [showModal, setShowModal] = useState(false);
     const [selectedHistory, setSelectedHistory] = useState(null);
     const [repairHistories, setRepairHistories] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    // const repairHistories = [
-    //     {
-    //         id: 1,
-    //         workOrder: {
-    //             orderCode: "PCT-2026-001",
-    //             leader: {
-    //                 fullName: "Nguyễn Văn A",
-    //             },
-    //         },
-    //         equipment: {
-    //             kksCode: "PUMP-001",
-    //             name: "Bơm nước làm mát",
-    //             imgPath:
-    //                 "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=800",
-    //         },
-    //         repairDate: "2026-06-15",
-    //         repairContent:
-    //             "Thay vòng bi, kiểm tra độ rung và căn chỉnh trục.",
-    //         repairResult:
-    //             "Thiết bị hoạt động ổn định sau sửa chữa.",
-    //         details: [
-    //             {
-    //                 id: 1,
-    //                 quantity: 2,
-    //                 sparePart: {
-    //                     sparePartCode: "SP001",
-    //                     name: "Vòng bi SKF 6205",
-    //                     imgPath:
-    //                         "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=500",
-    //                     unit: {
-    //                         unitName: "Cái",
-    //                     },
-    //                 },
-    //             },
-    //             {
-    //                 id: 2,
-    //                 quantity: 1,
-    //                 sparePart: {
-    //                     sparePartCode: "SP002",
-    //                     name: "Phớt cơ khí",
-    //                     imgPath:
-    //                         "https://images.unsplash.com/photo-1581092160607-ee22731d8a08?w=500",
-    //                     unit: {
-    //                         unitName: "Bộ",
-    //                     },
-    //                 },
-    //             },
-    //         ],
-    //     },
-    //     {
-    //         id: 2,
-    //         workOrder: {
-    //             orderCode: "PCT-2026-002",
-    //             leader: {
-    //                 fullName: "Trần Văn B",
-    //             },
-    //         },
-    //         equipment: {
-    //             kksCode: "MOTOR-002",
-    //             name: "Động cơ quạt gió",
-    //             imgPath:
-    //                 "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=800",
-    //         },
-    //         repairDate: "2026-06-20",
-    //         repairContent:
-    //             "Thay bạc đạn và vệ sinh toàn bộ động cơ.",
-    //         repairResult:
-    //             "Động cơ vận hành bình thường.",
-    //         details: [
-    //             {
-    //                 id: 3,
-    //                 quantity: 2,
-    //                 sparePart: {
-    //                     sparePartCode: "SP003",
-    //                     name: "Bạc đạn NSK",
-    //                     imgPath:
-    //                         "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500",
-    //                     unit: {
-    //                         unitName: "Cái",
-    //                     },
-    //                 },
-    //             },
-    //         ],
-    //     },
-    // ];
 
     useEffect(() => {
         fetchRepairHistories();
@@ -130,60 +47,77 @@ export default function RepairHistoryList() {
 
     return (
         <>
-            <Card className="shadow-sm border-0">
-                <Card.Header className="bg-primary text-white">
-                    <h5 className="mb-0">
-                        Lịch sử sửa chữa thiết bị
-                    </h5>
-                </Card.Header>
+            <PageHeader
+                icon={<BsClockHistory />}
+                title="Lịch sử Sửa chữa"
+                subtitle="Theo dõi lịch sử sửa chữa thiết bị trong nhà máy"
+            />
 
-                <Card.Body>
-                    <Table
-                        bordered
-                        hover
-                        responsive
-                        className="align-middle"
-                    >
-                        <thead className="table-primary">
-                        <tr>
-                            <th width="60">#</th>
-                            <th>Mã lệnh công việc</th>
-                            <th>Mã thiết bị</th>
-                            <th>Tên thiết bị</th>
-                            <th>Ngày sửa chữa</th>
-                            <th width="120">Thao tác</th>
-                        </tr>
-                        </thead>
+            {loading ? (
+                <LoadingSpinner text="Đang tải dữ liệu..." />
+            ) : repairHistories.length === 0 ? (
+                <EmptyState
+                    icon={<BsClockHistory />}
+                    title="Chưa có lịch sử sửa chữa"
+                    message="Dữ liệu lịch sử sẽ hiển thị khi có phiếu công tác hoàn thành."
+                />
+            ) : (
+                <div className="rh-table-wrapper card">
+                    {/* Toolbar */}
+                    <div className="rh-toolbar">
+                        <span className="rh-result-count">
+                            {repairHistories.length} bản ghi
+                        </span>
+                    </div>
 
-                        <tbody>
-                        {repairHistories.map((item, index) => (
-                            <tr key={item.id}>
-                                <td>{index + 1}</td>
-                                <td>
-                                    <Badge bg="primary">
-                                        {item.orderCode}
-                                    </Badge>
-                                </td>
-                                <td>{item.kksCode}</td>
-                                <td>{item.equipmentName}</td>
-                                <td>{item.repairDate}</td>
-                                <td>
-                                    <Button
-                                        size="sm"
-                                        variant="info"
-                                        onClick={() =>
-                                            handleView(item)
-                                        }
-                                    >
-                                        <BsEyeFill /> Chi tiết
-                                    </Button>
-                                </td>
+                    {/* Table */}
+                    <div className="table-responsive">
+                        <Table hover className="align-middle data-table mb-0">
+                            <thead>
+                            <tr>
+                                <th width="60">#</th>
+                                <th>Mã lệnh công việc</th>
+                                <th>Mã thiết bị</th>
+                                <th>Tên thiết bị</th>
+                                <th>Ngày sửa chữa</th>
+                                <th width="120" className="text-center">Thao tác</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </Table>
-                </Card.Body>
-            </Card>
+                            </thead>
+
+                            <tbody>
+                            {repairHistories.map((item, index) => (
+                                <tr key={item.id}>
+                                    <td>{index + 1}</td>
+                                    <td>
+                                        <Badge
+                                            className="rh-order-badge"
+                                            bg=""
+                                        >
+                                            {item.orderCode}
+                                        </Badge>
+                                    </td>
+                                    <td className="font-mono">{item.kksCode}</td>
+                                    <td>{item.equipmentName}</td>
+                                    <td className="font-mono">{item.repairDate}</td>
+                                    <td className="text-center">
+                                        <Button
+                                            size="sm"
+                                            variant="outline-primary"
+                                            className="d-inline-flex align-items-center gap-1"
+                                            onClick={() =>
+                                                handleView(item)
+                                            }
+                                        >
+                                            <BsEyeFill /> Chi tiết
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </Table>
+                    </div>
+                </div>
+            )}
 
             <Modal
                 size="xl"
@@ -191,7 +125,8 @@ export default function RepairHistoryList() {
                 onHide={() => setShowModal(false)}
             >
                 <Modal.Header closeButton>
-                    <Modal.Title>
+                    <Modal.Title className="d-flex align-items-center gap-2">
+                        <BsClockHistory style={{ color: 'var(--color-primary)' }} />
                         Chi tiết lịch sử sửa chữa
                     </Modal.Title>
                 </Modal.Header>
@@ -212,7 +147,7 @@ export default function RepairHistoryList() {
                                 </Col>
 
                                 <Col md={8}>
-                                    <Table bordered>
+                                    <Table bordered className="rh-detail-table">
                                         <tbody>
                                         <tr>
                                             <th width="220">
@@ -287,7 +222,8 @@ export default function RepairHistoryList() {
                                 </Col>
                             </Row>
 
-                            <h5 className="mb-3">
+                            <h5 className="mb-3 d-flex align-items-center gap-2">
+                                <BsClockHistory style={{ color: 'var(--color-primary)' }} />
                                 Vật tư đã thay thế
                             </h5>
 
@@ -297,7 +233,7 @@ export default function RepairHistoryList() {
                                 responsive
                                 className="align-middle"
                             >
-                                <thead className="table-secondary">
+                                <thead>
                                 <tr>
                                     <th>Ảnh</th>
                                     <th>Mã vật tư</th>

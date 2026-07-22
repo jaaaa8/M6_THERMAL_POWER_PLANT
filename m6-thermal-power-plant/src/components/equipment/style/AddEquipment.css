@@ -29,9 +29,9 @@
 .image-upload-dropzone {
   flex: 1;
   height: 140px;
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--color-outline-variant);
   border-radius: var(--radius-lg);
-  background: #f8fafc;
+  background: var(--color-surface-container);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -45,7 +45,7 @@
 
 .image-upload-dropzone:hover {
   border-color: var(--color-primary);
-  background: #f0f7ff;
+  background: var(--color-primary-50);
   color: var(--color-primary);
 }
 
@@ -65,7 +65,7 @@
   height: 140px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  background: #f1f5f9;
+  background: var(--color-surface-container);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,7 +99,7 @@
   position: absolute;
   top: 6px;
   right: 6px;
-  background: rgba(239, 68, 68, 0.9);
+  background: var(--color-status-danger);
   color: white;
   border: none;
   width: 24px;
@@ -115,7 +115,7 @@
 }
 
 .image-preview-remove:hover {
-  background: #dc2626;
+  background: var(--color-status-danger);
 }
 
 .required::after {
@@ -128,7 +128,7 @@
 .metadata-footer {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
-  background: #f8fafc;
+  background: var(--color-surface-container);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);

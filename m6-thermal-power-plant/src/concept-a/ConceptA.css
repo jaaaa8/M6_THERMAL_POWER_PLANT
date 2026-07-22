@@ -1,0 +1,456 @@
+/* ============================================================
+   CONCEPT A — "Phòng điều khiển" (Control Room)
+   BÀN THỬ Phase 0 — KHÔNG phải code sản xuất.
+   Mọi thứ scope trong .ca-root → không rò ra app thật.
+   Xoá cả thư mục src/concept-a/ + 2 dòng route trong App.jsx là sạch.
+
+   Ý đồ: bảng điều khiển thật trong nhà máy. Không phải "dark dashboard"
+   — đó tự nó đã là một khuôn mẫu. Đây là THIẾT BỊ: vỏ than chì, nhãn
+   khắc chìm, số liệu đọc như đồng hồ đo trên màn hình lõm, thang vạch
+   LED, đèn báo phát sáng.
+
+   LẬP TRƯỜNG: hệ thống phi sắc hoàn toàn (thép + than chì). Màu CHỈ
+   xuất hiện ở đèn trạng thái. Trong hệ an toàn công nghiệp, màu luôn
+   mang nghĩa — không bao giờ trang trí. Đây cũng là cách né cái bẫy đã
+   giết concept C (accent amber đụng --color-status-warning).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+.ca-root {
+  /* --- Vỏ thiết bị --- */
+  --ca-case:      #16191c;  /* vỏ ngoài */
+  --ca-panel:     #1e2226;  /* mặt panel */
+  --ca-panel-2:   #262b30;  /* panel nổi */
+  --ca-recess:    #0c0e10;  /* màn hình lõm */
+  --ca-bezel-hi:  #333940;  /* cạnh bắt sáng */
+  --ca-bezel-lo:  #0a0c0d;  /* cạnh đổ bóng */
+  --ca-rule:      #2f353b;
+  --ca-rule-2:    #3d444b;
+
+  /* --- Chữ khắc --- */
+  --ca-text:      #e2e7eb;
+  --ca-text-2:    #98a1a9;
+  --ca-text-3:    #666e75;
+  --ca-engrave:   #7b848c;
+
+  /* --- ĐÈN BÁO: nguồn màu DUY NHẤT của hệ. Giữ nguyên 5 ngữ nghĩa,
+         chỉ nâng độ sáng để phát quang trên nền tối. --- */
+  --ca-normal:    #3ad07f;
+  --ca-warning:   #f2c034;
+  --ca-danger:    #ff4b39;
+  --ca-inactive:  #5d666d;
+  --ca-info:      #4d9fff;
+
+  --ca-narrow: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  --ca-mono:   'IBM Plex Mono', Consolas, monospace;
+
+  font-family: var(--ca-narrow);
+  font-size: 14px;
+  color: var(--ca-text);
+  background: var(--ca-case);
+  min-height: 100vh;
+  display: flex;
+}
+
+.ca-root *, .ca-root *::before, .ca-root *::after { box-sizing: border-box; }
+
+/* Nhãn khắc chìm — motif lặp toàn hệ */
+.ca-engrave {
+  font-family: var(--ca-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ca-engrave);
+}
+
+/* ============================================================
+   SIDEBAR — cột panel, nhãn khắc, mục đang chọn có đèn
+   ============================================================ */
+.ca-side {
+  width: 224px;
+  flex-shrink: 0;
+  background: var(--ca-panel);
+  border-right: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset -1px 0 0 var(--ca-bezel-hi);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+}
+
+.ca-brand {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 -1px 0 var(--ca-bezel-hi);
+}
+.ca-brand-name {
+  font-family: var(--ca-narrow);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ca-text);
+}
+.ca-brand-sub { margin-top: 3px; }
+
+.ca-side-group { margin-top: 14px; }
+.ca-side-label { padding: 0 16px; margin-bottom: 5px; }
+
+.ca-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 16px;
+  border: 0;
+  background: none;
+  color: var(--ca-text-2);
+  font-family: var(--ca-narrow);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.ca-nav-item::before {
+  content: '';
+  width: 5px; height: 5px;
+  background: var(--ca-rule-2);
+  flex-shrink: 0;
+}
+.ca-nav-item:hover { background: var(--ca-panel-2); color: var(--ca-text); }
+.ca-nav-item.active {
+  background: var(--ca-panel-2);
+  color: var(--ca-text);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--ca-normal);
+}
+/* Đèn chỉ mục đang mở */
+.ca-nav-item.active::before {
+  background: var(--ca-normal);
+  box-shadow: 0 0 6px var(--ca-normal);
+}
+.ca-nav-icon { font-size: 13px; opacity: 0.75; }
+
+.ca-side-foot {
+  margin-top: auto;
+  padding: 12px 16px 0;
+  border-top: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 1px 0 var(--ca-bezel-hi);
+  line-height: 1.7;
+}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+.ca-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+/* Thanh trạng thái nhà máy — như dải đèn trên tủ điều khiển */
+.ca-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 20px;
+  background: var(--ca-panel);
+  border-bottom: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 -1px 0 var(--ca-bezel-hi);
+}
+.ca-topbar-left { display: flex; align-items: center; gap: 16px; }
+.ca-topbar-sep { width: 1px; height: 16px; background: var(--ca-rule-2); }
+.ca-user { display: flex; align-items: center; gap: 9px; }
+.ca-avatar {
+  width: 26px; height: 26px;
+  background: var(--ca-recess);
+  border: 1px solid var(--ca-rule-2);
+  font-family: var(--ca-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ca-text-2);
+  display: grid; place-items: center;
+}
+.ca-user-name { font-size: 13.5px; font-weight: 600; line-height: 1.2; }
+
+.ca-content { padding: 18px 20px 32px; }
+
+/* --- Đầu trang --- */
+.ca-pagehead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--ca-rule);
+}
+.ca-title {
+  font-family: var(--ca-narrow);
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 5px 0 0;
+  line-height: 1;
+}
+.ca-subtitle { font-size: 13px; color: var(--ca-text-2); margin: 5px 0 0; }
+
+/* ============================================================
+   NÚT — phím bấm trên panel, có gờ
+   ============================================================ */
+.ca-btn {
+  font-family: var(--ca-narrow);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 5px 11px;
+  background: var(--ca-panel-2);
+  color: var(--ca-text);
+  border: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 1px 0 var(--ca-bezel-hi);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.ca-btn:hover:not(:disabled) { background: #30363c; }
+.ca-btn:active:not(:disabled) { box-shadow: inset 0 1px 3px var(--ca-bezel-lo); background: #1a1e22; }
+.ca-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ca-btn-sm { padding: 3px 7px; font-size: 12px; }
+.ca-btn-icon { padding: 4px 7px; }
+
+/* ============================================================
+   ĐỒNG HỒ ĐO — màn hình lõm, số mono lớn, thang vạch LED
+   ============================================================ */
+.ca-gauges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.ca-gauge {
+  background: var(--ca-panel);
+  border: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 1px 0 var(--ca-bezel-hi);
+  padding: 10px 12px 11px;
+}
+.ca-gauge-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ca-readout {
+  background: var(--ca-recess);
+  border: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55);
+  padding: 7px 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ca-readout-value {
+  font-family: var(--ca-mono);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.ca-readout-delta { font-family: var(--ca-mono); font-size: 11px; font-weight: 500; }
+
+/* Thang vạch LED — motif chữ ký của concept */
+.ca-scale { display: flex; gap: 2px; margin-top: 8px; }
+.ca-scale i { flex: 1; height: 5px; background: var(--ca-rule); }
+.ca-scale i.lit { background: currentColor; box-shadow: 0 0 4px currentColor; }
+
+/* ============================================================
+   PANEL — thay cho card
+   ============================================================ */
+.ca-panel {
+  background: var(--ca-panel);
+  border: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 1px 0 var(--ca-bezel-hi);
+}
+.ca-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 -1px 0 var(--ca-bezel-hi);
+  background: var(--ca-panel-2);
+}
+.ca-panel-body { padding: 12px; }
+
+.ca-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; align-items: start; }
+
+/* ============================================================
+   BẢNG — lưới kẻ mảnh, mọi con số là mono
+   ============================================================ */
+.ca-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.ca-table thead th {
+  font-family: var(--ca-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--ca-engrave);
+  text-align: left;
+  padding: 7px 11px;
+  background: var(--ca-panel-2);
+  border-bottom: 1px solid var(--ca-rule-2);
+  white-space: nowrap;
+}
+.ca-table tbody td {
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--ca-rule);
+  vertical-align: middle;
+}
+.ca-table tbody tr:last-child td { border-bottom: 0; }
+.ca-table tbody tr:hover { background: var(--ca-panel-2); }
+.ca-mono { font-family: var(--ca-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ca-strong { font-weight: 600; }
+.ca-sub { font-family: var(--ca-mono); font-size: 10.5px; color: var(--ca-text-3); }
+.ca-muted { color: var(--ca-text-2); }
+
+/* ============================================================
+   ĐÈN BÁO — thay cho pill. Bóng đèn + nhãn khắc.
+   ============================================================ */
+.ca-lamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ca-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+  color: var(--ca-text-2);
+}
+.ca-lamp::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.ca-lamp.normal   { color: var(--ca-normal); }
+.ca-lamp.warning  { color: var(--ca-warning); }
+.ca-lamp.danger   { color: var(--ca-danger); }
+.ca-lamp.inactive { color: var(--ca-inactive); }
+.ca-lamp.info     { color: var(--ca-info); }
+.ca-lamp::before { box-shadow: 0 0 7px currentColor; }
+/* Đèn tắt thì không phát sáng — dự phòng/đã đóng là trạng thái nguội */
+.ca-lamp.inactive::before { box-shadow: none; }
+.ca-lamp-text { color: var(--ca-text); }
+
+/* ============================================================
+   CÔNG TẮC LỌC — dãy phím trên panel
+   ============================================================ */
+.ca-switches { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 12px; border: 1px solid var(--ca-bezel-lo); width: fit-content; }
+.ca-switch {
+  font-family: var(--ca-narrow);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 5px 11px;
+  background: var(--ca-panel);
+  color: var(--ca-text-2);
+  border: 0;
+  border-right: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 1px 0 var(--ca-bezel-hi);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ca-switch:last-child { border-right: 0; }
+.ca-switch:hover { background: var(--ca-panel-2); color: var(--ca-text); }
+.ca-switch.active {
+  background: var(--ca-recess);
+  color: var(--ca-text);
+  font-weight: 600;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--ca-rule-2);
+}
+.ca-switch-count { font-family: var(--ca-mono); font-size: 9.5px; color: var(--ca-text-3); font-variant-numeric: tabular-nums; }
+.ca-switch.active .ca-switch-count { color: var(--ca-normal); }
+
+/* --- Thanh công cụ --- */
+.ca-toolbar { display: flex; gap: 9px; margin-bottom: 12px; }
+.ca-search {
+  flex: 1;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ca-recess);
+  border: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+  padding: 5px 10px;
+}
+.ca-search:focus-within { box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--ca-info); }
+.ca-search input {
+  border: 0; background: none; outline: none; flex: 1;
+  font-family: var(--ca-narrow); font-size: 13.5px; color: var(--ca-text);
+}
+.ca-search input::placeholder { color: var(--ca-text-3); }
+
+/* --- Danh sách trạng thái thiết bị --- */
+.ca-eq-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ca-rule);
+}
+.ca-eq-row:last-of-type { border-bottom: 0; }
+.ca-eq-count { font-family: var(--ca-mono); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ca-bar { display: flex; height: 7px; border: 1px solid var(--ca-bezel-lo); background: var(--ca-recess); margin-top: 11px; }
+.ca-bar > i { display: block; height: 100%; }
+.ca-total { text-align: center; margin-top: 8px; }
+
+/* --- Truy cập nhanh: phím lớn trên panel --- */
+.ca-qa { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.ca-qa-btn {
+  background: var(--ca-panel-2);
+  border: 1px solid var(--ca-bezel-lo);
+  box-shadow: inset 0 1px 0 var(--ca-bezel-hi);
+  padding: 9px 10px;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--ca-narrow);
+  font-size: 12.5px;
+  color: var(--ca-text);
+  line-height: 1.3;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ca-qa-btn:hover { background: #30363c; }
+.ca-qa-btn:active { box-shadow: inset 0 1px 3px var(--ca-bezel-lo); background: #1a1e22; }
+.ca-qa-icon { font-size: 14px; color: var(--ca-text-2); }
+
+/* --- Phân trang --- */
+.ca-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+
+/* --- Chân trang --- */
+.ca-foot {
+  margin-top: 18px;
+  padding-top: 9px;
+  border-top: 1px solid var(--ca-rule);
+  display: flex;
+  justify-content: space-between;
+}
+
+.ca-actions { display: flex; gap: 4px; }
+
+@media (max-width: 1100px) {
+  .ca-grid { grid-template-columns: 1fr; }
+  .ca-gauges { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ca-root *, .ca-root *::before, .ca-root *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

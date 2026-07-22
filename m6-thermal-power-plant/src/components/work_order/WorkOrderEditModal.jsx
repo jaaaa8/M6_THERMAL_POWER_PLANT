@@ -85,7 +85,7 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
     <Modal show={show} onHide={() => !saving && onClose()} centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsPencilSquare className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          <BsPencilSquare className="me-2" style={{ color: 'var(--color-primary)' }} />
           Chỉnh sửa phiếu — {workOrder?.orderCode}
         </Modal.Title>
       </Modal.Header>

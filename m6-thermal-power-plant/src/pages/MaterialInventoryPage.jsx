@@ -230,60 +230,23 @@ export default function MaterialInventoryPage({ type = 'consumables' }) {
                 className="mb-4 scms-tabs"
             >
                 <Tab eventKey="stock" title="Tồn kho hiện tại">
-                    {/* THẺ CHỈ SỐ TỔNG QUAN */}
+                    {/* THẺ CHỈ SỐ TỔNG QUAN — style đồng bộ với trang CCDC (.ccdc-stat) */}
                     <Row className="g-3 mb-4">
-                        <Col xs={12} md={4}>
-                            <div className="stat-card surface-card p-3 d-flex align-items-center">
-                                <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
-                                     style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', background: 'var(--color-primary-50)', color: 'var(--color-primary-500)', fontSize: '1.4rem' }}>
-                                    <BsTags />
-                                </div>
-                                <div>
-                                    <div className="text-muted" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' }}>Chủng loại vật tư</div>
-                                    <div className="fw-bold" style={{ fontSize: 'var(--text-xl)', color: 'var(--text-primary)' }}>
-                                        {stats.totalCategories.toLocaleString('vi-VN')}
+                        {[
+                            { key: 'categories', label: 'Chủng loại vật tư', value: stats.totalCategories, icon: <BsTags />, color: 'var(--color-primary)' },
+                            { key: 'total', label: 'Tổng lượng tồn kho', value: stats.totalStockQuantity, icon: <BsBoxSeam />, color: 'var(--color-status-info)' },
+                            { key: 'low', label: 'Vật tư sắp hết (Tồn ≤ 5)', value: stats.lowStockCount, icon: <BsExclamationTriangle />, color: stats.lowStockCount > 0 ? 'var(--color-status-danger)' : 'var(--color-status-inactive)' },
+                        ].map((s) => (
+                            <Col xs={12} md={4} key={s.key}>
+                                <div className="ccdc-stat surface-card">
+                                    <span className="ccdc-stat-icon" style={{ color: s.color }}>{s.icon}</span>
+                                    <div className="ccdc-stat-body">
+                                        <span className="ccdc-stat-value">{s.value.toLocaleString('vi-VN')}</span>
+                                        <span className="ccdc-stat-label">{s.label}</span>
                                     </div>
                                 </div>
-                            </div>
-                        </Col>
-
-                        <Col xs={12} md={4}>
-                            <div className="stat-card surface-card p-3 d-flex align-items-center">
-                                <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
-                                     style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', background: 'var(--color-status-info-bg)', color: 'var(--color-status-info)', fontSize: '1.4rem' }}>
-                                    <BsBoxSeam />
-                                </div>
-                                <div>
-                                    <div className="text-muted" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' }}>Tổng lượng tồn kho</div>
-                                    <div className="fw-bold" style={{ fontSize: 'var(--text-xl)', color: 'var(--text-primary)' }}>
-                                        {stats.totalStockQuantity.toLocaleString('vi-VN')}
-                                    </div>
-                                </div>
-                            </div>
-                        </Col>
-
-                        <Col xs={12} md={4}>
-                            <div className={`stat-card surface-card p-3 d-flex align-items-center ${stats.lowStockCount > 0 ? 'border-danger' : ''}`}
-                                 style={{ transition: 'all 0.3s ease' }}>
-                                <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
-                                     style={{ 
-                                         width: '48px', 
-                                         height: '48px', 
-                                         borderRadius: 'var(--radius-lg)', 
-                                         background: stats.lowStockCount > 0 ? 'var(--color-status-danger-bg)' : 'var(--color-status-inactive-bg)', 
-                                         color: stats.lowStockCount > 0 ? 'var(--color-status-danger)' : 'var(--color-status-inactive)', 
-                                         fontSize: '1.4rem' 
-                                     }}>
-                                    <BsExclamationTriangle />
-                                </div>
-                                <div>
-                                    <div className="text-muted" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' }}>Vật tư sắp hết (Tồn ≤ 5)</div>
-                                    <div className={`fw-bold ${stats.lowStockCount > 0 ? 'text-danger' : ''}`} style={{ fontSize: 'var(--text-xl)' }}>
-                                        {stats.lowStockCount.toLocaleString('vi-VN')}
-                                    </div>
-                                </div>
-                            </div>
-                        </Col>
+                            </Col>
+                        ))}
                     </Row>
 
                     {/* Tìm kiếm tồn kho */}

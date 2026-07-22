@@ -15,8 +15,8 @@
     width: 130px;
     height: 130px;
     border-radius: var(--radius-full);
-    border: 3px dashed var(--border-color-strong);
-    background: var(--bg-surface-hover);
+    border: 3px dashed var(--color-outline-variant);
+    background: var(--color-surface-container);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -28,14 +28,13 @@
 }
 
 .avatar-upload-circle:hover {
-    border-color: var(--color-primary-400);
+    border-color: var(--color-primary);
     background: var(--color-primary-50);
-    transform: scale(1.03);
 }
 
 .avatar-upload-circle.has-image {
     border-style: solid;
-    border-color: var(--color-primary-300);
+    border-color: var(--color-inverse-primary);
     border-width: 3px;
     padding: 0;
 }
@@ -84,7 +83,7 @@
 }
 
 .avatar-upload-circle:hover .avatar-upload-icon {
-    color: var(--color-primary-500);
+    color: var(--color-primary);
 }
 
 .avatar-upload-hint {
@@ -136,11 +135,7 @@
     width: 40px;
     height: 40px;
     border-radius: var(--radius-lg);
-    background: linear-gradient(
-            135deg,
-            var(--color-primary-500),
-            var(--color-primary-700)
-    );
+    background: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -209,7 +204,7 @@
 }
 
 .form-section-title svg {
-    color: var(--color-primary-500);
+    color: var(--color-primary);
     font-size: var(--text-sm);
 }
 
@@ -224,22 +219,22 @@
    PDF UPLOAD
    ============================================================ */
 .pdf-upload-zone {
-    border: 2px dashed var(--border-color-strong);
+    border: 2px dashed var(--color-outline-variant);
     border-radius: var(--radius-lg);
     padding: 24px;
     text-align: center;
-    background: var(--bg-surface-hover);
+    background: var(--color-surface-container);
     transition: all var(--transition-base);
 }
 
 .pdf-upload-zone:hover {
-    border-color: var(--color-primary-400);
+    border-color: var(--color-primary);
     background: var(--color-primary-50);
 }
 
 .pdf-upload-icon {
     font-size: 2.5rem;
-    color: #dc3545;
+    color: var(--color-status-danger);
     margin-bottom: 12px;
 }
 
@@ -256,7 +251,7 @@
 .pdf-file-name {
     margin-top: 10px;
     font-size: var(--text-sm);
-    color: var(--color-primary-600);
+    color: var(--color-primary);
     font-weight: var(--font-medium);
 }
 
@@ -264,22 +259,22 @@
    IMAGE UPLOAD
    ============================================================ */
 .image-upload-zone {
-    border: 2px dashed var(--border-color-strong);
+    border: 2px dashed var(--color-outline-variant);
     border-radius: var(--radius-lg);
     padding: 24px;
     text-align: center;
-    background: var(--bg-surface-hover);
+    background: var(--color-surface-container);
     transition: all var(--transition-base);
 }
 
 .image-upload-zone:hover {
-    border-color: var(--color-primary-400);
+    border-color: var(--color-primary);
     background: var(--color-primary-50);
 }
 
 .image-upload-icon {
     font-size: 2.5rem;
-    color: var(--color-primary-500);
+    color: var(--color-primary);
     margin-bottom: 12px;
 }
 
@@ -322,8 +317,7 @@
 }
 
 .image-preview-item:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+    border-color: var(--color-outline-variant);
 }
 
 .image-preview-item img {
@@ -355,7 +349,7 @@
 }
 
 .image-preview-remove:hover {
-    background: rgba(220, 53, 69, 0.9);
+    background: var(--color-status-danger);
 }
 
 /* ============================================================
@@ -398,17 +392,17 @@
 }
 
 .status-radio-pill label:hover {
-    border-color: var(--color-primary-300);
+    border-color: var(--color-inverse-primary);
     background: var(--color-primary-50);
 }
 
 .status-radio-pill input:checked + label {
-    border-color: var(--color-primary-500);
+    border-color: var(--color-primary);
     background: var(--color-primary-50);
 
-    color: var(--color-primary-700);
+    color: var(--color-primary-container);
 
-    box-shadow: 0 0 0 3px rgba(62, 101, 162, 0.1);
+    box-shadow: var(--shadow-focus);
 }
 
 .status-dot {
@@ -418,19 +412,19 @@
 }
 
 .status-dot.pending {
-    background: #f59e0b;
+    background: var(--color-status-warning);
 }
 
 .status-dot.progress {
-    background: #3b82f6;
+    background: var(--color-status-info);
 }
 
 .status-dot.completed {
-    background: #10b981;
+    background: var(--color-status-normal);
 }
 
 .status-dot.rejected {
-    background: #ef4444;
+    background: var(--color-status-danger);
 }
 
 /* ============================================================
@@ -445,7 +439,7 @@
     justify-content: flex-end;
     gap: var(--space-3);
 
-    background: var(--bg-surface-hover);
+    background: var(--color-surface-container);
 }
 
 .technical-form-footer .btn {
@@ -503,7 +497,7 @@
     width: 40px;
     height: 40px;
     border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+    background: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -547,7 +541,7 @@
 
 .form-section-title svg {
     font-size: var(--text-sm);
-    color: var(--color-primary-400);
+    color: var(--color-primary);
 }
 
 /* --- Field group enhancements --- */
@@ -587,7 +581,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-3);
-    background: var(--bg-surface-hover);
+    background: var(--color-surface-container);
 }
 
 .spare-part-form-footer .btn {
@@ -632,16 +626,16 @@
 }
 
 .status-radio-pill label:hover {
-    border-color: var(--color-primary-300);
+    border-color: var(--color-inverse-primary);
     background: var(--color-primary-50);
 }
 
 .status-radio-pill input:checked + label {
-    border-color: var(--color-primary-500);
+    border-color: var(--color-primary);
     background: var(--color-primary-50);
-    color: var(--color-primary-700);
+    color: var(--color-primary-container);
     font-weight: var(--font-semibold);
-    box-shadow: 0 0 0 3px rgba(62, 101, 162, 0.1);
+    box-shadow: var(--shadow-focus);
 }
 
 .status-dot {
@@ -670,13 +664,9 @@
     }
 }
 .selected-spare-head th {
-    background: linear-gradient(
-            135deg,
-            #0d6efd,
-            #0b5ed7
-    ) !important;
+    background: var(--color-primary) !important;
 
-    color: #fff !important;
+    color: var(--text-on-primary) !important;
 
     font-weight: 600;
 
@@ -695,13 +685,13 @@
 }
 
 .spare-table {
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-color);
 }
 
 .spare-table tbody tr:hover {
-    background: #f8f9fa;
+    background: var(--color-surface-container);
 }
 
 .spare-table td {
@@ -711,10 +701,10 @@
 .unit-badge {
     display: inline-block;
     padding: 6px 12px;
-    border-radius: 999px;
-    background: #e7f1ff;
-    color: #0d6efd;
-    font-weight: 600;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-50);
+    color: var(--color-primary);
+    font-weight: var(--font-semibold);
 }
 
 .quantity-input {
@@ -723,37 +713,19 @@
     margin: auto;
 }
 
-.spare-table {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
 .spare-table thead th {
-    background: #f8fafc;
-    font-weight: 600;
+    background: var(--color-surface-container);
+    font-weight: var(--font-semibold);
     white-space: nowrap;
     vertical-align: middle;
-}
-
-.spare-table tbody tr:hover {
-    background: #f8fbff;
 }
 
 .spare-part-image {
     width: 60px;
     height: 60px;
     object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.unit-badge {
-    background: #e7f5ff;
-    color: #1971c2;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
 }
 
 /* bảng vật tư đã chọn */
@@ -777,9 +749,9 @@
 
     object-fit: cover;
 
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
 
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-color);
 
 }
 

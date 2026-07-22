@@ -14,7 +14,7 @@
 
 .search-filter-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-300);
+  border-color: var(--color-inverse-primary);
 }
 
 /* Custom table action button designs */
@@ -30,11 +30,6 @@
   color: var(--text-secondary);
   transition: all var(--transition-fast);
   padding: 0;
-}
-
-.system-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
 }
 
 .system-action-btn.view-btn:hover {
@@ -67,15 +62,15 @@
   height: 80px;
   margin: auto;
   border-radius: 50%;
-  background: #eef5ff;
-  color: #2563eb;
+  background: var(--color-primary-50);
+  color: var(--color-primary);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .detail-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -85,7 +80,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 14px 18px;
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .detail-row:last-child {
@@ -94,13 +89,13 @@
 
 .detail-title {
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-tertiary);
   min-width: 120px;
 }
 
 .detail-content {
   font-weight: 500;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .detail-description {
@@ -108,10 +103,10 @@
 }
 
 .description-box {
-  background: #f8fafc;
+  background: var(--color-surface-container);
   border-radius: 8px;
   padding: 16px;
-  color: #374151;
+  color: var(--text-secondary);
   line-height: 1.7;
   min-height: 90px;
 }
@@ -124,7 +119,7 @@
 }
 
 .system-name-link:hover {
-  color: #2563eb;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
@@ -136,7 +131,7 @@
 }
 
 .btn-close-custom:hover {
-  background: #f3f4f6;
+  background: var(--color-surface-container);
 }
 
 .detail-item {
@@ -168,7 +163,7 @@
 
 .detail-value.mono {
   font-family: var(--font-mono);
-  color: var(--color-primary-600);
+  color: var(--color-primary);
 }
 
 /* Form layout styles */

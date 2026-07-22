@@ -177,15 +177,15 @@ export default function LubricationPlanForm({
         : INITIAL_VALUES;
 
     return (
-        <div className="nhansu-form-card">
+        <div className="employee-form-card nhansu-form-card">
 
             {/* HEADER */}
-            <div className="nhansu-form-header">
-                <div className="nhansu-form-header-icon">
+            <div className="employee-form-header nhansu-form-header">
+                <div className="employee-form-header-icon nhansu-form-header-icon">
                     <BsDropletFill />
                 </div>
 
-                <div className="nhansu-form-header-text">
+                <div className="employee-form-header-text nhansu-form-header-text">
                     <h2>
                         {isEdit
                             ? "Cập nhật Kế hoạch Bảo Dưỡng"
@@ -213,7 +213,7 @@ export default function LubricationPlanForm({
                   }) => (
                     <Form noValidate>
 
-                        <div className="nhansu-form-body">
+                        <div className="employee-form-body nhansu-form-body">
 
 
                             {/* THIẾT BỊ */}
@@ -436,7 +436,7 @@ export default function LubricationPlanForm({
                         </div>
 
                         {/* FOOTER */}
-                        <div className="nhansu-form-footer">
+                        <div className="employee-form-footer nhansu-form-footer">
 
                             <Button
                                 variant="outline-secondary"
@@ -446,12 +446,10 @@ export default function LubricationPlanForm({
                                 <BsArrowClockwise />
                                 Đặt lại
                             </Button>
-                            <Link to="/lubrication/plant">
-                                <Button variant="outline-danger">
-                                    <BsXCircle />
-                                    Huỷ bỏ
-                                </Button>
-                            </Link>
+                            <Button as={Link} to="/lubrication/plant" variant="outline-danger">
+                                <BsXCircle />
+                                Huỷ bỏ
+                            </Button>
 
                             {onCancel && (
                                 <Button

@@ -70,7 +70,7 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
     <Modal show={show} onHide={onClose} centered size="lg" scrollable>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsBoxSeam className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          <BsBoxSeam className="me-2" style={{ color: 'var(--color-primary)' }} />
           Cấp vật tư — PCT <span className="font-mono">{workOrder.orderCode}</span>
         </Modal.Title>
       </Modal.Header>

@@ -30,7 +30,7 @@ export default function MaterialDetailModal({ show, onHide, item, type }) {
             <Modal show={show} onHide={onHide} centered size="lg" className="material-detail-modal">
                 <Modal.Header closeButton>
                     <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-                        <BsEye className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+                        <BsEye className="me-2" style={{ color: 'var(--color-primary)' }} />
                         Chi tiết {isConsumable ? 'vật tư tiêu hao' : 'vật tư thay thế'}
                     </Modal.Title>
                 </Modal.Header>
@@ -92,29 +92,29 @@ export default function MaterialDetailModal({ show, onHide, item, type }) {
                                 <table className="table table-bordered table-striped align-middle mb-0" style={{ fontSize: 'var(--text-sm)' }}>
                                     <tbody>
                                         <tr>
-                                            <th style={{ width: '35%', backgroundColor: '#f8f9fa' }}>Mã vật tư</th>
+                                            <th style={{ width: '35%', backgroundColor: 'var(--color-surface-container)' }}>Mã vật tư</th>
                                             <td className="font-mono fw-semibold">{code || '—'}</td>
                                         </tr>
                                         <tr>
-                                            <th style={{ backgroundColor: '#f8f9fa' }}>Tên vật tư</th>
+                                            <th style={{ backgroundColor: 'var(--color-surface-container)' }}>Tên vật tư</th>
                                             <td>{item.name || '—'}</td>
                                         </tr>
                                         <tr>
-                                            <th style={{ backgroundColor: '#f8f9fa' }}>Đơn giá</th>
+                                            <th style={{ backgroundColor: 'var(--color-surface-container)' }}>Đơn giá</th>
                                             <td className="fw-semibold text-primary">
                                                 {item.price != null ? `${Number(item.price).toLocaleString('vi-VN')} đ` : '—'}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th style={{ backgroundColor: '#f8f9fa' }}>Đơn vị tính</th>
+                                            <th style={{ backgroundColor: 'var(--color-surface-container)' }}>Đơn vị tính</th>
                                             <td>{item.unitName || '—'}</td>
                                         </tr>
                                         <tr>
-                                            <th style={{ backgroundColor: '#f8f9fa' }}>Nhà sản xuất</th>
+                                            <th style={{ backgroundColor: 'var(--color-surface-container)' }}>Nhà sản xuất</th>
                                             <td>{item.manufacturer || '—'}</td>
                                         </tr>
                                         <tr>
-                                            <th style={{ backgroundColor: '#f8f9fa' }}>Trạng thái</th>
+                                            <th style={{ backgroundColor: 'var(--color-surface-container)' }}>Trạng thái</th>
                                             <td>
                                                 <Badge bg={isAct ? 'success' : 'danger'}>
                                                     {isAct ? 'Đang hoạt động' : 'Ngừng hoạt động'}
