@@ -1,134 +1,62 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Form, Button, Modal, Table, Spinner, Badge } from 'react-bootstrap';
-import {
-  BsPlusLg, BsPencil, BsTrash, BsPlus, BsFileEarmarkPdf, BsArrowLeft
-} from 'react-icons/bs';
+import { Button, Table, Spinner, Badge } from 'react-bootstrap';
+import { BsFileEarmarkPdf, BsArrowLeft } from 'react-icons/bs';
 import * as equipmentService from "../../services/equipment/equipmentService";
 import PageHeader from '../common/PageHeader';
 import StatusBadge from '../common/StatusBadge';
 import { toast } from 'react-toastify';
 import './style/ListEquipment.css';
-
+import './style/DetailEquipment.css';
+import TechnicalParameterTab from "./TechnicalParameterTab";
+import RepairHistoryTab from "../repair_history/RepairHistoryList";
+import LubricationHistoryTab from "./LubricationHistoryTab";
+import * as parameterService from "../../services/equipment/parameterService";
 export default function DetailEquipment() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [selectedEqData, setSelectedEqData] = useState(null);
-  const [systems, setSystems] = useState([]);
-  const [detailTab, setDetailTab] = useState('tech-param'); // 'general', 'tech-param', 'repair-history', 'maintenance-history'
-  const [techParamModalShow, setTechParamModalShow] = useState(false);
-  const [unitsList, setUnitsList] = useState([]);
-  const [tempParams, setTempParams] = useState([]);
 
-  // Fetch systems to map names and fill dropdowns
-  const fetchSystems = async () => {
-    try {
-      const res = await systemService.getAll('', '', 0, 1000);
-      setSystems(res.data?.content || []);
-    } catch (e) {
-      console.error('Lỗi tải hệ thống:', e);
-    }
-  };
+  const [detailTab, setDetailTab] = useState('general'); // 'general', 'tech-param', 'repair-history', 'maintenance-history', 'lubrication-history'
 
-  // Fetch units list
-  const fetchUnits = async () => {
-    try {
-      const u = await equipmentService.getUnits();
-      setUnitsList(u);
-    } catch (e) {
-      console.error('Lỗi tải đơn vị:', e);
-    }
-  };
+  const [currentImage, setCurrentImage] = useState(0);
+
 
   // Fetch equipment detail
   const fetchEquipmentDetail = async () => {
     setLoading(true);
+
     try {
-      const res = await equipmentService.getById(id);
-      setSelectedEqData(res.data);
+      const { data } = await equipmentService.getById(id);
+
+      const parameterRes = await parameterService.getByEquipment(id);
+
+      setSelectedEqData({
+        ...data,
+        equipmentName: data.name,
+        equipmentType: data.equipmentTypeName,
+        installYear: data.installationYear,
+        technicalParameters: parameterRes.data
+      });
+
+      setCurrentImage(0);
+
     } catch (e) {
       console.error(e);
-      toast.error('Không thể tải thông tin chi tiết thiết bị');
-      navigate('/equipment/equipments');
+      toast.error("Không thể tải thông tin chi tiết thiết bị");
+      navigate("/equipment/equipments");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSystems();
-    fetchUnits();
     if (id) {
       fetchEquipmentDetail();
     }
   }, [id]);
-
-  // Open parameter edit modal
-  const handleOpenTechParamModal = () => {
-    const params = selectedEqData?.technicalParameters || [];
-    // Deep clone parameters
-    setTempParams(params.map((p, idx) => ({ ...p, tempId: idx + 1 })));
-    setTechParamModalShow(true);
-  };
-
-  // Add technical parameter row in modal
-  const handleAddParamRow = () => {
-    const nextId = tempParams.length > 0 ? Math.max(...tempParams.map(p => p.tempId || 0)) + 1 : 1;
-    setTempParams([
-      ...tempParams,
-      { tempId: nextId, name: '', value: '', unit: unitsList[0] || '' }
-    ]);
-  };
-
-  // Edit technical parameter field inside row
-  const handleEditParamRowField = (tempId, field, value) => {
-    setTempParams(prev => prev.map(p => {
-      if (p.tempId === tempId) {
-        return { ...p, [field]: value };
-      }
-      return p;
-    }));
-  };
-
-  // Delete technical parameter row in modal
-  const handleDeleteParamRow = (tempId) => {
-    setTempParams(prev => prev.filter(p => p.tempId !== tempId));
-  };
-
-  // Save technical parameters
-  const handleSaveTechParams = async () => {
-    // Validate rows
-    const hasEmpty = tempParams.some(p => !p.name.trim() || !p.value.trim());
-    if (hasEmpty) {
-      toast.warning('Vui lòng điền đầy đủ Tên thông số và Giá trị');
-      return;
-    }
-
-    try {
-      // Map back to standard parameters (removing tempId)
-      const cleanParams = tempParams.map((p, idx) => ({
-        id: p.id || idx + 1,
-        name: p.name.trim(),
-        value: p.value.trim(),
-        unit: p.unit
-      }));
-
-      const updatedData = {
-        ...selectedEqData,
-        technicalParameters: cleanParams
-      };
-
-      const res = await equipmentService.update(id, updatedData);
-      setSelectedEqData(res.data);
-      setTechParamModalShow(false);
-      toast.success('Cập nhật thông số kỹ thuật thành công!');
-    } catch (e) {
-      console.error(e);
-      toast.error('Lỗi khi lưu thông số kỹ thuật');
-    }
-  };
 
   // PDF Export placeholder
   const handleExportPdf = () => {
@@ -217,7 +145,7 @@ export default function DetailEquipment() {
             </Button>
             <Button
               variant="outline-secondary"
-              onClick={() => navigate('/equipment/equipments')}
+              onClick={() => navigate(`/equipment/equipments/system/${selectedEqData.systemId}`)}
               className="d-inline-flex align-items-center gap-2"
             >
               <BsArrowLeft />
@@ -231,9 +159,54 @@ export default function DetailEquipment() {
         {/* Left Pane */}
         <div className="general-info-card bg-white">
           <div className="detail-img-box">
-            <img src={getEquipmentImage(selectedEqData)} alt={selectedEqData.equipmentName} />
+            <div className="d-flex align-items-center justify-content-center gap-2">
+
+              {selectedEqData.imageUrls?.length > 1 && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentImage(prev =>
+                      prev === 0
+                        ? selectedEqData.imageUrls.length - 1
+                        : prev - 1
+                    )
+                  }
+                >
+                  ❮
+                </Button>
+              )}
+
+              <div className="detail-img-box">
+                <img
+                  src={
+                    selectedEqData.imageUrls?.length
+                      ? selectedEqData.imageUrls[currentImage]
+                      : getEquipmentImage(selectedEqData)
+                  }
+                  alt={selectedEqData.name}
+                />
+              </div>
+
+              {selectedEqData.imageUrls?.length > 1 && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentImage(prev =>
+                      prev === selectedEqData.imageUrls.length - 1
+                        ? 0
+                        : prev + 1
+                    )
+                  }
+                >
+                  ❯
+                </Button>
+              )}
+
+            </div>
           </div>
-          <h5 className="fw-bold mb-1 mt-2 text-center">{selectedEqData.equipmentName}</h5>
+          <h5 className="fw-bold mb-1 mt-2 text-center">{selectedEqData.name}</h5>
           <Badge bg="light" className="text-secondary mb-2">{selectedEqData.kksCode}</Badge>
 
           <div className="detail-info-list">
@@ -245,36 +218,11 @@ export default function DetailEquipment() {
               <span className="detail-info-label">Tên thiết bị</span>
               <span className="detail-info-value">{selectedEqData.equipmentName}</span>
             </div>
-            <div className="detail-info-item">
-              <span className="detail-info-label">Hệ thống</span>
-              <span className="detail-info-value">{selectedEqData.systemName || getSystemName(selectedEqData.systemId)}</span>
-            </div>
-            <div className="detail-info-item">
-              <span className="detail-info-label">Loại thiết bị</span>
-              <span className="detail-info-value">{selectedEqData.equipmentType}</span>
-            </div>
+
             <div className="detail-info-item">
               <span className="detail-info-label">Trạng thái</span>
               <span className="detail-info-value">
                 <StatusBadge status={statusProps.status} label={statusProps.label} />
-              </span>
-            </div>
-            <div className="detail-info-item">
-              <span className="detail-info-label">Nhà sản xuất</span>
-              <span className="detail-info-value">{selectedEqData.manufacturer || 'Grundfos'}</span>
-            </div>
-            <div className="detail-info-item">
-              <span className="detail-info-label">Model</span>
-              <span className="detail-info-value">{selectedEqData.model || 'CR 64-4'}</span>
-            </div>
-            <div className="detail-info-item">
-              <span className="detail-info-label">Năm lắp đặt</span>
-              <span className="detail-info-value">{selectedEqData.installYear}</span>
-            </div>
-            <div className="detail-info-item flex-column align-items-start gap-1">
-              <span className="detail-info-label">Mô tả</span>
-              <span className="detail-info-value text-start w-100 fw-normal text-muted">
-                {selectedEqData.description || 'Chưa có mô tả chi tiết cho thiết bị này.'}
               </span>
             </div>
           </div>
@@ -303,7 +251,9 @@ export default function DetailEquipment() {
             </button>
             <button
               className={`detail-tab-btn ${detailTab === 'maintenance-history' ? 'active' : ''}`}
-              onClick={() => setDetailTab('maintenance-history')}
+              onClick={() =>
+                setDetailTab("lubrication-history")
+              }
             >
               Lịch sử bảo dưỡng
             </button>
@@ -352,164 +302,34 @@ export default function DetailEquipment() {
               </div>
             )}
 
-            {detailTab === 'tech-param' && (
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <h5 className="fw-bold mb-0">Thông số kỹ thuật của thiết bị</h5>
-                  <Button
-                    variant="primary"
-                    onClick={handleOpenTechParamModal}
-                    className="d-inline-flex align-items-center gap-2"
-                  >
-                    <BsPlusLg size={12} />
-                    Thêm thông số
-                  </Button>
-                </div>
+            {detailTab === "tech-param" && (
+              <TechnicalParameterTab
+                equipmentId={id}
+                technicalParameters={selectedEqData.technicalParameters}
+                onReload={fetchEquipmentDetail}
+              />
+            )}
+            {detailTab === "repair-history" && (
 
-                {(!selectedEqData.technicalParameters || selectedEqData.technicalParameters.length === 0) ? (
-                  <div className="text-center py-5 text-muted bg-light rounded border">
-                    Chưa có thông số kỹ thuật. Nhấp "Thêm thông số" để cập nhật.
-                  </div>
-                ) : (
-                  <div className="table-responsive rounded border">
-                    <Table hover className="tech-param-table mb-0">
-                      <thead>
-                        <tr>
-                          <th style={{ width: 60 }}>#</th>
-                          <th>Tên thông số</th>
-                          <th>Giá trị</th>
-                          <th style={{ width: 120 }}>Đơn vị</th>
-                          <th style={{ width: 100 }} className="text-end">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedEqData.technicalParameters.map((p, idx) => (
-                          <tr key={p.id || idx}>
-                            <td>{idx + 1}</td>
-                            <td className="fw-semibold">{p.name}</td>
-                            <td className="font-mono text-primary fw-bold">{p.value}</td>
-                            <td>
-                              <Badge bg="light" className="text-dark border px-2 py-1">{p.unit}</Badge>
-                            </td>
-                            <td className="text-end">
-                              <Button
-                                variant="link"
-                                className="p-0 text-primary me-2"
-                                onClick={handleOpenTechParamModal}
-                                title="Chỉnh sửa thông số"
-                              >
-                                <BsPencil size={14} />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </div>
-                )}
-              </div>
+              <RepairHistoryTab
+                equipmentId={id}
+              />
+
             )}
 
-            {detailTab === 'repair-history' && (
-              <div className="text-center py-5 text-muted bg-light rounded border">
-                🚧 Không tìm thấy lịch sử sửa chữa nào của thiết bị này.
-              </div>
-            )}
 
-            {detailTab === 'maintenance-history' && (
-              <div className="text-center py-5 text-muted bg-light rounded border">
-                🚧 Không có lịch sử bảo dưỡng định kỳ gần đây cho thiết bị này.
-              </div>
-            )}
+            {
+              detailTab === "lubrication-history" && (
+
+                <LubricationHistoryTab
+                  equipmentId={id}
+                />
+
+              )
+            }
           </div>
         </div>
       </div>
-
-      {/* Modal: Thêm thông số kỹ thuật (Chỉnh sửa bảng hàng loạt) */}
-      <Modal
-        show={techParamModalShow}
-        onHide={() => setTechParamModalShow(false)}
-        size="lg"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">Thêm thông số kỹ thuật</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="table-responsive">
-            <Table bordered hover align="middle">
-              <thead className="bg-light">
-                <tr>
-                  <th style={{ width: 50 }}>#</th>
-                  <th>Tên thông số *</th>
-                  <th style={{ width: 220 }}>Giá trị *</th>
-                  <th style={{ width: 180 }}>Đơn vị</th>
-                  <th style={{ width: 60 }} className="text-center">Xóa</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tempParams.map((p, idx) => (
-                  <tr key={p.tempId}>
-                    <td className="text-center fw-bold">{idx + 1}</td>
-                    <td>
-                      <Form.Control
-                        type="text"
-                        placeholder="Nhập tên thông số (ví dụ: Áp suất)..."
-                        value={p.name}
-                        onChange={(e) => handleEditParamRowField(p.tempId, 'name', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <Form.Control
-                        type="text"
-                        placeholder="Nhập giá trị..."
-                        value={p.value}
-                        onChange={(e) => handleEditParamRowField(p.tempId, 'value', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <Form.Select
-                        value={p.unit}
-                        onChange={(e) => handleEditParamRowField(p.tempId, 'unit', e.target.value)}
-                      >
-                        {unitsList.map(u => (
-                          <option key={u} value={u}>{u}</option>
-                        ))}
-                      </Form.Select>
-                    </td>
-                    <td className="text-center">
-                      <Button
-                        variant="link"
-                        className="p-0 text-danger"
-                        onClick={() => handleDeleteParamRow(p.tempId)}
-                      >
-                        <BsTrash size={16} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-
-          <Button
-            variant="outline-secondary"
-            onClick={handleAddParamRow}
-            className="mt-2 d-inline-flex align-items-center gap-1"
-          >
-            <BsPlus />
-            Thêm dòng
-          </Button>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="light" onClick={() => setTechParamModalShow(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSaveTechParams}>
-            Lưu
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }

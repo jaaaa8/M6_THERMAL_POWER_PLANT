@@ -8,7 +8,6 @@ import {
   BsPencil
 } from "react-icons/bs";
 import * as unitService from "../../services/equipment/unitService";
-import PageHeader from '../common/PageHeader';
 import { toast } from 'react-toastify';
 import './style/ListEquipment.css';
 import PaginationPanel from "./PaginationPanel";
@@ -163,23 +162,6 @@ export default function ManageUnits() {
   });
   return (
     <><><><div className="manage-units-container animate-fade-in">
-      <PageHeader
-        title="Quản lý Đơn vị đo lường"
-        subtitle="Quản lý các đơn vị đo lường được sử dụng trong thông số kỹ thuật của thiết bị"
-        breadcrumbs={[
-          { label: 'Trang chủ', path: '/' },
-          { label: 'Hệ thống & Thiết bị', path: '/equipment/system' },
-          { label: 'Thiết bị', path: '/equipment/equipments' },
-          { label: 'Quản lý đơn vị' }
-        ]}
-        actions={<Button
-          variant="outline-secondary"
-          onClick={() => navigate('/equipment/equipments')}
-          className="d-inline-flex align-items-center gap-2"
-        >
-          <BsArrowLeft />
-          Quay lại danh sách
-        </Button>} />
 
       <Row className="justify-content-center mt-4">
         <Col lg={12}>

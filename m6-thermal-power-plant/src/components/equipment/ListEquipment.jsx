@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Row, Col, Form, Button, Modal, Table, Spinner, Badge } from 'react-bootstrap';
 import {
   BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX,
@@ -18,6 +18,12 @@ export default function ListEquipment() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const { systemId } = useParams();
+  const isFilterBySystem = !!systemId;
+  const isSystemView = !!systemId;
+
+  // system
+  const location = useLocation();
+  const systemName = location.state?.systemName;
   // Pagination state
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(5);
@@ -66,6 +72,10 @@ export default function ListEquipment() {
         size: currentSize
       };
 
+      if (isFilterBySystem) {
+        params.systemId = Number(systemId);
+      }
+
       if (searchKks.trim()) {
         params.kks = searchKks.trim();
       }
@@ -78,23 +88,17 @@ export default function ListEquipment() {
         params.typeId = Number(filterType);
       }
 
-      // Chỉ gửi status khi có chọn
       if (filterStatus) {
         params.status = filterStatus;
       }
 
-      console.log(params);
+      const res = await equipmentService.getAll(params);
 
-      let res;
+      const filtered = res.data.content.filter(
+        item => item.equipmentStatus !== "RETIRED"
+      );
 
-      if (systemId) {
-        res = await equipmentService.getBySystem(systemId, params);
-      } else {
-        res = await equipmentService.getAll(params);
-      }
-
-      setData(res.data.content);
-      console.log(res.data.content);
+      setData(filtered);
       setPage(res.data.number);
       setSize(res.data.size);
       setTotalPages(res.data.totalPages);
@@ -112,7 +116,7 @@ export default function ListEquipment() {
   useEffect(() => {
     fetchEquipmentTypes();
     fetchEquipments(0);
-  }, []);
+  }, [systemId]);
 
   // Handle filter submission
   const handleApplyFilter = () => {
@@ -140,31 +144,32 @@ export default function ListEquipment() {
 
   // Delete handler
   const handleDeleteConfirm = async () => {
-    setDeleting(true);
     try {
-      await equipmentService.delete(deleteModal.data.id);
-      toast.success('Xóa thiết bị thành công');
-      setDeleteModal({ show: false, data: null });
-      fetchEquipments(page);
+      setDeleting(true);
+
+      await equipmentService.deleteById(deleteModal.data.id);
+
+      toast.success("Xóa thiết bị thành công");
+
+      setDeleteModal({
+        show: false,
+        data: null,
+      });
+
+      // load lại danh sách
+      await fetchEquipments(page);
+
     } catch (e) {
       console.error(e);
-      toast.error('Lỗi khi xóa thiết bị');
+      toast.error("Không thể xóa thiết bị");
     } finally {
       setDeleting(false);
     }
   };
 
   // View details handler
-  const handleViewDetails = async (eq) => {
-    try {
-      const res = await equipmentService.getById(eq.id);
-      setSelectedEqData(res.data);
-      setSelectedEqId(eq.id);
-      setDetailTab('tech-param');
-    } catch (e) {
-      console.error(e);
-      toast.error('Không thể tải thông tin chi tiết thiết bị');
-    }
+  const handleViewDetails = (eq) => {
+    navigate(`/equipment/equipments/${eq.id}`);
   };
 
   // Open parameter edit modal
@@ -266,26 +271,23 @@ export default function ListEquipment() {
   return (
     <div className="list-equipment-container animate-fade-in">
       <PageHeader
-        title="Danh sách Thiết bị"
+        title={`Danh sách thiết bị${systemName ? ` - ${systemName}` : ""}`}
         subtitle="Quản lý và cập nhật thông số kỹ thuật thiết bị trong các hệ thống"
         actions={
           <div className="d-flex gap-2">
-            <Button
-              variant="outline-secondary"
-              onClick={() => navigate("/equipment/equipments/units")}
-              className="d-inline-flex align-items-center gap-2 px-3"
-            >
-              <BsTag />
-              Quản lý đơn vị
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => navigate('/equipment/equipments/add')}
-              className="d-inline-flex align-items-center gap-2 px-3"
-            >
-              <BsPlusLg />
-              Thêm thiết bị
-            </Button>
+
+            {isSystemView && (
+              <Button
+                variant="primary"
+                onClick={() =>
+                  navigate(`/equipment/equipments/${systemId}/add`)
+                }
+                className="d-inline-flex align-items-center gap-2 px-3"
+              >
+                <BsPlusLg />
+                Thêm thiết bị
+              </Button>
+            )}
           </div>
         }
       />
@@ -483,7 +485,12 @@ export default function ListEquipment() {
         {/* Modal: Xác nhận xóa */}
         <ConfirmModal
           show={deleteModal.show}
-          onClose={() => setDeleteModal({ show: false, data: null })}
+          onClose={() =>
+            setDeleteModal({
+              show: false,
+              data: null,
+            })
+          }
           onConfirm={handleDeleteConfirm}
           loading={deleting}
           title="Xóa thiết bị"
@@ -491,16 +498,9 @@ export default function ListEquipment() {
           cancelText="Hủy"
           variant="danger"
           message={
-            deleteModal.data ? (
-              <div>
-                <p className="mb-2">Bạn có chắc chắn muốn xóa thiết bị sau?</p>
-                <div className="p-3 bg-light rounded border mb-2 text-start">
-                  <strong>KKS:</strong> {deleteModal.data.kksCode}<br />
-                  <strong>Tên thiết bị:</strong> {deleteModal.data.name}
-                </div>
-                <p className="text-danger small mb-0">Thiết bị sẽ được chuyển vào thùng rác.</p>
-              </div>
-            ) : ''
+            deleteModal.data
+              ? `Bạn có chắc chắn muốn xóa thiết bị "${deleteModal.data.name}" (${deleteModal.data.kksCode}) không?`
+              : ""
           }
         />
       </div>
