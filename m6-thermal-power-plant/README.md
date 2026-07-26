@@ -1,3 +1,24 @@
+# M6 Thermal Power Plant — Frontend
+
+## Chạy lần đầu
+
+1. `cp .env.example .env`
+2. `npm install`
+3. `npm run dev`
+
+Để `VITE_API_BASE_URL` trống là chạy được — request `/api/...` sẽ được Vite
+proxy chuyển sang `http://localhost:8080`. Chỉ điền giá trị nếu backend máy bạn
+chạy cổng khác.
+
+**Không đặt secret vào biến `VITE_*`.** Vite nhúng giá trị vào bundle
+`dist/*.js` lúc build, người dùng mở DevTools là đọc được. Secret chỉ nằm ở
+backend.
+
+Thêm biến mới thì cập nhật `.env.example` trong cùng PR, kèm mô tả — không kèm
+giá trị thật.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
