@@ -15,7 +15,12 @@ chạy cổng khác.
 backend.
 
 Thêm biến mới thì cập nhật `.env.example` trong cùng PR, kèm mô tả — không kèm
-giá trị thật.
+giá trị thật. Tên biến frontend **bắt buộc** có tiền tố `VITE_`, nếu không Vite
+bỏ qua và code đọc ra `undefined` mà không báo lỗi.
+
+Quy ước đặt tên đầy đủ, cách khai báo biến mới, xử lý sự cố: xem
+`BIEN_MOI_TRUONG.md` ở gốc repo **backend** (`M6_THERMAL_POWER_PLANT_API`) —
+tài liệu đó dùng chung cho cả 2 repo.
 
 ---
 
