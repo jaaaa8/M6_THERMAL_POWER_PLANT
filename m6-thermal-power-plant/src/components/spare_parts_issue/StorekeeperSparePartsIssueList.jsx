@@ -10,7 +10,8 @@ import {
 } from "react-bootstrap";
 import {
     BsEye,
-    BsArrowClockwise
+    BsArrowClockwise,
+    BsUpload
 } from "react-icons/bs";
 import { toast } from "react-toastify";
 import { authService } from "../../services/authService";
@@ -27,6 +28,7 @@ export default function StorekeeperSparePartsIssueList() {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedIssue, setSelectedIssue] = useState(null);
     const [workOrderMap, setWorkOrderMap] = useState({});
+    const [rowPdfIssueId, setRowPdfIssueId] = useState(null);
     const [filters, setFilters] = useState({
         keyword: "",
         status: ""
@@ -107,9 +109,9 @@ export default function StorekeeperSparePartsIssueList() {
         }
     };
 
-    const handlePdfUpload = async (event) => {
+    const handlePdfUpload = async (event, targetIssueId = selectedIssue?.id) => {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file || !targetIssueId) return;
 
         if (file.type !== "application/pdf") {
             toast.error("Chỉ chấp nhận file PDF");
@@ -122,11 +124,13 @@ export default function StorekeeperSparePartsIssueList() {
         }
 
         try {
-            const uploadToast = toast.info("Đang tải file PDF lên...", { autoClose: false });
-            const response = await sparePartIssueService.uploadPdf(selectedIssue.id, file);
+            const uploadToast = toast.info("Đang tải file PDF chữ ký lên Cloudinary...", { autoClose: false });
+            const response = await sparePartIssueService.uploadPdf(targetIssueId, file);
             toast.dismiss(uploadToast);
-            setSelectedIssue(response);
-            toast.success("Tải lên PDF chữ ký thành công!");
+            if (selectedIssue && selectedIssue.id === targetIssueId) {
+                setSelectedIssue(response);
+            }
+            toast.success("Tải/Đổi file PDF chữ ký thành công!");
             loadData();
         } catch (error) {
             console.error("Lỗi upload PDF:", error);
@@ -151,8 +155,6 @@ export default function StorekeeperSparePartsIssueList() {
                     quantity: d.quantity
                 })) : []
             };
-            console.log("=== PAYLOAD GỬI LÊN ===", JSON.stringify(updatePayload, null, 2));
-            console.log("=== SELECTED ISSUE ===", JSON.stringify(selectedIssue, null, 2));
             const response = await sparePartIssueService.update(updatePayload);
             setSelectedIssue(response);
             toast.success("Xác nhận hoàn thành phiếu xuất thành công!");
@@ -160,8 +162,6 @@ export default function StorekeeperSparePartsIssueList() {
             loadData();
         } catch (error) {
             console.error("Lỗi hoàn thành phiếu xuất:", error);
-            console.error("Response data:", error.response?.data);
-            console.error("Response status:", error.response?.status);
             const errData = error.response?.data;
             const errMsg = typeof errData === 'string' ? errData : errData?.message || error.message || "Lỗi khi cập nhật trạng thái";
             toast.error(errMsg);
@@ -253,6 +253,15 @@ export default function StorekeeperSparePartsIssueList() {
 
     return (
         <div className="animate-fade-in mt-3">
+            {/* Input file dùng chung cho việc upload/đổi PDF chữ ký */}
+            <input
+                id="spare-signed-pdf-upload-input"
+                type="file"
+                accept="application/pdf"
+                className="d-none"
+                onChange={(e) => handlePdfUpload(e, rowPdfIssueId || selectedIssue?.id)}
+            />
+
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h5 className="mb-1 text-primary fw-bold">
@@ -336,7 +345,7 @@ export default function StorekeeperSparePartsIssueList() {
                     }
                 }}
                 renderActions={(row) => (
-                    <div className="data-table-actions">
+                    <div className="data-table-actions d-flex gap-1">
                         <Button
                             size="sm"
                             variant="outline-primary"
@@ -344,6 +353,19 @@ export default function StorekeeperSparePartsIssueList() {
                         >
                             <BsEye className="me-1" /> Chi tiết
                         </Button>
+                        {isStorekeeper && (
+                            <Button
+                                size="sm"
+                                variant="outline-warning"
+                                title="Thay đổi file PDF chữ ký trên Cloudinary"
+                                onClick={() => {
+                                    setRowPdfIssueId(row.id);
+                                    document.getElementById("spare-signed-pdf-upload-input")?.click();
+                                }}
+                            >
+                                <BsUpload className="me-1" /> Đổi PDF chữ ký
+                            </Button>
+                        )}
                     </div>
                 )}
             />
@@ -408,6 +430,7 @@ export default function StorekeeperSparePartsIssueList() {
                                             <th>Tên vật tư</th>
                                             <th>Đơn vị</th>
                                             <th className="text-end">Yêu cầu</th>
+                                            <th className="text-end">Thực tế cấp</th>
                                             <th className="text-end">Tồn khả dụng</th>
                                             {selectedIssue.status !== "COMPLETED" && <th className="text-center">Trạng thái</th>}
                                         </tr>
@@ -416,6 +439,11 @@ export default function StorekeeperSparePartsIssueList() {
                                         {selectedIssue.details && selectedIssue.details.length > 0 ? (
                                             selectedIssue.details.map((detail, idx) => {
                                                 const isAvailable = (detail.currentStock || 0) >= (detail.quantity || 0);
+                                                const displayActualQty = detail.actualQuantity != null
+                                                    ? detail.actualQuantity
+                                                    : (selectedIssue.status === "COMPLETED"
+                                                        ? detail.quantity
+                                                        : Math.min(detail.quantity || 0, detail.currentStock || 0));
                                                 return (
                                                     <tr key={idx}>
                                                         <td style={{ width: "80px" }}>
@@ -440,6 +468,7 @@ export default function StorekeeperSparePartsIssueList() {
                                                             <Badge bg="secondary">{detail.unit}</Badge>
                                                         </td>
                                                         <td className="text-end fw-bold text-dark">{detail.quantity}</td>
+                                                        <td className="text-end fw-bold text-success">{displayActualQty}</td>
                                                         <td className="text-end fw-bold text-info">
                                                             {detail.currentStock != null ? detail.currentStock.toLocaleString("vi-VN") : 0}
                                                         </td>
@@ -469,7 +498,7 @@ export default function StorekeeperSparePartsIssueList() {
                                             })
                                         ) : (
                                             <tr>
-                                                <td colSpan={selectedIssue.status !== "COMPLETED" ? 7 : 6} className="text-center text-muted">
+                                                <td colSpan={selectedIssue.status !== "COMPLETED" ? 8 : 7} className="text-center text-muted">
                                                     Không có vật tư nào được liệt kê.
                                                 </td>
                                             </tr>
@@ -482,55 +511,39 @@ export default function StorekeeperSparePartsIssueList() {
                 </Modal.Body>
 
                 <Modal.Footer className="bg-light d-flex justify-content-between align-items-center">
-                    <div>
-                        {selectedIssue && selectedIssue.status === "PENDING" && isStorekeeper && (
+                    <div className="d-flex align-items-center gap-2">
+                        {selectedIssue && isStorekeeper && (
                             <>
-                                <input
-                                    id="signed-pdf-upload"
-                                    type="file"
-                                    accept="application/pdf"
-                                    className="d-none"
-                                    onChange={handlePdfUpload}
-                                />
                                 <Button
-                                    variant="outline-primary"
+                                    variant="outline-warning"
                                     size="sm"
-                                    className="me-2"
-                                    onClick={() => document.getElementById("signed-pdf-upload").click()}
+                                    onClick={() => {
+                                        setRowPdfIssueId(selectedIssue.id);
+                                        document.getElementById("spare-signed-pdf-upload-input")?.click();
+                                    }}
                                 >
-                                    Tải lên PDF chữ ký
+                                    <BsUpload className="me-1" /> {selectedIssue.attachmentPath ? "Đổi PDF chữ ký" : "Tải lên PDF chữ ký"}
                                 </Button>
                                 {selectedIssue.attachmentPath && (
-                                    <>
-                                        <Button
-                                            variant="info"
-                                            size="sm"
-                                            className="me-2 text-white"
-                                            onClick={() => window.open(selectedIssue.attachmentPath, "_blank")}
-                                        >
-                                            Xem PDF đã ký
-                                        </Button>
-                                        <Button
-                                            variant="success"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={handleCompleteIssue}
-                                        >
-                                            Xác nhận hoàn thành
-                                        </Button>
-                                    </>
+                                    <Button
+                                        variant="info"
+                                        size="sm"
+                                        className="text-white"
+                                        onClick={() => window.open(selectedIssue.attachmentPath, "_blank")}
+                                    >
+                                        Xem PDF chữ ký
+                                    </Button>
+                                )}
+                                {selectedIssue.status === "PENDING" && selectedIssue.attachmentPath && (
+                                    <Button
+                                        variant="success"
+                                        size="sm"
+                                        onClick={handleCompleteIssue}
+                                    >
+                                        Xác nhận hoàn thành
+                                    </Button>
                                 )}
                             </>
-                        )}
-                        {selectedIssue && selectedIssue.status !== "PENDING" && selectedIssue.attachmentPath && (
-                            <Button
-                                variant="info"
-                                size="sm"
-                                className="text-white"
-                                onClick={() => window.open(selectedIssue.attachmentPath, "_blank")}
-                            >
-                                Xem PDF chữ ký
-                            </Button>
                         )}
                     </div>
                     <Button

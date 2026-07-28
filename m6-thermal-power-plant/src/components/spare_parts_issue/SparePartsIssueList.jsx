@@ -530,28 +530,26 @@ export default function SparePartsIssueList() {
                                 >
                                     <thead className="table-primary">
                                     <tr>
-                                        <th width="70">
+                                        <th width="50">
                                             STT
                                         </th>
-
-                                        <th width="100">
+                                        <th width="80">
                                             Hình ảnh
                                         </th>
-
                                         <th>
                                             Mã vật tư
                                         </th>
-
                                         <th>
                                             Tên vật tư
                                         </th>
-
-                                        <th width="120">
+                                        <th width="100">
                                             Đơn vị
                                         </th>
-
-                                        <th width="120">
-                                            Số lượng
+                                        <th width="110" className="text-end">
+                                            Yêu cầu
+                                        </th>
+                                        <th width="130" className="text-end">
+                                            Thực tế cấp
                                         </th>
                                     </tr>
                                     </thead>
@@ -559,8 +557,13 @@ export default function SparePartsIssueList() {
                                     <tbody>
                                     {
                                         selectedIssue.details?.map(
-                                            (detail, index) => (
-
+                                            (detail, index) => {
+                                                const displayActualQty = detail.actualQuantity != null
+                                                    ? detail.actualQuantity
+                                                    : (selectedIssue.status === "COMPLETED"
+                                                        ? detail.quantity
+                                                        : Math.min(detail.quantity || 0, detail.currentStock || 0));
+                                                return (
                                                 <tr key={index}>
 
                                                     <td>
@@ -576,8 +579,8 @@ export default function SparePartsIssueList() {
                                                             }
                                                             alt={detail.sparePartName}
                                                             style={{
-                                                                width: "60px",
-                                                                height: "60px",
+                                                                width: "50px",
+                                                                height: "50px",
                                                                 objectFit: "cover",
                                                                 borderRadius: "8px",
                                                                 border: "1px solid var(--border-color)"
@@ -589,9 +592,9 @@ export default function SparePartsIssueList() {
                                                     </td>
 
                                                     <td>
-                    <span className="fw-semibold">
-                        {detail.sparePartCode}
-                    </span>
+                                                        <span className="fw-semibold">
+                                                            {detail.sparePartCode}
+                                                        </span>
                                                     </td>
 
                                                     <td>
@@ -604,14 +607,21 @@ export default function SparePartsIssueList() {
                                                         </Badge>
                                                     </td>
 
-                                                    <td>
-                    <span className="fw-bold text-success">
-                        {detail.quantity}
-                    </span>
+                                                    <td className="text-end">
+                                                        <span className="fw-bold text-dark">
+                                                            {detail.quantity}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="text-end">
+                                                        <span className="fw-bold text-success">
+                                                            {displayActualQty}
+                                                        </span>
                                                     </td>
 
                                                 </tr>
-                                            )
+                                                );
+                                            }
                                         )
                                     }
                                     </tbody>
