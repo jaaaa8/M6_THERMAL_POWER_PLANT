@@ -84,7 +84,7 @@ export default function ToolReturnModal({ show, onClose, onSaved, log }) {
               <div className="row g-3 mb-2">
                 <div className="col-6">
                   <label htmlFor="return-returnQuantity" className="form-label fw-semibold">
-                    Số trả 
+                    Số trả
                   </label>
                   <Field
                     id="return-returnQuantity"

@@ -6,6 +6,7 @@ import * as Yup from 'yup';
 import { BsBoxArrowInRight, BsEye, BsEyeSlash, BsShieldLock } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { authService } from '../services/authService';
+import { speak, getWelcomeText } from '../utils/speak';
 
 /**
  * Schema validation cho form đăng nhập
@@ -45,7 +46,10 @@ export default function LoginPage() {
       const res = await authService.login(values.username, values.password);
       const user = res.data;
 
-      toast.success(`Xin chào, ${user.fullName || user.username}!`);
+      // Thông báo trên màn hình + loa phát dùng chung 1 câu chào theo vai trò
+      const welcome = getWelcomeText(user);
+      toast.success(welcome, { autoClose: 6000 });
+      speak(welcome);
 
       // Chuyển hướng theo role backend (lấy role đầu tiên).
       const primaryRole = user.roles?.[0];
