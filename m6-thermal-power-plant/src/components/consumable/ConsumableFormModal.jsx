@@ -32,6 +32,7 @@ const validationSchema = Yup.object().shape({
 export default function ConsumableFormModal({ show, onHide, editingItem, onSubmit }) {
 
     const [units, setUnits] = useState([]);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     useEffect(() => {
         if (show) {
@@ -84,7 +85,7 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                     <Form noValidate>
                         <Modal.Header closeButton>
                             <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-                                <BsTags className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+                                <BsTags className="me-2" style={{ color: 'var(--color-primary)' }} />
                                 {editingItem ? 'Cập nhật danh mục' : 'Thêm mới danh mục'} vật tư tiêu hao
                             </Modal.Title>
                         </Modal.Header>
@@ -183,7 +184,7 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                 </label>
                                 <div className="d-flex flex-wrap gap-2 mb-2">
                                     {(values.imgPath ? values.imgPath.split('|').filter(Boolean) : []).map((img, index) => (
-                                        <div key={index} className="position-relative border rounded p-1" style={{ width: '100px', height: '100px', backgroundColor: '#f8f9fa' }}>
+                                        <div key={index} className="position-relative border rounded p-1" style={{ width: '100px', height: '100px', backgroundColor: 'var(--color-surface-container)' }}>
                                             <img
                                                 src={img}
                                                 alt={`Preview ${index + 1}`}
@@ -206,12 +207,18 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
 
                                     {(values.imgPath ? values.imgPath.split('|').filter(Boolean) : []).length < 3 && (
                                         <div
-                                            className="border rounded d-flex flex-column align-items-center justify-content-center bg-light cursor-pointer"
-                                            style={{ width: '100px', height: '100px', borderStyle: 'dashed', borderColor: errors.imgPath && touched.imgPath ? 'var(--color-danger-500)' : '#dee2e6' }}
-                                            onClick={() => document.getElementById('consumable-image-upload').click()}
+                                            className="border rounded d-flex flex-column align-items-center justify-content-center bg-light"
+                                            style={{
+                                                width: '100px', height: '100px', borderStyle: 'dashed',
+                                                borderColor: errors.imgPath && touched.imgPath ? 'var(--color-status-danger)' : 'var(--border-color)',
+                                                cursor: uploadingImage ? 'wait' : 'pointer', opacity: uploadingImage ? 0.6 : 1,
+                                            }}
+                                            onClick={() => !uploadingImage && document.getElementById('consumable-image-upload').click()}
                                         >
-                                            <BsImage style={{ fontSize: '1.2rem', color: '#6c757d' }} />
-                                            <span style={{ fontSize: '10px', color: '#6c757d', marginTop: '4px' }}>Thêm ảnh</span>
+                                            <BsImage style={{ fontSize: '1.2rem', color: 'var(--text-tertiary)' }} />
+                                            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                                                {uploadingImage ? 'Đang tải...' : 'Thêm ảnh'}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -220,6 +227,7 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                     type="file"
                                     accept="image/*"
                                     className="d-none"
+                                    disabled={uploadingImage}
                                     onChange={async (event) => {
                                         const file = event.currentTarget.files[0];
                                         if (file) {
@@ -228,6 +236,7 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                                 return;
                                             }
                                             try {
+                                                setUploadingImage(true);
                                                 const uploadToast = toast.info("Đang tải ảnh lên...", { autoClose: false });
                                                 const result = await uploadImage(file);
                                                 toast.dismiss(uploadToast);
@@ -238,6 +247,8 @@ export default function ConsumableFormModal({ show, onHide, editingItem, onSubmi
                                             } catch (error) {
                                                 console.error("Lỗi upload ảnh:", error);
                                                 toast.error("Không thể tải ảnh lên Cloudinary");
+                                            } finally {
+                                                setUploadingImage(false);
                                             }
                                         }
                                         event.target.value = '';

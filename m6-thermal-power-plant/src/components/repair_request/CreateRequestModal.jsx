@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { BsPlusCircle, BsPencilSquare } from 'react-icons/bs';
+import { BsPlusCircle } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { repairRequestService, PRIORITY, PRIORITY_LABEL } from '../../services/repairRequestService';
+import { getApiErrorMessage } from '../../services/apiError';
 import * as equipmentService from '../../services/equipment/equipmentService';
 import * as systemService from '../../services/equipment/systemService';
 import './CreateRequestModal.css';
@@ -28,8 +29,7 @@ const createRequestSchema = Yup.object({
 /**
  * CreateRequestModal — Modal tạo mới yêu cầu sửa chữa.
  */
-export default function CreateRequestModal({ show, onClose, onSuccess, editRequest = null }) {
-  const isEditMode = !!editRequest;
+export default function CreateRequestModal({ show, onClose, onSuccess }) {
   const [systems, setSystems] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [loadingEquipments, setLoadingEquipments] = useState(false);
@@ -79,20 +79,12 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      if (isEditMode) {
-        await repairRequestService.update(editRequest.id, {
-          issueDescription: values.issueDescription,
-          priority: values.priority,
-        });
-        toast.success('Cập nhật yêu cầu thành công!');
-      } else {
-        await repairRequestService.create(values);
-        toast.success('Tạo yêu cầu sửa chữa thành công!');
-        resetForm();
-      }
+      await repairRequestService.create(values);
+      toast.success('Tạo yêu cầu sửa chữa thành công!');
+      resetForm();
       onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(getApiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -109,20 +101,16 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
     <Modal show={show} onHide={onClose} centered size="lg" className="create-request-modal">
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          {isEditMode ? (
-            <><BsPencilSquare className="me-2" style={{ color: 'var(--color-accent)' }} />Sửa yêu cầu sửa chữa</>
-          ) : (
-            <><BsPlusCircle className="me-2" style={{ color: 'var(--color-primary-600)' }} />Tạo yêu cầu sửa chữa mới</>
-          )}
+          <BsPlusCircle className="me-2" style={{ color: 'var(--color-primary)' }} />Tạo yêu cầu sửa chữa mới
         </Modal.Title>
       </Modal.Header>
 
       <Formik
         enableReinitialize
         initialValues={{
-          equipmentId: editRequest?.equipmentId || '',
-          issueDescription: editRequest?.issueDescription || '',
-          priority: editRequest?.priority || '',
+          equipmentId: '',
+          issueDescription: '',
+          priority: '',
         }}
         validationSchema={createRequestSchema}
         onSubmit={handleSubmit}
@@ -144,7 +132,7 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                 <Form.Label className="crm-label">Hệ thống</Form.Label>
                 <Form.Select
                   value={selectedSystemId}
-                  disabled={loadingEquipments || isEditMode}
+                  disabled={loadingEquipments}
                   onChange={(e) => handleSystemChange(e.target.value, setFieldValue)}
                 >
                   <option value="">— Tất cả hệ thống —</option>
@@ -167,7 +155,7 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                   onChange={handleChange}
                   onBlur={handleBlur}
                   isInvalid={touched.equipmentId && !!errors.equipmentId}
-                  disabled={loadingEquipments || isEditMode}
+                  disabled={loadingEquipments}
                 >
                   <option value="">
                     {loadingEquipments ? 'Đang tải thiết bị...' : '— Chọn thiết bị —'}
@@ -247,10 +235,7 @@ export default function CreateRequestModal({ show, onClose, onSuccess, editReque
                 Huỷ
               </Button>
               <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
-                {isSubmitting
-                  ? (isEditMode ? 'Đang lưu...' : 'Đang tạo...')
-                  : (isEditMode ? 'Lưu thay đổi' : 'Tạo yêu cầu')
-                }
+                {isSubmitting ? 'Đang tạo...' : 'Tạo yêu cầu'}
               </Button>
             </Modal.Footer>
           </Form>

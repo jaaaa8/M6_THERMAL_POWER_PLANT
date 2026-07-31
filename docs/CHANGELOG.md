@@ -1,5 +1,317 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-07-22] — Dashboard dùng dữ liệu thật (thay toàn bộ mock)
+
+Thay toàn bộ mock data trên Dashboard bằng dữ liệu thật qua **1 endpoint tổng hợp**
+`GET /api/dashboard/summary` (KPI cards + area/pie/bar chart + bảng YC gần nhất — 1 request).
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **Mới**: `dto/dashboard/DashboardSummaryDTO.java` (gồm nested `StatusCountDTO`, `MonthlyTrendDTO`,
+  `TopEquipmentDTO`, `RecentRequestDTO`), `controller/dashboard/DashboardController.java`
+  (`GET /api/dashboard/summary`), `service/dashboard/DashboardService.java` (gom mọi query vào 1 response).
+- **`RepairRequestRepository`**: thêm `countActiveRequests`, `getMonthlyTrend(months)`,
+  `getTopRepairedEquipment(lim)`, `findRecentRequests(lim)`.
+- **`IEquipmentRepository`**: thêm `countByStatusGrouped` (pie chart).
+- **`WorkOrderRepository`**: thêm `countByStatus(WorkOrderStatus)`.
+- **`IToolBorrowLogRepository`**: thêm `countOverdue` (CCDC quá hạn: APPROVED, chưa trả, quá `dueDate`).
+- **`ISparePartInventoryRepository`**: thêm `countLowStock(threshold)` (net stock < 10).
+- Chốt 3 open question: ngưỡng tồn kho = 10 cố định; dùng `dueDate`; không zero-fill tháng trống.
+
+### Frontend (`m6-thermal-power-plant`)
+- **Mới**: `services/dashboardService.js` (`getDashboardSummary`).
+- **`pages/Dashboard.jsx`**: bỏ toàn bộ mock (`stats`, `recentRequests`, `repairTrendData`,
+  `equipmentPieData`, `topEquipmentData`); thêm `useEffect` fetch + loading (`LoadingSpinner`);
+  map DTO vào KPI cards, 3 chart (recharts) và bảng (`DataTable`). Bổ sung dòng import `DataTable`
+  còn thiếu (đây là điểm khiến trang crash `DataTable is not defined`).
+
+### Nghiệm thu
+`npm run build` FE pass; `mvn compile` BE pass. Mở Dashboard: KPI/chart/bảng hiển thị data thật,
+console sạch; DB rỗng → card về 0, chart/bảng rỗng, không crash.
+
+---
+
+## [2026-07-20] — #34: Phân quyền theo ROLE (xoá cơ chế permission)
+
+Chi tiết đầy đủ ở CHANGELOG của `M6_THERMAL_POWER_PLANT_API` (cùng ngày, entry "#34: Chuyển phân
+quyền từ PERMISSION sang ROLE"). Tóm tắt phần FE:
+
+- `authService.normalizeUser`: bỏ field `permissions` (BE không còn trả).
+- `roleService.js`: thêm `HR_STAFF` vào `SYSTEM_ROLES`; thay `canAccess`/`hasPermission` (dead code,
+  luôn `return true`) bằng `isAdmin(user)` + `hasAnyRole(user, roles)` — ADMIN luôn qua mọi kiểm tra.
+- `ProtectedRoute.jsx`: thực thi thật `allowedRoles` (trước bị bỏ qua) → không đủ role → điều hướng
+  `/unauthorized`. Bỏ prop `requireFunction` (dead) + import `canAccess`.
+- `Sidebar.jsx`: `canSee` dùng `hasAnyRole`; sửa bug lọc menu (mục cha có `roles` + `children` nhưng
+  code cũ chỉ lọc theo role của children, bỏ qua role mục cha); gắn `roles` cho từng mục theo ma
+  trận role→chức năng đã chốt với chủ dự án.
+- `App.jsx`: bọc từng nhóm route nghiệp vụ bằng `ProtectedRoute allowedRoles` thay vì 1
+  `ProtectedRoute` chung không kiểm tra role.
+- `docs/ROLE_CODES.md`: cập nhật mô tả role-based, xoá phần mô tả permission-based cũ (permission
+  code, `permission_version`, `FEATURE_VIEW_PERMISSIONS`).
+
+### Nghiệm thu
+`npm run lint` + `npm run build` sạch cho mọi file đã sửa. Xem CHANGELOG phía API cho phần verify
+RBAC chạy thật (login theo từng role, kiểm tra 200/403/401).
+
+---
+
+## [2026-07-20] — Hoàn thiện chức năng Yêu cầu Sửa chữa (#35 + #36)
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **`RepairService` / `IRepairService`**: `getAllRepairRequests` nhận thêm `priority` + `search`
+  (lọc gộp status + độ ưu tiên + từ khoá, server-side); thêm `getStats()` trả số liệu tổng hợp.
+- **`RepairRequestRepository`**: thêm query `search(status, priority, kw, pageable)` (pattern giống
+  `EquipmentSystemRepository.search`) + `countByStatus` / `countByStatusAndPriority`.
+- **`RepairRequestController`**: `GET /` thêm param `priority`, `search`; thêm `GET /stats`.
+- **`RepairService.createRepairRequest`**: khi tạo YCSC → set thiết bị `EquipmentStatus.FAILURE`
+  (Sự cố) qua dirty-checking. `GET /pending` giữ nguyên (workOrderService còn dùng).
+- **`RepairRequestDTO.from`**: fallback `requesterName` = username khi tài khoản chưa có hồ sơ NV.
+- **Mới**: `dto/maintenance/RepairRequestStatsDTO.java`.
+
+### Frontend (`m6-thermal-power-plant`)
+- **`RepairRequestPage.jsx`**: chuyển sang phân trang + lọc SERVER-SIDE (tái dùng `PaginationPanel`
+  + pattern `fetchData` của `ListSystem`); pill counts + stat cards lấy từ `/stats` (khớp tổng,
+  không phụ thuộc trang). Thêm pill `Đã duyệt`, dropdown lọc theo độ ưu tiên.
+- **`repairRequestService.js`**: `getAll()` → `getList({status,priority,search,page,size})` (bỏ
+  hard-code `size=100`); thêm `getStats()`; thêm status `APPROVED` (nhãn "Đã duyệt", variant cobalt).
+- **`StatusBadge`**: thêm variant `accent` (cobalt) cho "Đã duyệt" — thuần thêm mới.
+- **`CreateRequestModal.jsx`**: xoá nhánh "edit" chết (gọi `update` không tồn tại) → chỉ còn tạo mới.
+- **Mới `services/apiError.js`** `getApiErrorMessage()`: đọc được cả body chuỗi thuần lẫn JSON
+  `{message}` → sửa lỗi nuốt thông báo khi xoá YC đã có PCT.
+- **`AppBreadcrumb.jsx`**: thêm nhãn `yeu-cau` / `phieu-cong-tac` (breadcrumb hết chữ thô).
+
+### Verify
+Xem mục Verification trong plan. Backend: build + test endpoint `/stats`, `?priority=`, tạo YC →
+thiết bị chuyển Sự cố. Frontend: `npm run dev` + `npm run lint`.
+
+---
+
+## [2026-07-17] — REBUILD UI Phase 5 (CHỐT): polish pass + tài liệu + build
+
+### Thay đổi
+- **`src/index.css`**:
+  - `.btn:active` lún 1px (tactile feedback toàn cục).
+  - `.animate-fade-in` — trước là class RỖNG (gắn sẵn ở hầu hết page root nhưng không làm gì) →
+    nay là **staggered reveal CSS-only** (reveal-up 350ms, delay bậc thang 50ms, chỉ
+    transform/opacity).
+  - Gate `prefers-reduced-motion: reduce` toàn cục — tắt mọi animation/transition trang trí.
+- **Quét tàn dư cuối:** `src/**/*.css` còn **0 hex ngoài index.css** (64 hex còn lại đều là
+  định nghĩa token). App 100% token-driven.
+- **A11y audit nhanh:** focus-visible cobalt ✓, contrast text-primary ~16:1 / secondary ~7:1 /
+  nút cobalt ~4.9:1 AA ✓, reduced-motion ✓. Ghi chú: `--text-tertiary` ~2.9:1 (chỉ hint/subtitle,
+  dưới AA — chấp nhận có chủ đích).
+- **Tài liệu:** `CLAUDE.md` §5.2 viết lại theo hệ Quiet Studio (quy tắc 100%-token + ngoại lệ
+  src/pdf), §7 đánh dấu trang Phân quyền đã xoá.
+
+### Verify
+`npm run build` ✓ (1.09s). Lint 114 (không đổi so với sau Phase 1; baseline gốc 119).
+Screenshot chốt: `docs/ui-refactor/p5-final-dashboard.png`.
+
+---
+
+## [2026-07-17] — REBUILD UI Phase 4: Vật tư + CCDC + Bảo dưỡng + Cổng nhân viên
+
+### Thay đổi
+- **Inline style JSX** (không tự ăn token — phải sửa tay): thay `#f8f9fa/#dee2e6/#6c757d` bằng
+  `var(--bg-surface-hover)/var(--border-color)/var(--text-tertiary)` trong
+  `MaterialDetailModal.jsx` (6 th), `ConsumableFormModal.jsx`, `SparePartFormModal.jsx`,
+  `hr/employee/AddEmployee.jsx`, `SparePartsIssueList.jsx`.
+  **KHÔNG đụng `src/pdf/`** — react-pdf render riêng, CSS var không hoạt động, hex là bắt buộc.
+- **CSS cụm còn lại** (ccdc/lubrication/employee/profile/consumable/spare_part): quét — đã sạch
+  hex từ cascade; phần `#fff`/rgba còn lại đều là trắng-trên-nền-đậm hoặc overlay hợp lệ.
+
+### Verify
+Lint: 114 (không đổi). Playwright: `/ccdc/danh-sach` (stat tiles + filter) và `/employee`
+(EmployeeLayout — layout thứ 2) đều chuẩn Quiet Studio (`docs/ui-refactor/p4-*.png`).
+
+---
+
+## [2026-07-17] — REBUILD UI Phase 3: cụm Nhân sự + Thiết bị
+
+### Thay đổi
+- **Equipment** (`components/equipment/style/`): token-hoá toàn bộ hex cứng trong
+  `AddEquipment.css`, `ListEquipment.css`, `ListSystem.css` (23 hex: slate/gray Tailwind cũ
+  `#f8fafc #f1f5f9 #e2e8f0 #cbd5e1…` → `--bg-surface-hover`/`--border-*`; `#2563eb` →
+  `--color-primary-600`; `#dc2626 #b91c1c rgba(239,68,68)` → `--color-status-danger`;
+  text grays → `--text-*`). Kết quả: 0 hex còn lại trong 3 file.
+- **HR** (`components/hr/`): vốn đã sạch, chỉ vá 2 chỗ — `DetailDepartment.css` nền `#fff` →
+  `--bg-surface`, `AddEmployee.css` focus ring steel-blue cũ → `--shadow-focus`.
+  Giữ nguyên overlay/danger-tint rgba hợp lệ.
+
+### Verify
+Lint: 114 (không đổi). Playwright: `/hr/employees` + `/equipment/system` render chuẩn Quiet Studio
+(`docs/ui-refactor/p3-*.png`) — filter bar, submenu 2 cấp, empty state, nút cobalt đều chuẩn.
+
+---
+
+## [2026-07-17] — REBUILD UI Phase 2: cụm Sửa chữa theo Quiet Studio
+
+### Phát hiện quan trọng
+Audit thị giác cho thấy **token cascade từ Phase 1 đã tự "ăn" gần trọn cụm Sửa chữa** (WorkOrderList,
+RepairRequestPage, filter pills đều đã quy về cobalt qua `--color-primary-600`/`--btn-primary-bg`).
+Việc thật của Phase 2 là dọn các đảo hard-code còn sót:
+
+### Thay đổi
+- **`technical_assessment/TechnicalAssessmentList.css`** — viết lại: badge trạng thái bỏ 8 hex cứng
+  (`#92400e #fef3c7 #166534 #dcfce7…`) → hệ 5 màu `--color-status-*` (tự chạy đúng cả dark mode).
+- **`spare_parts_issue/SparePartsIssueForm.css`** (file hard-code nặng nhất repo) — token-hoá:
+  status-dot 4 màu, focus ring steel-blue cũ `rgba(62,101,162)` → `--shadow-focus`, bảng spare-table
+  (viền `#dee2e6`, hover `#f8f9fa/#f8fbff`, header `#f8fafc`) → token, unit-badge Bootstrap blue
+  (`#e7f1ff/#0d6efd`, khối trùng lặp thứ 2 bị xoá) → `--color-primary-*`, icon PDF `#dc3545` →
+  `--color-status-danger`, radius cứng 8/12/999px → `--radius-*`. GIỮ trắng-trên-overlay (hợp lệ).
+- **`repair_history/repairHistoryList.css`** — token-hoá toàn bộ (icon `#0d6efd`, hover `#f8f9fa`,
+  radius cứng).
+- Xác minh: pills active của cả 3 trang (rr-/yc-/wo-) đã đồng nhất cobalt; modal thừa hưởng
+  `radius-xl`/`shadow-xl` mới; `#fff` còn lại đều là chữ trắng trên nền đậm (giữ).
+
+### Verify
+Lint: 114 lỗi (không đổi — chỉ sửa CSS). Playwright: WorkOrder + TechnicalAssessment +
+RepairRequest render chuẩn Quiet Studio (`docs/ui-refactor/p2-*.png`); error-state RepairRequest
+hiển thị đúng khi không có backend.
+
+---
+
+## [2026-07-17] — REBUILD UI Phase 0+1: concept "Quiet Studio" + nền móng + xoá 2 trang admin
+
+### Bối cảnh
+Chủ dự án quyết định **rebuild toàn bộ giao diện** (thay cho hướng refactor đen Vercel/Carbon ở entry
+dưới — bản đó bị chê "cứng nhắc, giống AI code"). Plan rebuild 6 phase đã duyệt; nguyên tắc: giữ nguyên
+`src/services/` + route path, chỉ đổi UI; xoá trang Phân quyền & Tạo tài khoản theo yêu cầu.
+
+### Phase 0 — Concept (đã chốt)
+Dựng 3 concept khác biệt render trên app thật (`docs/ui-refactor/concept-*.png`): Quiet Studio /
+Warm Paper / Navy Crisp. Chủ dự án chọn **"Quiet Studio"**: font **Outfit**, bo góc 8–18px, card
+**không viền + bóng mềm nhiều lớp**, nền lạnh `#f6f7f9`, sidebar TRẮNG, accent **cobalt `#3b5bfd`**,
+giữ 5 màu status + IBM Plex Mono cho mã.
+
+### Phase 1 — Nền móng (hoàn tất, đã verify)
+- **`src/index.css`** — viết lại token theo Quiet Studio (light + dark), giữ nguyên tên biến.
+  Sửa bug cũ: `--font-sans` vẫn trỏ `'Inter'` dù `@import` đã đổi → nay trỏ `'Outfit'`.
+  Bỏ khối `[data-accent="blue"]` (hết vai trò). `.surface-card`/`.card`: viền transparent + bóng mềm,
+  dark mode thêm viền mảnh.
+- **Common**: `DataTable.css` thêm `tabular-nums`; `SearchBox` chuyển inline style → `SearchBox.css`
+  (file mới); `EmptyState.css` icon đặt trong đĩa tròn tint. (StatusBadge/PageHeader/LoadingSpinner
+  đã 100% token — tự nhận diện mạo mới, không cần sửa.)
+- **Layout**: `Sidebar.css` sửa hard-code chữ trắng (brand, tên user — bug hiện hình khi sidebar sáng),
+  logo amber → cobalt, active border amber → cobalt; `Header.css` tokenize avatar;
+  **`AuthLayout.css` viết lại toàn bộ** (dark-glass amber → sáng Quiet Studio, radial wash cobalt).
+- **Xoá trang** (yêu cầu chủ dự án): `RoleManagementPage.jsx|.css`, `CreateAccountPage.jsx|.css`;
+  gỡ 2 route + 2 import trong `App.jsx`; xoá section "Quản trị" trong `Sidebar.jsx`;
+  `roleService.js` gỡ object `roleService` + `FEATURE_VIEW_PERMISSIONS` (GIỮ `SYSTEM_ROLES`/`canAccess`
+  vì Sidebar/Header/ProtectedRoute còn dùng). `CreateWorkerAccountPage` (ccdc) KHÔNG liên quan — giữ.
+- **Dọn xác chết**: xoá `WorkOrderPage.jsx|.css`, `WorkOrderListPage.jsx|.css` (mồ côi, service không
+  khớp); bỏ route `/equipment/equipments` khai báo trùng; đổi tên `"ToolCategory .jsx"` (có dấu cách)
+  → `ToolCategory.jsx`.
+
+### Verify
+`npm run lint`: 114 lỗi (baseline cũ 119 — GIẢM 5, không lỗi mới). Playwright: login + dashboard
+light/dark OK (`docs/ui-refactor/p1-*.png`), menu không còn "Quản trị", `/admin/roles` → 404.
+
+---
+
+## [2026-07-17] — Refactor UI (Pha 1 cũ — ĐÃ THAY THẾ bởi rebuild ở trên): hệ token đen Vercel + Carbon + IBM Plex Sans
+
+### Bối cảnh
+Chủ dự án yêu cầu refactor toàn diện diện mạo cho chuyên nghiệp/nhất quán, tham khảo 3 bộ design tải về
+(`VERCEL_DESIGN.md`, `AIRTABLE_DESIGN.md`, `IBM_DESIGN.md`), **giữ nguyên mọi call API**. Hướng chốt:
+backbone **IBM Carbon** (vuông, phẳng, viền mảnh) + **màu đen Vercel `#171717`** làm primary/chrome +
+**IBM Plex Sans** cho chữ. Quyết định này **thay thế** quyết định "giữ palette steel-blue, không re-skin"
+ở entry cũ bên dưới — đây là yêu cầu thị giác mới, có chủ đích của chủ dự án.
+
+> **Pha 1 = mũi khoan thăm dò**, không phải bản hoàn thiện. Viết lại tầng token để cả app cascade theo +
+> reskin trang flagship (Phiếu Công tác). Các trang còn hard-code màu (~12% khai báo) sẽ lộ ra để dọn ở Pha 2.
+
+### Thay đổi
+- **`src/index.css`** — viết lại tầng token, **giữ nguyên toàn bộ tên biến** (không gãy ~1700 điểm tham chiếu):
+  - Font: `Inter` → **IBM Plex Sans** (`@import` + `--font-sans`). Mono giữ IBM Plex Mono.
+  - Palette `--color-primary-*`: steel-blue → thang **đen/xám trung tính** (`#171717`…`#f4f4f4`).
+  - `--color-neutral-*`: xám ám xanh → **xám thật kiểu Carbon**.
+  - `--radius-*`: bo góc **2px** (Carbon vuông). `--shadow-*`: giảm mạnh (tile dùng viền, không bóng).
+  - Semantic (light + dark): **sidebar đen `#171717`/`#000`** (chrome), giữ vùng nội dung sáng để status nổi.
+  - **Màu status GIỮ NGUYÊN** (green/yellow/red/gray/blue — ngữ nghĩa an toàn công nghiệp).
+  - Thêm biến `--btn-primary-*` + khối **`[data-accent="blue"]`** để bật/tắt accent xanh (biến thể A/B).
+  - Link/selection/focus/`.btn-primary`/`.btn-outline-primary`/form-focus trỏ về token mới.
+- **`src/components/work_order/WorkOrderList.css`** — filter pill vuông (Carbon) + active state đen đậm.
+
+### Không đụng
+Services/API, markup/logic component, CSS riêng các trang khác (để Pha 2), file cấu hình.
+
+---
+
+## [2026-07-17] — Đồng bộ giao diện: vá token hỏng + áp quy tắc thị giác scms-design
+
+### Bối cảnh
+Rà giao diện theo skill `scms-design`. Skill này được viết khi **chưa có codebase** (readme của skill:
+*"No codebase, Figma file, or existing product screens were attached"*) nên palette của nó (IBM Plex Sans,
+oklch, cấm cam, không dark mode) **mâu thuẫn** với hệ thống đã chạy trong `index.css` (Inter, hex steel-blue
+`#3e65a2`, có accent cam, có dark mode). Chốt với chủ dự án: **giữ palette + dark mode hiện tại**, chỉ lấy
+**quy tắc thị giác** của skill và vá drift. Không re-skin.
+
+### Vấn đề gốc: 21 token dùng nhưng chưa bao giờ định nghĩa
+Mỗi dev tự đặt tên token riêng (`--danger-color`, `--primary-color`, `--color-primary`, `--surface-light`,
+`--border-secondary`…) trong khi `index.css` đặt là `--color-status-danger`, `--color-primary-600`,
+`--bg-surface`… Phần lớn **không có fallback** → CSS invalid → thuộc tính bị bỏ, giá trị inherit.
+Ví dụ dấu `*` bắt buộc (`.required-asterisk`) đang ăn màu đen thay vì đỏ.
+
+Đã đổi tên **50 usage / 19 file** về token canonical. Bảng map chính:
+
+| Token bịa | → Canonical |
+|---|---|
+| `--danger-color`, `--color-danger-500`, `--color-status-error` | `--color-status-danger` |
+| `--color-status-success` | `--color-status-normal` |
+| `--primary-color`, `--color-primary` | `--color-primary-600` |
+| `--primary-light` | `--color-primary-50` |
+| `--surface-light`, `--bg-subtle`, `--bg-secondary`, `--color-surface-secondary` | `--bg-surface-hover` |
+| `--surface-card`, `--color-surface-primary` | `--bg-surface` |
+| `--border-light`, `--border-secondary` | `--border-color` |
+| `--border-tertiary`, `--border-primary` | `--border-color-strong` |
+| `--text-quaternary` | `--text-tertiary` |
+| `--font-normal` | `--font-regular` |
+
+Cũng sửa 4 chỗ token có fallback hex cứng (`var(--surface-card, #fff)`…) — fallback luôn thắng vì token
+không tồn tại, nên **phá dark mode** (vd `<thead>` sticky luôn trắng).
+
+> `--priority-color` **không đụng**: nó được set động qua inline style (`RepairRequestDetailModal.jsx:64`)
+> và luôn có fallback — đúng pattern.
+
+### Quy tắc thị giác (theo skill)
+- **Bỏ 11 chỗ hover `translateY`/`scale`** — skill: *"no scale/shrink transforms; this is precision software"*.
+  Chỗ nào hover chỉ có transform+shadow thì thay bằng tín hiệu nền/viền để không mất phản hồi hover.
+  Giữ 2 chỗ `translateY(-50%)` vì đó là kỹ thuật căn giữa, không phải hover.
+- **Bỏ shadow khi hover**, dùng border/background. Shadow chỉ dành cho thứ nổi lên trên (modal, dropdown).
+- **Làm phẳng 25/26 gradient**. Giữ lại `DataTable.css` skeleton shimmer vì đó là gradient **chức năng**
+  (hiệu ứng loading), không phải trang trí.
+- **Thêm `:focus-visible` toàn cục** — trước đó **0 chỗ** có focus ring (lỗi accessibility).
+- **Accent cam**: giữ (theo brand mark) nhưng thu hẹp — xoá `--shadow-accent-glow`, làm phẳng gradient cam.
+- **Bỏ emoji `⚡` ở 2 logo** (AuthLayout, Sidebar) → `BsLightningChargeFill`. Skill: *"No emoji… anywhere"*.
+- Bỏ lưới nền động ở trang login (skill cấm pattern/texture), xoá cả `<div className="auth-bg-pattern" />`.
+- 2 header bảng dùng `#0d6efd` (xanh mặc định Bootstrap, **lệch palette dự án**) → `--color-primary-600`.
+
+### File bị ảnh hưởng
+38 file (33 `.css`, 5 `.jsx`). Trọng tâm: `index.css`, `components/layout/AuthLayout.{css,jsx}`,
+`components/layout/Sidebar.{css,jsx}`, `components/work_order/WorkOrderDetailModal.css`,
+`components/spare_parts_issue/SparePartsIssueForm.css`, `pages/Dashboard.css`, `pages/WorkOrderPage.css`,
+`components/hr/**/style/*.css`, `components/equipment/style/*.css`.
+
+### Kiểm chứng
+- `npm run lint`: **134 vấn đề trước = 134 sau** (so bằng `git stash`) → không thêm lỗi mới; 134 lỗi này có sẵn ở file khác.
+- `npm run build`: pass.
+- Chạy dev + đo computed style trên `/login`: mọi token resolve ra giá trị thật; `.required-asterisk`
+  compute `rgb(239,68,68)` (đỏ) thay vì đen; nền login `background-image: none`, màu đặc `rgb(27,42,74)`;
+  logo là `<svg>`, không còn emoji; 0 token bịa còn sót trong toàn bộ stylesheet đã load.
+- Toggle `data-theme=dark`: 5/6 token đảo màu đúng → dark mode nguyên vẹn.
+
+### Còn lại (chưa làm — cần quyết định riêng)
+- **15 file dùng `<Table>` thô** thay vì `DataTable`, **9 file dùng `<Badge>` thô** thay vì `StatusBadge`.
+  Hoãn theo thống nhất: đụng nhiều file của nhiều dev, dễ xung đột merge giữa sprint.
+- Còn emoji ở vài chỗ UI khác (`🚧` placeholder, `✅`, `👋`, `📷` fallback ảnh) — chưa đụng vì nằm trong
+  nội dung nghiệp vụ, không phải chrome.
+- 2 header bảng nay đã phẳng + đúng palette nhưng vẫn là "thanh xanh", trong khi `index.css` quy định
+  header bảng là chữ hoa nhỏ trên nền trong suốt → còn lệch, cần chốt thiết kế.
+- `--color-primary-50` không đổi theo dark mode (là nấc palette tĩnh), nên avatar dùng `--primary-light` cũ
+  nay hiện nền xanh nhạt ở dark mode. Đúng ý đồ ban đầu nhưng là thay đổi thấy được.
+
+---
+
 ## [2026-07-06] — Ghi nhận: login production đã chạy (fix CORS phía backend)
 
 Login trên `cloudfront.net` từng lỗi "Đăng nhập thất bại" dù API trả 200 khi test bằng curl.

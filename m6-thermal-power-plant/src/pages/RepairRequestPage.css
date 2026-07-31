@@ -1,50 +1,61 @@
 /* ============================================================
-   RepairRequestPage — Danh sách Yêu cầu Sửa chữa
+   RepairRequestPage — Industrial Blue
    ============================================================ */
 
-/* --- Stats summary --- */
+/* --- Stats summary (KPI cards style) --- */
 .rr-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .rr-stat {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.rr-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .rr-stat-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
-  background: var(--bg-surface-hover);
-  font-size: 1.25rem;
+  font-size: 1rem;
   flex-shrink: 0;
+  padding: 6px;
 }
 
 .rr-stat-body {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
 }
 
 .rr-stat-value {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
+  font-size: var(--text-headline-lg);
+  line-height: var(--text-headline-lg-lh);
+  font-weight: var(--text-headline-lg-fw);
+  color: var(--color-on-surface);
 }
 
 .rr-stat-label {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  font-weight: var(--font-medium);
+  font-size: var(--text-label-md);
+  font-weight: var(--text-label-md-fw);
+  letter-spacing: var(--text-label-md-ls);
+  text-transform: uppercase;
+  color: var(--color-secondary);
 }
 
 /* --- Filter pills --- */
@@ -52,47 +63,47 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .rr-pill {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 0.4rem 0.85rem;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-secondary);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: var(--text-label-md);
+  font-weight: var(--text-label-md-fw);
+  color: var(--color-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .rr-pill:hover {
-  border-color: var(--color-primary-300);
-  color: var(--color-primary-600);
+  border-color: var(--color-outline-variant);
+  background: var(--color-surface-container);
 }
 
 .rr-pill.active {
-  background: var(--color-primary-600);
-  border-color: var(--color-primary-600);
-  color: var(--text-on-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 .rr-pill-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  font-size: var(--text-xs);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: var(--text-label-sm);
   font-weight: var(--font-semibold);
   border-radius: var(--radius-full);
-  background: var(--bg-surface-hover);
-  color: var(--text-secondary);
+  background: var(--color-surface-container);
+  color: var(--color-secondary);
 }
 
 .rr-pill.active .rr-pill-count {
@@ -106,9 +117,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-4);
   flex-wrap: wrap;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .rr-toolbar-left {
@@ -131,8 +145,8 @@
 /* --- Switch "Của tôi" --- */
 .rr-only-mine {
   margin: 0;
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--text-label-sm);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 .rr-only-mine .form-check-label {
@@ -140,36 +154,36 @@
 }
 
 .rr-result-count {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  font-size: var(--text-label-sm);
+  color: var(--color-outline);
   white-space: nowrap;
 }
 
 /* --- Table Wrapper --- */
 .rr-table-wrapper {
   overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-/* Tắt card hover-lift — dòng bảng đã có hover highlight riêng */
 .rr-table-wrapper:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
-/* Fixed layout để các cột nghe theo width đã khai báo,
-   không để cột "Mô tả sự cố" tự phình theo nội dung và đẩy các cột khác. */
+/* Fixed layout */
 .rr-table {
   table-layout: fixed;
   width: 100%;
 }
 
-/* Cell rút gọn (Thiết bị, Mô tả sự cố) — ép một dòng, ... khi tràn */
+/* Cell truncate */
 .rr-cell-truncate {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Đảm bảo nội dung khác trong cell cũng không phá layout */
 .rr-table td {
   word-break: break-word;
 }
@@ -179,12 +193,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0.2em 0.6em;
-  font-size: var(--text-xs);
+  padding: 2px 8px;
+  font-size: var(--text-label-sm);
   font-weight: var(--font-semibold);
   border-radius: var(--radius-sm);
-  color: var(--priority-color, var(--text-secondary));
-  background: color-mix(in srgb, var(--priority-color, var(--text-secondary)) 10%, transparent);
+  color: var(--priority-color, var(--color-secondary));
+  background: color-mix(in srgb, var(--priority-color, var(--color-secondary)) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--priority-color, var(--color-secondary)) 20%, transparent);
   letter-spacing: 0.01em;
 }
 
@@ -193,7 +208,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--priority-color, var(--text-secondary));
+  background: var(--priority-color, var(--color-secondary));
   flex-shrink: 0;
 }
 
@@ -220,15 +235,12 @@
     flex-direction: column;
     align-items: stretch;
   }
-
   .rr-toolbar-left {
     max-width: 100%;
   }
-
   .rr-toolbar-right {
     justify-content: space-between;
   }
-
   .rr-status-filter {
     flex: 1;
   }

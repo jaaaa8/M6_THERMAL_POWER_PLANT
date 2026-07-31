@@ -48,7 +48,7 @@ export default function SparePartImportModal({ show, onHide, sparePartItem, onSu
                     <Form noValidate>
                         <Modal.Header closeButton>
                             <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-                                <BsBoxSeam className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+                                <BsBoxSeam className="me-2" style={{ color: 'var(--color-primary)' }} />
                                 Nhập kho vật tư thay thế
                             </Modal.Title>
                         </Modal.Header>

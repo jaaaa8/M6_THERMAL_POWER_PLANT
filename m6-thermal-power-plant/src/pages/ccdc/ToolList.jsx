@@ -86,7 +86,7 @@ export default function ToolList() {
         const totalBorrowed = tools.reduce((sum, t) => sum + (t.quantityBorrowed || 0), 0);
         const totalDamaged = tools.reduce((sum, t) => sum + (t.quantityDamaged || 0), 0);
         return [
-            { key: 'types', label: 'Số đầu mục CCDC', value: tools.length, icon: <BsBoxSeam />, color: 'var(--color-primary-500)' },
+            { key: 'types', label: 'Số đầu mục CCDC', value: tools.length, icon: <BsBoxSeam />, color: 'var(--color-primary)' },
             { key: 'total', label: 'Tổng số lượng trong kho', value: totalQuantity, icon: <BsCheckCircle />, color: 'var(--color-status-normal)' },
             { key: 'borrowed', label: 'Đang được mượn', value: totalBorrowed, icon: <BsArrowLeftRight />, color: 'var(--color-status-info)' },
             { key: 'damaged', label: 'Hư hỏng / đã huỷ', value: totalDamaged, icon: <BsExclamationTriangle />, color: 'var(--color-status-danger)' },
