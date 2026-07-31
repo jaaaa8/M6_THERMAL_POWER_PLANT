@@ -59,6 +59,7 @@ export default function ToolLoanManagementPage() {
     try {
       const logsRes = await toolBorrowLogService.search({});
       const logPage = logsRes.data?.data;
+      // DataTable tự đưa bản ghi mới nhất lên đầu (newestFirst)
       setLogs(logPage?.content ?? logPage ?? []);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Không thể tải danh sách phiếu mượn/trả');
