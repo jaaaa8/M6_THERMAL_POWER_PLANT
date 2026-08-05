@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Table, Spinner, Badge } from 'react-bootstrap';
-import { BsFileEarmarkPdf, BsArrowLeft } from 'react-icons/bs';
+import {
+  Button,
+  Table,
+  Spinner,
+  Badge,
+  Modal,
+  Form
+} from "react-bootstrap";
+import { BsFileEarmarkPdf, BsArrowLeft, BsDownload } from 'react-icons/bs';
 import * as equipmentService from "../../services/equipment/equipmentService";
 import PageHeader from '../common/PageHeader';
 import StatusBadge from '../common/StatusBadge';
@@ -31,6 +38,8 @@ export default function DetailEquipment() {
   const [detailTab, setDetailTab] = useState('general'); // 'general', 'tech-param', 'repair-history', 'maintenance-history', 'lubrication-history'
 
   const [currentImage, setCurrentImage] = useState(0);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
 
   const getPdfData = async () => {
 
@@ -127,26 +136,11 @@ export default function DetailEquipment() {
           equipment={pdfData}
         />
       ).toBlob();
-
-
-    const url =
-      URL.createObjectURL(blob);
-
-
-    const a =
-      document.createElement("a");
-
-
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
     a.href = url;
-
-
-    a.download =
-      `equipment-${id}.pdf`;
-
-
+    a.download = `equipment-${id}.pdf`;
     a.click();
-
-
     URL.revokeObjectURL(url);
 
   };
@@ -211,7 +205,36 @@ export default function DetailEquipment() {
       </div>
     );
   }
+  const downloadSelectedImages = async () => {
 
+    for (const index of selectedImages) {
+
+      const url =
+        selectedEqData.imageUrls[index];
+
+      const res = await fetch(url);
+
+      const blob = await res.blob();
+
+      const blobUrl =
+        URL.createObjectURL(blob);
+
+      const a =
+        document.createElement("a");
+
+      a.href = blobUrl;
+
+      a.download =
+        `${selectedEqData.kksCode}-${index + 1}.jpg`;
+
+      a.click();
+
+      URL.revokeObjectURL(blobUrl);
+    }
+
+    setShowDownloadModal(false);
+
+  };
   const statusProps = getStatusProps(selectedEqData.status);
 
   return (
@@ -298,53 +321,59 @@ export default function DetailEquipment() {
       <div className="detail-layout">
         {/* Left Pane */}
         <div className="general-info-card bg-white">
-          <div className="detail-img-box">
-            <div className="d-flex align-items-center justify-content-center gap-2">
+          <div className="detail-img-wrapper">
+            <Button
+              className="download-image-btn"
+              onClick={() => {
+                setSelectedImages([]);
+                setShowDownloadModal(true);
+              }}
+            >
+              <BsDownload />
+            </Button>
 
-              {selectedEqData.imageUrls?.length > 1 && (
-                <Button
-                  variant="light"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentImage(prev =>
-                      prev === 0
-                        ? selectedEqData.imageUrls.length - 1
-                        : prev - 1
-                    )
-                  }
-                >
-                  ❮
-                </Button>
-              )}
+            {selectedEqData.imageUrls?.length > 1 && (
+              <Button
+                className="image-nav left"
+                variant="light"
+                onClick={() =>
+                  setCurrentImage(prev =>
+                    prev === 0
+                      ? selectedEqData.imageUrls.length - 1
+                      : prev - 1
+                  )
+                }
+              >
+                ❮
+              </Button>
+            )}
 
-              <div className="detail-img-box">
-                <img
-                  src={
-                    selectedEqData.imageUrls?.length
-                      ? selectedEqData.imageUrls[currentImage]
-                      : getEquipmentImage(selectedEqData)
-                  }
-                  alt={selectedEqData.name}
-                />
-              </div>
-
-              {selectedEqData.imageUrls?.length > 1 && (
-                <Button
-                  variant="light"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentImage(prev =>
-                      prev === selectedEqData.imageUrls.length - 1
-                        ? 0
-                        : prev + 1
-                    )
-                  }
-                >
-                  ❯
-                </Button>
-              )}
-
+            <div className="detail-img-box">
+              <img
+                src={
+                  selectedEqData.imageUrls?.length
+                    ? selectedEqData.imageUrls[currentImage]
+                    : getEquipmentImage(selectedEqData)
+                }
+                alt={selectedEqData.name}
+              />
             </div>
+
+            {selectedEqData.imageUrls?.length > 1 && (
+              <Button
+                className="image-nav right"
+                variant="light"
+                onClick={() =>
+                  setCurrentImage(prev =>
+                    prev === selectedEqData.imageUrls.length - 1
+                      ? 0
+                      : prev + 1
+                  )
+                }
+              >
+                ❯
+              </Button>
+            )}
           </div>
           <h5 className="fw-bold mb-1 mt-2 text-center">{selectedEqData.name}</h5>
           <Badge bg="light" className="text-secondary mb-2">{selectedEqData.kksCode}</Badge>
@@ -394,7 +423,7 @@ export default function DetailEquipment() {
               onClick={() =>
                 setDetailTab("lubrication-history")
               }>
-              Lịch sử bảo dưỡng
+              Lịch sử bảo dưỡng dầu mỡ
             </button>
           </div>
           <div className="detail-tab-content">
@@ -460,8 +489,117 @@ export default function DetailEquipment() {
               )
             }
           </div>
+          <Modal
+            show={showDownloadModal}
+            onHide={() => setShowDownloadModal(false)}
+            size="xl"
+            centered
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Chọn ảnh cần tải</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Body>
+
+              <div className="download-header">
+
+                <Form.Check
+                  type="checkbox"
+                  id="select-all-images"
+                  label={
+                    <span className="fw-semibold">
+                      Chọn tất cả ({selectedEqData.imageUrls.length} ảnh)
+                    </span>
+                  }
+                  checked={
+                    selectedImages.length === selectedEqData.imageUrls.length
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedImages(
+                        selectedEqData.imageUrls.map((_, i) => i)
+                      );
+                    } else {
+                      setSelectedImages([]);
+                    }
+                  }}
+                />
+              </div>
+              <hr className="my-3" />
+              <div className="row g-3">
+
+                {selectedEqData.imageUrls.map((img, index) => (
+
+                  <div
+                    className="col-md-6"
+                    key={index}
+                  >
+
+                    <div className="border rounded p-2">
+
+                      <Form.Check
+                        type="checkbox"
+                        label={`Ảnh ${index + 1}`}
+                        checked={selectedImages.includes(index)}
+                        onChange={() => {
+                          if (selectedImages.includes(index)) {
+                            setSelectedImages(
+                              selectedImages.filter(i => i !== index)
+                            );
+                          } else {
+                            setSelectedImages([
+                              ...selectedImages,
+                              index
+                            ]);
+                          }
+                        }}
+                      />
+
+                      <img
+                        src={img}
+                        alt={`Ảnh ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          height: 240,
+                          objectFit: "cover",
+                          marginTop: 10,
+                          borderRadius: 10,
+                          border: "1px solid #ddd"
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            </Modal.Body>
+
+            <Modal.Footer>
+
+              <Button
+                variant="secondary"
+                onClick={() => setShowDownloadModal(false)}
+              >
+                Hủy
+              </Button>
+
+              <Button
+                onClick={downloadSelectedImages}
+              >
+                Tải xuống
+              </Button>
+
+            </Modal.Footer>
+
+          </Modal>
         </div>
       </div>
     </div>
+
+
   );
 }

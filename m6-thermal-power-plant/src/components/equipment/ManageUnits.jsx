@@ -34,22 +34,19 @@ export default function ManageUnits() {
   const [totalElements, setTotalElements] = useState(0);
 
   const unitSchema = Yup.object({
+
     name: Yup.string()
       .trim()
-      .required("Tên đơn vị không được để trống")
-      .max(100, "Tên đơn vị tối đa 100 ký tự")
+      .required("Vui lòng điền tên đơn vị")
+      .max(50, "Tên đơn vị không được vượt quá 50 ký tự.")
       .matches(
-        /^[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ].*$/,
-        "Tên đơn vị phải bắt đầu bằng chữ cái viết hoa"
-      )
-      // Chỉ cho phép chữ, số, khoảng trắng
-      .matches(
-        /^[A-Za-zÀ-ỹ0-9\s]+$/,
-        "Tên đơn vị chỉ được chứa chữ cái, số và khoảng trắng"
+        /^[A-Za-z0-9°%μµΩÀ-ỹ³²^/().·*_-]+$/,
+        "Tên đơn vị chứa ký tự không hợp lệ."
       ),
 
     description: Yup.string()
       .max(255, "Mô tả tối đa 255 ký tự")
+
   });
   // Fetch units list
 
@@ -103,9 +100,16 @@ export default function ManageUnits() {
 
       } catch (e) {
 
-        console.log(e);
+        console.error(e);
 
-        toast.error("Thêm thất bại");
+        const message =
+          e.response?.data?.message ||
+          e.response?.data?.error ||
+          e.response?.data ||
+          "Thêm thất bại";
+
+        toast.error(message);
+
       }
     }
   });
@@ -152,9 +156,15 @@ export default function ManageUnits() {
 
       } catch (e) {
 
-        console.log(e);
+        console.error(e);
 
-        toast.error("Cập nhật thất bại");
+        const message =
+          e.response?.data?.message ||
+          e.response?.data?.error ||
+          e.response?.data ||
+          "Cập nhật thất bại";
+
+        toast.error(message);
 
       }
 
@@ -276,7 +286,10 @@ export default function ManageUnits() {
               value={addFormik.values.name}
               onChange={addFormik.handleChange}
               onBlur={addFormik.handleBlur}
-              isInvalid={addFormik.touched.name && addFormik.errors.name}
+              isInvalid={
+                addFormik.touched.name &&
+                !!addFormik.errors.name
+              }
             />
 
             <Form.Control.Feedback type="invalid">
@@ -293,7 +306,7 @@ export default function ManageUnits() {
               onBlur={addFormik.handleBlur}
               isInvalid={
                 addFormik.touched.description &&
-                addFormik.errors.description
+                !!addFormik.errors.description
               }
             />
 

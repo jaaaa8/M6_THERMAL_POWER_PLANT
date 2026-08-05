@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Row, Col, Form, Button, Spinner } from 'react-bootstrap';
+import {
+  Row,
+  Col,
+  Form,
+  Button,
+  Spinner,
+  Modal
+} from "react-bootstrap";
 import { BsArrowLeft, BsCpu, BsCloudUpload, BsX } from 'react-icons/bs';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import * as equipmentService from "../../services/equipment/equipmentService";
-import * as systemService from '../../services/equipment/systemService';
 import PageHeader from '../common/PageHeader';
 import './style/AddEquipment.css';
 
@@ -17,6 +23,7 @@ export default function UpdateEquipment() {
 
   const [equipmentData, setEquipmentData] = useState(null);
   const [equipmentTypes, setEquipmentTypes] = useState([]);
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -137,6 +144,8 @@ export default function UpdateEquipment() {
     name: equipmentData?.name || "",
     equipmentTypeId:
       equipmentData?.equipmentTypeId || "",
+    newEquipmentTypeName: "",
+    newEquipmentTypeDescription: "",
     status:
       equipmentData?.status || "ACTIVE",
     manufacturer:
@@ -185,22 +194,29 @@ export default function UpdateEquipment() {
             setFieldValue
           }) => {
             const handleImageChange = (e) => {
+
               const files = Array.from(e.target.files);
-              const valid = files.filter(file => {
+
+              if (!files.length) return;
+
+              const validFiles = files.filter(file => {
+
                 if (file.size > 2 * 1024 * 1024) {
-                  toast.error(file.name + " quá 2MB");
+                  toast.error(`${file.name} vượt quá 2MB`);
                   return false;
                 }
+
                 return true;
               });
+
               setFieldValue(
                 "newImages",
                 [
                   ...values.newImages,
-                  ...valid
+                  ...validFiles
                 ]
               );
-            }
+            };
 
             const triggerFileSelect = () => {
               fileInputRef.current.click();
@@ -224,81 +240,96 @@ export default function UpdateEquipment() {
             return (
               <FormikForm onSubmit={handleSubmit}>
                 {/* Upload Image Section */}
-                <div className="image-upload-row">
-                  <div
-                    className="image-upload-dropzone"
-                    onClick={triggerFileSelect}
+                {/* Upload */}
+                <div
+                  className="image-upload-dropzone"
+                  onClick={triggerFileSelect}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    hidden
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+
+                  <BsCloudUpload className="image-upload-icon" />
+
+                  <span className="fw-semibold">
+                    Kéo thả ảnh hoặc
+                  </span>
+
+                  <span
+                    className="text-primary fw-bold"
+                    style={{ textDecoration: "underline" }}
                   >
-                    <input
-                      multiple
-                      type="file"
-                      accept="image/*"
-                      ref={fileInputRef}
-                      className="d-none"
-                      onChange={handleImageChange} />
-                    <BsCloudUpload className="image-upload-icon" />
-                    <span className="fw-semibold">Kéo thả ảnh hoặc</span>
-                    <span className="text-primary fw-bold" style={{ textDecoration: 'underline' }}>Chọn ảnh</span>
-                    <span className="text-muted small mt-1">PNG, JPG, JPEG (tối đa 2MB)</span>
-                  </div>
-                  <div className="d-flex flex-wrap gap-3">
+                    Chọn ảnh
+                  </span>
 
-                    {values.imageUrls.map((url, index) => (
+                  <span className="text-muted small mt-1">
+                    PNG, JPG, JPEG (tối đa 2MB)
+                  </span>
+                </div>
 
-                      <div
-                        key={index}
-                        className="position-relative"
-                      >
+                {/* Preview */}
+                <div className="image-preview-container">
 
-                        <img
-                          src={url}
-                          width={150}
-                          height={150}
-                          className="rounded border"
-                          style={{ objectFit: "cover" }}
-                        />
-
-                        <Button
-                          type="button"
-                          variant="danger"
-                          size="sm"
-                          onClick={() => removeOldImage(index)}
-                        >
-                          <BsX />
-                        </Button>
-
+                  {values.imageUrls.length === 0 &&
+                    values.newImages.length === 0 && (
+                      <div className="image-preview-placeholder">
+                        <BsCpu />
+                        <span>Chưa có ảnh</span>
                       </div>
+                    )}
 
-                    ))}
+                  {/* Ảnh cũ */}
+                  {values.imageUrls.map((url, index) => (
+                    <div
+                      key={`old-${index}`}
+                      className="preview-item"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="image-preview-img"
+                      />
 
-                    {values.newImages.map((file, index) => (
-                      <div
-                        key={index}
-                        className="position-relative"
+                      <button
+                        type="button"
+                        className="image-preview-remove"
+                        onClick={() => removeOldImage(index)}
                       >
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="preview"
-                          width={150}
-                          height={150}
-                          className="rounded border"
-                          style={{ objectFit: "cover" }}
-                        />
-                        <Button
-                          type="button"
-                          variant="danger"
-                          size="sm"
-                          onClick={() => removeNewImage(index)}
-                        >
-                          <BsX />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                        <BsX />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Ảnh mới */}
+                  {values.newImages.map((file, index) => (
+                    <div
+                      key={`new-${index}`}
+                      className="preview-item"
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt=""
+                        className="image-preview-img"
+                      />
+
+                      <button
+                        type="button"
+                        className="image-preview-remove"
+                        onClick={() => removeNewImage(index)}
+                      >
+                        <BsX />
+                      </button>
+                    </div>
+                  ))}
 
                 </div>
 
-                <Row className="g-4">
+                <Row className="g-4 mt-3">
                   {/* Mã KKS */}
                   <Col md={6}>
                     <Form.Group>
@@ -354,29 +385,37 @@ export default function UpdateEquipment() {
                       <Form.Label htmlFor="equipmentTypeId" className="required">
                         Loại thiết bị
                       </Form.Label>
+                      <div className="d-flex gap-2">
+                        <Form.Select
+                          id="equipmentTypeId"
+                          name="equipmentTypeId"
+                          value={values.equipmentTypeId}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          isInvalid={
+                            touched.equipmentTypeId &&
+                            !!errors.equipmentTypeId
+                          }
+                        >
+                          <option value="">Chọn loại thiết bị</option>
 
-                      <Form.Select
-                        id="equipmentTypeId"
-                        name="equipmentTypeId"
-                        value={values.equipmentTypeId}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        isInvalid={
-                          touched.equipmentTypeId &&
-                          !!errors.equipmentTypeId
-                        }
-                      >
-                        <option value="">Chọn loại thiết bị</option>
-
-                        {equipmentTypes.map(type => (
-                          <option
-                            key={type.id}
-                            value={type.id}
-                          >
-                            {type.name}
-                          </option>
-                        ))}
-                      </Form.Select>
+                          {equipmentTypes.map(type => (
+                            <option
+                              key={type.id}
+                              value={type.id}
+                            >
+                              {type.name}
+                            </option>
+                          ))}
+                        </Form.Select>
+                        <Button
+                          type="button"
+                          variant="outline-primary"
+                          onClick={() => setShowAddTypeModal(true)}
+                        >
+                          +
+                        </Button>
+                      </div>
                       <Form.Control.Feedback type="invalid">
                         {errors.equipmentTypeId}
                       </Form.Control.Feedback>
@@ -515,7 +554,137 @@ export default function UpdateEquipment() {
                     </div>
                   </div>
                 )}
+                <Modal
+                  show={showAddTypeModal}
+                  onHide={() => setShowAddTypeModal(false)}
+                  centered
+                >
 
+                  <Modal.Header closeButton>
+                    <Modal.Title>
+                      Thêm loại thiết bị
+                    </Modal.Title>
+                  </Modal.Header>
+
+                  <Modal.Body>
+
+                    <Form.Group>
+                      <Form.Label>Tên loại thiết bị</Form.Label>
+
+                      <Form.Control
+                        value={values.newEquipmentTypeName}
+                        onChange={(e) =>
+                          setFieldValue(
+                            "newEquipmentTypeName",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mt-3">
+                      <Form.Label>Mô tả</Form.Label>
+
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={values.newEquipmentTypeDescription}
+                        onChange={(e) =>
+                          setFieldValue(
+                            "newEquipmentTypeDescription",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </Form.Group>
+
+                  </Modal.Body>
+
+                  <Modal.Footer>
+
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+
+                        setFieldValue("newEquipmentTypeName", "");
+                        setFieldValue("newEquipmentTypeDescription", "");
+
+                        setShowAddTypeModal(false);
+
+                      }}
+                    >
+                      Hủy
+                    </Button>
+
+                    <Button
+                      variant="primary"
+                      onClick={async () => {
+
+                        if (!values.newEquipmentTypeName.trim()) {
+                          toast.error("Nhập tên loại thiết bị");
+                          return;
+                        }
+
+                        try {
+
+                          const res =
+                            await equipmentService.createEquipmentType({
+
+                              newEquipmentTypeName:
+                                values.newEquipmentTypeName,
+
+                              description:
+                                values.newEquipmentTypeDescription
+
+                            });
+
+                          const newType = {
+                            id: res.data.equipmentTypeId,
+                            name: res.data.newEquipmentTypeName,
+                            description: res.data.description
+                          };
+
+                          setEquipmentTypes(prev => [
+                            ...prev,
+                            newType
+                          ]);
+
+                          setFieldValue(
+                            "equipmentTypeId",
+                            String(newType.id)
+                          );
+
+                          setFieldValue(
+                            "newEquipmentTypeName",
+                            ""
+                          );
+
+                          setFieldValue(
+                            "newEquipmentTypeDescription",
+                            ""
+                          );
+
+                          setShowAddTypeModal(false);
+
+                          toast.success("Thêm loại thiết bị thành công");
+
+                        } catch (err) {
+
+                          toast.error(
+                            err.response?.data?.message ??
+                            "Không thể thêm loại thiết bị"
+                          );
+
+                        }
+
+                      }}
+                    >
+                      Chọn
+                    </Button>
+
+                  </Modal.Footer>
+
+                </Modal>
                 {/* Submit Actions */}
                 <div className="d-flex justify-content-end gap-3 mt-4 border-top pt-4">
                   <Button
