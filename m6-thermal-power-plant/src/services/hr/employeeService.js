@@ -15,4 +15,6 @@ export const employeeService = {
   getDepartments: () => apiClient.get(`${BASE_URL}/api/v1/employees/departments`),
   getExpertises: () => apiClient.get(`${BASE_URL}/api/v1/employees/expertises`),
   getPositions: () => apiClient.get(`${BASE_URL}/api/v1/employees/positions`),
+  createPosition: (data) => apiClient.post(`${API_URL}/positions`, data),
+  createExpertise: (data) => apiClient.post(`${API_URL}/expertises`, data),
 };
