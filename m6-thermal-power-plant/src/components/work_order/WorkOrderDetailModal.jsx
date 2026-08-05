@@ -28,13 +28,16 @@ const STATUS_MAP = {
 };
 
 /**
- * Gating theo vai trò (chỉ ở UI — backend không chặn, nhất quán các endpoint cũ):
- * - OPERATE: Tổ trưởng thao tác thành viên + gửi duyệt gia hạn.
+ * Gating theo vai trò (chỉ ở UI — backend chặn riêng ở từng endpoint):
+ * - MANAGE_MEMBER_ROLES: Quản đốc SC / Tổ trưởng thao tác thành viên (thêm/rời).
+ * - EXTEND_ROLES: Trưởng ca / Trưởng kíp gửi duyệt gia hạn (bước chuyển trạng
+ *   thái — khớp BE requireWorkOrderStatusRole = SHIFT_LEADER/CREW_LEADER).
  * Các bước chuyển trạng thái khác (duyệt phiếu, bắt đầu, tạm dừng, hoàn thành,
  * huỷ) và chỉnh sửa thông tin nằm ở DANH SÁCH PCT (WorkOrderStatusModal /
- * WorkOrderEditModal) — modal chi tiết chỉ giữ nút GIA HẠN theo yêu cầu.
+ * WorkOrderEditModal).
  */
-const OPERATE_ROLES = ['TEAM_LEADER', 'ADMIN'];
+const MANAGE_MEMBER_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
+const EXTEND_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
 
 /**
  * Lấy nguyên văn message lỗi backend trả về (GlobalExceptionHandler trả về
@@ -274,7 +277,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
 
   // Gating theo vai trò của tài khoản đang đăng nhập (chỉ ở UI).
   const userRoles = authService.getCurrentUser()?.roles || [];
-  const canOperate = userRoles.some((r) => OPERATE_ROLES.includes(r));
+  const canManageMembers = userRoles.some((r) => MANAGE_MEMBER_ROLES.includes(r));
+  const canExtend = userRoles.some((r) => EXTEND_ROLES.includes(r));
 
   const statusInfo = detail?.status ? STATUS_MAP[detail.status] || { label: detail.status, status: 'info' } : null;
 
@@ -301,7 +305,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     <Modal show={show} onHide={onClose} centered size="xl" scrollable dialogClassName="wo-detail-modal">
       <Modal.Header closeButton>
         <Modal.Title className="wo-detail-modal-title">
-          <BsCpu className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          <BsCpu className="me-2" style={{ color: 'var(--color-primary)' }} />
           <div>
             <span className="wo-detail-modal-title-main">
               Phiếu Công tác {detail?.orderCode}
@@ -405,13 +409,13 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                               key={m.id}
                               member={m}
                               isOnline={!m.leftAt}
-                              onLeave={canManage && !m.leftAt ? () => setLeaveTarget(m) : undefined}
+                              onLeave={canManage && canManageMembers && !m.leftAt ? () => setLeaveTarget(m) : undefined}
                             />
                           ))}
                         </div>
                       )}
                     </Tab>
-                    {canManage && (
+                    {canManage && canManageMembers && (
                       <Tab
                         eventKey="add"
                         title={<span><BsPersonPlus className="me-1" />Thêm thành viên</span>}
@@ -542,9 +546,9 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
             <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In PCT'}
           </Button>
         )}
-        {/* ===== GIA HẠN (nút duy nhất của modal chi tiết — các bước chuyển
-             trạng thái khác nằm ở modal "Cập nhật trạng thái" ngoài danh sách) ===== */}
-        {detail && canOperate && ['IN_PROGRESS', 'APPROVED', 'STOPPED'].includes(detail.status) && (
+        {/* ===== GIA HẠN (bước chuyển trạng thái — thuộc Trưởng ca/kíp;
+             các bước khác nằm ở modal "Cập nhật trạng thái" ngoài danh sách) ===== */}
+        {detail && canExtend && ['IN_PROGRESS', 'APPROVED', 'STOPPED'].includes(detail.status) && (
           <Button
             variant="outline-warning"
             size="sm"

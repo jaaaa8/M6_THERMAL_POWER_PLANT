@@ -14,7 +14,7 @@
   transition: background 0.15s;
 }
 
-.notif-bell-btn:hover { background: var(--bg-surface-hover); }
+.notif-bell-btn:hover { background: var(--color-surface-container); }
 
 .notif-bell-icon {
   font-size: 1.35rem;
@@ -22,7 +22,7 @@
 }
 
 .notif-bell-icon.ringing {
-  color: var(--color-primary-500);
+  color: var(--color-primary);
   animation: ring 1s ease-in-out;
 }
 
@@ -76,14 +76,14 @@
   color: var(--text-primary);
 }
 
-.notif-count-label { color: var(--color-primary-500); font-weight: normal; }
+.notif-count-label { color: var(--color-primary); font-weight: normal; }
 
 .notif-mark-all {
   background: none;
   border: none;
   cursor: pointer;
   font-size: var(--text-xs);
-  color: var(--color-primary-500);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -92,7 +92,7 @@
   transition: background 0.15s;
 }
 
-.notif-mark-all:hover { background: var(--bg-surface-hover); }
+.notif-mark-all:hover { background: var(--color-surface-container); }
 
 .notif-list {
   max-height: 380px;
@@ -117,14 +117,14 @@
 }
 
 .notif-item:last-child { border-bottom: none; }
-.notif-item:hover { background: var(--bg-surface-hover); }
-.notif-item.unread { background: color-mix(in srgb, var(--color-primary-500) 6%, transparent); }
+.notif-item:hover { background: var(--color-surface-container); }
+.notif-item.unread { background: color-mix(in srgb, var(--color-primary) 6%, transparent); }
 
 .notif-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-primary-500);
+  background: var(--color-primary);
   flex-shrink: 0;
   margin-top: 6px;
 }

@@ -35,8 +35,8 @@
 }
 
 .breadcrumb-link:hover {
-  color: var(--color-primary-600);
-  background: var(--bg-surface-hover);
+  color: var(--color-primary);
+  background: var(--color-surface-container);
 }
 
 .breadcrumb-separator {

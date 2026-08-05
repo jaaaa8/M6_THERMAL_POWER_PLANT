@@ -116,7 +116,7 @@ export default function MaterialInventoryStats({ stockList = [], materialType, o
                 <Col xs={12} sm={6} lg={3}>
                     <div className="stat-card surface-card p-3 d-flex align-items-center">
                         <div className="stat-card-icon me-3 d-flex align-items-center justify-content-center" 
-                             style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', background: 'var(--color-primary-50)', color: 'var(--color-primary-500)', fontSize: '1.4rem' }}>
+                             style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', background: 'var(--color-secondary-container)', color: 'var(--color-primary)', fontSize: '1.4rem' }}>
                             <BsTags />
                         </div>
                         <div>

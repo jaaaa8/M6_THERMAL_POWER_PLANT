@@ -63,9 +63,8 @@ export default function ToolList() {
                 categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
             });
             const toolPage = res.data?.data;
-            const list = toolPage?.content ?? toolPage ?? [];
-            // CCDC mới thêm (id lớn nhất) hiển thị lên đầu danh sách
-            setTools([...list].sort((a, b) => (b.id || 0) - (a.id || 0)));
+            // DataTable tự đưa bản ghi mới nhất lên đầu (newestFirst)
+            setTools(toolPage?.content ?? toolPage ?? []);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Không thể tải danh sách CCDC');
         } finally {
@@ -86,7 +85,7 @@ export default function ToolList() {
         const totalBorrowed = tools.reduce((sum, t) => sum + (t.quantityBorrowed || 0), 0);
         const totalDamaged = tools.reduce((sum, t) => sum + (t.quantityDamaged || 0), 0);
         return [
-            { key: 'types', label: 'Số đầu mục CCDC', value: tools.length, icon: <BsBoxSeam />, color: 'var(--color-primary-500)' },
+            { key: 'types', label: 'Số đầu mục CCDC', value: tools.length, icon: <BsBoxSeam />, color: 'var(--color-primary)' },
             { key: 'total', label: 'Tổng số lượng trong kho', value: totalQuantity, icon: <BsCheckCircle />, color: 'var(--color-status-normal)' },
             { key: 'borrowed', label: 'Đang được mượn', value: totalBorrowed, icon: <BsArrowLeftRight />, color: 'var(--color-status-info)' },
             { key: 'damaged', label: 'Hư hỏng / đã huỷ', value: totalDamaged, icon: <BsExclamationTriangle />, color: 'var(--color-status-danger)' },

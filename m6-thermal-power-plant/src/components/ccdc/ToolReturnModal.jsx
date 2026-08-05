@@ -19,12 +19,17 @@ export default function ToolReturnModal({ show, onClose, onSaved, log }) {
   // Số còn đang mượn (chưa giải quyết) = số mượn gốc - (đã trả tốt + đã báo hư)
   const remaining = log.quantity - (log.returnedQuantity || 0);
 
+  // Ô để trống → coi là 0 (tránh lỗi "phải là số" khi trả toàn hàng hư)
+  const emptyToZero = (val, orig) => (orig === '' || orig == null ? 0 : val);
+
   const validationSchema = Yup.object({
     returnQuantity: Yup.number()
+      .transform(emptyToZero)
       .typeError('Số lượng phải là số')
       .integer('Số lượng phải là số nguyên')
       .min(0, 'Không được âm'),
     damagedQuantity: Yup.number()
+      .transform(emptyToZero)
       .typeError('Số lượng phải là số')
       .integer('Số lượng phải là số nguyên')
       .min(0, 'Không được âm')
@@ -84,7 +89,7 @@ export default function ToolReturnModal({ show, onClose, onSaved, log }) {
               <div className="row g-3 mb-2">
                 <div className="col-6">
                   <label htmlFor="return-returnQuantity" className="form-label fw-semibold">
-                    Số trả 
+                    Số trả
                   </label>
                   <Field
                     id="return-returnQuantity"

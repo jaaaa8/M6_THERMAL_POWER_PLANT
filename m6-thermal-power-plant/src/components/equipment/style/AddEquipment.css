@@ -68,7 +68,12 @@
 }
 
 .preview-item {
+  width: 130px;
+  height: 130px;
   position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ddd;
 }
 
 .image-preview-img {

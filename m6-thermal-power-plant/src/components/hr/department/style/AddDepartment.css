@@ -5,7 +5,7 @@
 
 .department-form .form-label.required::after {
   content: " *";
-  color: var(--danger-color);
+  color: var(--color-status-danger);
 }
 
 .form-section-title {

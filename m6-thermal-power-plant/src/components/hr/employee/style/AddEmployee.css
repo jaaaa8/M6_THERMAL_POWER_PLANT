@@ -14,8 +14,8 @@
   width: 130px;
   height: 130px;
   border-radius: var(--radius-full);
-  border: 3px dashed var(--border-color-strong);
-  background: var(--bg-surface-hover);
+  border: 3px dashed var(--color-outline-variant);
+  background: var(--color-surface-container);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -27,14 +27,13 @@
 }
 
 .avatar-upload-circle:hover {
-  border-color: var(--color-primary-400);
+  border-color: var(--color-primary);
   background: var(--color-primary-50);
-  transform: scale(1.03);
 }
 
 .avatar-upload-circle.has-image {
   border-style: solid;
-  border-color: var(--color-primary-300);
+  border-color: var(--color-inverse-primary);
   border-width: 3px;
   padding: 0;
 }
@@ -83,7 +82,7 @@
 }
 
 .avatar-upload-circle:hover .avatar-upload-icon {
-  color: var(--color-primary-500);
+  color: var(--color-primary);
 }
 
 .avatar-upload-hint {
@@ -127,7 +126,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -171,7 +170,7 @@
 
 .form-section-title svg {
   font-size: var(--text-sm);
-  color: var(--color-primary-400);
+  color: var(--color-primary);
 }
 
 /* --- Field group enhancements --- */
@@ -211,7 +210,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-3);
-  background: var(--bg-surface-hover);
+  background: var(--color-surface-container);
 }
 
 .employee-form-footer .btn {
@@ -256,16 +255,16 @@
 }
 
 .status-radio-pill label:hover {
-  border-color: var(--color-primary-300);
+  border-color: var(--color-inverse-primary);
   background: var(--color-primary-50);
 }
 
 .status-radio-pill input:checked + label {
-  border-color: var(--color-primary-500);
+  border-color: var(--color-primary);
   background: var(--color-primary-50);
-  color: var(--color-primary-700);
+  color: var(--color-primary-container);
   font-weight: var(--font-semibold);
-  box-shadow: 0 0 0 3px rgba(62, 101, 162, 0.1);
+  box-shadow: var(--shadow-focus);
 }
 
 .status-dot {

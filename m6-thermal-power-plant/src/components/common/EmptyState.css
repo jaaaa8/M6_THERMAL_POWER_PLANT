@@ -11,22 +11,28 @@
 }
 
 .empty-state-icon {
-  font-size: 3rem;
-  color: var(--text-tertiary);
-  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container);
+  font-size: 1.75rem;
+  color: var(--color-outline);
   margin-bottom: var(--space-4);
 }
 
 .empty-state-title {
-  font-size: var(--text-md);
+  font-size: var(--text-headline-sm);
   font-weight: var(--font-semibold);
-  color: var(--text-secondary);
+  color: var(--color-on-surface-variant);
   margin: 0 0 var(--space-2);
 }
 
 .empty-state-message {
-  font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  font-size: var(--text-body-sm);
+  color: var(--color-outline);
   margin: 0;
   max-width: 360px;
 }

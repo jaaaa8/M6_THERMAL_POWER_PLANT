@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { tokenStore } from '../../services/apiClient';
-import { canAccess } from '../../services/roleService';
+import { hasAnyRole } from '../../services/roleService';
 
 /**
- * ProtectedRoute — Bảo vệ route theo authentication & phân quyền.
+ * ProtectedRoute — Bảo vệ route theo authentication & phân quyền theo ROLE.
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - Component con cần bảo vệ
- * @param {string[]} [props.allowedRoles] - Danh sách roles được phép (kiểm tra cứng)
- * @param {string} [props.requireFunction] - Mã chức năng cần quyền XEM (theo ma trận phân quyền)
+ * @param {string[]} [props.allowedRoles] - Danh sách role được phép (ADMIN luôn qua — xem roleService.hasAnyRole).
+ *                                          Bỏ trống = chỉ cần đăng nhập.
  */
-export default function ProtectedRoute({ children, allowedRoles, requireFunction }) {
+export default function ProtectedRoute({ children, allowedRoles }) {
   const [bootstrapped, setBootstrapped] = useState(() => !!authService.getCurrentUser());
   const hasToken = !!tokenStore.getAccess();
 
@@ -44,5 +44,12 @@ export default function ProtectedRoute({ children, allowedRoles, requireFunction
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
+
+  // Chặn thật sự nằm ở backend (@PreAuthorize) — đây là lớp UX, tránh việc
+  // gõ tay URL vẫn vào được trang rồi mới nhận lỗi 403 từ API.
+  if (!hasAnyRole(currentUser, allowedRoles)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
   return children;
 }

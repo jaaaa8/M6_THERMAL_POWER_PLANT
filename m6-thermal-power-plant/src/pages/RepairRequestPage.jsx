@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Table, Modal } from 'react-bootstrap';
 import {
   BsWrenchAdjustable, BsPlusLg, BsEye, BsTrash,
@@ -12,6 +12,7 @@ import StatusBadge from '../components/common/StatusBadge';
 import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ConfirmModal from '../components/common/ConfirmModal';
+import PaginationPanel from '../components/equipment/PaginationPanel';
 import CreateRequestModal from '../components/repair_request/CreateRequestModal';
 import CreateWorkOrderModal from '../components/repair_request/CreateWorkOrderModal';
 import {
@@ -22,22 +23,34 @@ import {
   PRIORITY_LABEL,
   PRIORITY_COLOR,
 } from '../services/repairRequestService';
+import { getApiErrorMessage } from '../services/apiError';
+import { authService } from '../services/authService';
 import './RepairRequestPage.css';
 
 const FILTER_PILLS = [
   { key: 'ALL', label: 'Tất cả' },
   { key: REQUEST_STATUS.PENDING, label: 'Chờ xử lý' },
+  { key: REQUEST_STATUS.APPROVED, label: 'Đã duyệt' },
   { key: REQUEST_STATUS.IN_PROGRESS, label: 'Đang xử lý' },
   { key: REQUEST_STATUS.COMPLETED, label: 'Hoàn thành' },
 ];
 
-function RequestDetailModal({ request, onClose }) {
+// Map key stats trả về từ backend cho từng pill (ALL/status).
+const STAT_KEY_BY_STATUS = {
+  ALL: 'total',
+  [REQUEST_STATUS.PENDING]: 'pending',
+  [REQUEST_STATUS.APPROVED]: 'approved',
+  [REQUEST_STATUS.IN_PROGRESS]: 'inProgress',
+  [REQUEST_STATUS.COMPLETED]: 'completed',
+};
+
+export function RequestDetailModal({ request, onClose }) {
   if (!request) return null;
   return (
     <Modal show={!!request} onHide={onClose} centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsCpu className="me-2" style={{ color: 'var(--color-primary-500)' }} />
+          <BsCpu className="me-2" style={{ color: 'var(--color-primary)' }} />
           Chi tiết yêu cầu {request.requestCode}
         </Modal.Title>
       </Modal.Header>
@@ -74,7 +87,7 @@ function RequestDetailModal({ request, onClose }) {
         </div>
         <div className="yc-detail-desc" style={{ marginTop: '1.5rem' }}>
           <span className="yc-detail-label text-muted d-block" style={{ fontSize: 'var(--text-xs)', marginBottom: '0.5rem' }}>Mô tả sự cố</span>
-          <p style={{ background: 'var(--bg-surface-hover)', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{request.incidentDescription}</p>
+          <p style={{ background: 'var(--color-surface-container)', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{request.incidentDescription}</p>
         </div>
       </Modal.Body>
       <Modal.Footer>
@@ -89,8 +102,33 @@ export default function RepairRequestPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // Vai trò: chỉ SL/CL mới tạo mới / xoá yêu cầu sửa chữa.
+  // MF/TL chỉ xem danh sách + tạo PCT từ request pending.
+  const userRoles = authService.getCurrentUser()?.roles || [];
+  const canManageRequest = userRoles.some((r) =>
+    ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'].includes(r)
+  );
+
+  // Vai trò: chỉ MF/TL mới tạo Phiếu công tác từ yêu cầu (khớp BE POST /api/v1/work-orders).
+  const canOperatePCT = userRoles.some((r) =>
+    ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'].includes(r)
+  );
+
+  // Phân trang server-side (0-based, khớp Spring Page)
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
+  // Bộ lọc
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterPriority, setFilterPriority] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Số liệu tổng hợp (đếm toàn bộ) cho stat cards + pill counts
+  const [stats, setStats] = useState({
+    total: 0, pending: 0, approved: 0, inProgress: 0, completed: 0, emergencyPending: 0,
+  });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailTarget, setDetailTarget] = useState(null);
@@ -98,84 +136,78 @@ export default function RepairRequestPage() {
   const [deleting, setDeleting] = useState(false);
   const [pctTarget, setPctTarget] = useState(null);
 
-  const loadRequests = useCallback(async () => {
+  const fetchData = useCallback(async (
+    status = filterStatus,
+    priority = filterPriority,
+    search = searchQuery,
+    pageNumber = page,
+    pageSize = size,
+  ) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await repairRequestService.getAll();
-      setRequests(res.data?.content || res.data || []);
-    } catch (err) {
+      const res = await repairRequestService.getList({
+        status: status === 'ALL' ? undefined : status,
+        priority: priority || undefined,
+        search,
+        page: pageNumber,
+        size: pageSize,
+      });
+      const d = res.data || {};
+      setRequests(d.content || []);
+      setTotalElements(d.totalElements ?? (d.page?.totalElements ?? 0));
+      setTotalPages(d.totalPages ?? (d.page?.totalPages ?? 0));
+      setPage(d.number ?? (d.page?.number ?? pageNumber));
+      setSize(d.size ?? (d.page?.size ?? pageSize));
+    } catch {
       setError('Không thể tải danh sách yêu cầu sửa chữa');
       toast.error('Lỗi tải dữ liệu');
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await repairRequestService.getStats();
+      setStats(res.data || {});
+    } catch {
+      // Không chặn UI nếu stats lỗi — danh sách vẫn dùng được.
+    }
   }, []);
 
   useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
+    fetchData('ALL', '', '', 0, size);
+    fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const pillCounts = useMemo(() => {
-    const counts = { ALL: requests.length };
-    FILTER_PILLS.forEach((p) => {
-      if (p.key !== 'ALL') {
-        counts[p.key] = requests.filter((r) => r.status === p.key).length;
-      }
-    });
-    return counts;
-  }, [requests]);
+  // Đổi bộ lọc → luôn quay về trang 0
+  const applyStatus = (status) => {
+    setFilterStatus(status);
+    fetchData(status, filterPriority, searchQuery, 0, size);
+  };
+  const applyPriority = (priority) => {
+    setFilterPriority(priority);
+    fetchData(filterStatus, priority, searchQuery, 0, size);
+  };
+  const applySearch = (q) => {
+    setSearchQuery(q);
+    fetchData(filterStatus, filterPriority, q, 0, size);
+  };
 
-  const stats = useMemo(() => {
-    const pending = requests.filter((r) => r.status === REQUEST_STATUS.PENDING);
-    return [
-      {
-        key: 'total',
-        label: 'Tổng yêu cầu',
-        value: requests.length,
-        icon: <BsListUl />,
-        color: 'var(--color-primary-500)',
-      },
-      {
-        key: 'pending',
-        label: 'Đang chờ xử lý',
-        value: pending.length,
-        icon: <BsHourglassSplit />,
-        color: 'var(--color-status-warning)',
-      },
-      {
-        key: 'in_progress',
-        label: 'Đang thực hiện',
-        value: requests.filter((r) => r.status === REQUEST_STATUS.IN_PROGRESS).length,
-        icon: <BsFileEarmarkCheck />,
-        color: 'var(--color-status-info)',
-      },
-      {
-        key: 'urgent',
-        label: 'Khẩn cấp (chờ xử lý)',
-        value: pending.filter((r) => r.priority === 'EMERGENCY').length,
-        icon: <BsLightningChargeFill />,
-        color: 'var(--color-status-danger)',
-      },
-    ];
-  }, [requests]);
+  const refresh = () => {
+    fetchData(filterStatus, filterPriority, searchQuery, page, size);
+    fetchStats();
+  };
 
-  const filteredRequests = useMemo(() => {
-    let result = requests;
-    if (filterStatus !== 'ALL') {
-      result = result.filter((r) => r.status === filterStatus);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (r) =>
-          (r.equipmentKksCode && r.equipmentKksCode.toLowerCase().includes(q)) ||
-          (r.equipmentName && r.equipmentName.toLowerCase().includes(q)) ||
-          (r.requestCode && r.requestCode.toLowerCase().includes(q))
-      );
-    }
-    return result;
-  }, [requests, filterStatus, searchQuery]);
+  const statCards = [
+    { key: 'total', label: 'Tổng yêu cầu', value: stats.total, icon: <BsListUl />, color: 'var(--color-primary)' },
+    { key: 'pending', label: 'Đang chờ xử lý', value: stats.pending, icon: <BsHourglassSplit />, color: 'var(--color-status-warning)' },
+    { key: 'in_progress', label: 'Đang thực hiện', value: stats.inProgress, icon: <BsFileEarmarkCheck />, color: 'var(--color-status-info)' },
+    { key: 'urgent', label: 'Khẩn cấp (chờ xử lý)', value: stats.emergencyPending, icon: <BsLightningChargeFill />, color: 'var(--color-status-danger)' },
+  ];
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -184,9 +216,9 @@ export default function RepairRequestPage() {
       await repairRequestService.remove(deleteTarget.id);
       toast.success('Xoá yêu cầu thành công!');
       setDeleteTarget(null);
-      loadRequests();
+      refresh();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể xoá yêu cầu');
+      toast.error(getApiErrorMessage(err, 'Không thể xoá yêu cầu'));
     } finally {
       setDeleting(false);
     }
@@ -194,7 +226,8 @@ export default function RepairRequestPage() {
 
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
-    loadRequests();
+    fetchData(filterStatus, filterPriority, searchQuery, 0, size);
+    fetchStats();
   };
 
   const formatDate = (dateStr) => {
@@ -212,18 +245,20 @@ export default function RepairRequestPage() {
         subtitle="Quản lý các yêu cầu sửa chữa thiết bị trong nhà máy"
         icon={<BsWrenchAdjustable />}
         actions={
-          <Button variant="primary" size="sm" onClick={() => setShowCreateModal(true)}>
-            <BsPlusLg className="me-1" /> Tạo mới
-          </Button>
+          canManageRequest && (
+            <Button variant="primary" size="sm" onClick={() => setShowCreateModal(true)}>
+              <BsPlusLg className="me-1" /> Tạo mới
+            </Button>
+          )
         }
       />
 
       <div className="rr-stats">
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <div key={s.key} className="rr-stat surface-card">
             <span className="rr-stat-icon" style={{ color: s.color }}>{s.icon}</span>
             <div className="rr-stat-body">
-              <span className="rr-stat-value">{s.value}</span>
+              <span className="rr-stat-value">{s.value ?? 0}</span>
               <span className="rr-stat-label">{s.label}</span>
             </div>
           </div>
@@ -236,10 +271,10 @@ export default function RepairRequestPage() {
             key={p.key}
             type="button"
             className={`rr-pill ${filterStatus === p.key ? 'active' : ''}`}
-            onClick={() => setFilterStatus(p.key)}
+            onClick={() => applyStatus(p.key)}
           >
             {p.label}
-            <span className="rr-pill-count">{pillCounts[p.key] ?? 0}</span>
+            <span className="rr-pill-count">{stats[STAT_KEY_BY_STATUS[p.key]] ?? 0}</span>
           </button>
         ))}
       </div>
@@ -249,14 +284,14 @@ export default function RepairRequestPage() {
           <SearchBox
             placeholder="Tìm theo mã YC, KKS hoặc tên thiết bị..."
             value={searchQuery}
-            onSearch={setSearchQuery}
+            onSearch={applySearch}
           />
         </div>
         <div className="rr-toolbar-right">
           <Form.Select
             size="sm"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => applyStatus(e.target.value)}
             className="rr-status-filter"
           >
             <option value="ALL">Tất cả trạng thái</option>
@@ -264,7 +299,18 @@ export default function RepairRequestPage() {
               <option key={key} value={key}>{label}</option>
             ))}
           </Form.Select>
-          <span className="rr-result-count">{filteredRequests.length} kết quả</span>
+          <Form.Select
+            size="sm"
+            value={filterPriority}
+            onChange={(e) => applyPriority(e.target.value)}
+            className="rr-status-filter"
+          >
+            <option value="">Tất cả mức độ</option>
+            {Object.entries(PRIORITY_LABEL).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </Form.Select>
+          <span className="rr-result-count">{totalElements} kết quả</span>
         </div>
       </div>
 
@@ -273,14 +319,14 @@ export default function RepairRequestPage() {
       ) : error ? (
         <div className="rr-error surface-card">
           <p className="text-danger">{error}</p>
-          <Button variant="outline-primary" size="sm" onClick={loadRequests}>Thử lại</Button>
+          <Button variant="outline-primary" size="sm" onClick={refresh}>Thử lại</Button>
         </div>
-      ) : filteredRequests.length === 0 ? (
+      ) : requests.length === 0 ? (
         <div className="surface-card" style={{ padding: 'var(--space-6)' }}>
           <EmptyState
             title="Không tìm thấy"
             message={
-              searchQuery || filterStatus !== 'ALL'
+              searchQuery || filterStatus !== 'ALL' || filterPriority
                 ? 'Không có yêu cầu nào phù hợp với bộ lọc'
                 : 'Chưa có yêu cầu sửa chữa nào. Bấm "Tạo mới" để bắt đầu.'
             }
@@ -302,7 +348,7 @@ export default function RepairRequestPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((req) => (
+                {requests.map((req) => (
                   <tr key={req.id}>
                     <td>
                       <code className="code-tag">{req.requestCode}</code>
@@ -340,7 +386,7 @@ export default function RepairRequestPage() {
                         >
                           <BsEye />
                         </button>
-                        {req.status === REQUEST_STATUS.PENDING && (
+                        {req.status === REQUEST_STATUS.PENDING && canOperatePCT && (
                           <button
                             className="btn btn-sm btn-outline-info"
                             onClick={() => setPctTarget(req)}
@@ -349,7 +395,7 @@ export default function RepairRequestPage() {
                             <BsFileEarmarkPlus />
                           </button>
                         )}
-                        {req.status === REQUEST_STATUS.PENDING && (
+                        {req.status === REQUEST_STATUS.PENDING && canManageRequest && (
                           <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => setDeleteTarget(req)}
@@ -365,6 +411,17 @@ export default function RepairRequestPage() {
               </tbody>
             </Table>
           </div>
+          <PaginationPanel
+            page={page}
+            size={size}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            onPageChange={(newPage) => fetchData(filterStatus, filterPriority, searchQuery, newPage, size)}
+            onSizeChange={(newSize) => {
+              setSize(newSize);
+              fetchData(filterStatus, filterPriority, searchQuery, 0, newSize);
+            }}
+          />
         </div>
       )}
 
@@ -399,7 +456,7 @@ export default function RepairRequestPage() {
         onClose={() => setPctTarget(null)}
         onCreated={() => {
           setPctTarget(null);
-          loadRequests();
+          refresh();
         }}
       />
     </div>

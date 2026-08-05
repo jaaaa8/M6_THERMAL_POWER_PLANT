@@ -1,46 +1,53 @@
-.repair-history-card {
-    border: none;
-    border-radius: 16px;
+/* ============================================================
+   Repair History — Industrial Blue
+   Đồng bộ style với RepairRequest, WorkOrder pages
+   ============================================================ */
+
+/* --- Table Wrapper --- */
+.rh-table-wrapper {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
-.history-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
+/* --- Toolbar --- */
+.rh-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-container-low);
 }
 
-.history-header svg {
-    font-size: 24px;
-    color: #0d6efd;
+.rh-result-count {
+  font-size: var(--text-label-sm);
+  color: var(--color-outline);
+  white-space: nowrap;
 }
 
-.history-header h4 {
-    margin: 0;
-    font-weight: 600;
+/* --- Order Code Badge --- */
+.rh-order-badge {
+  background: var(--color-secondary-container) !important;
+  color: var(--color-primary) !important;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-label-sm);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono);
 }
 
-.history-table {
-    border-radius: 12px;
-    overflow: hidden;
+/* --- Detail Table (Modal) --- */
+.rh-detail-table th {
+  background: var(--color-surface-container-low);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-body-sm);
+  white-space: nowrap;
 }
 
-.history-table thead th {
-    background: linear-gradient(135deg,
-            #0d6efd,
-            #0b5ed7);
-
-    color: white;
-    border: none;
-    text-align: center;
-    font-weight: 600;
-    padding: 14px;
-}
-
-.history-table tbody td {
-    vertical-align: middle;
-}
-
-.history-table tbody tr:hover {
-    background: #f8f9fa;
+.rh-detail-table td {
+  font-size: var(--text-body-sm);
 }

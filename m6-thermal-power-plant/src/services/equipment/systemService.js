@@ -17,6 +17,8 @@ export const getAllSystems = (
     },
   });
 
+export const getAll = getAllSystems;
+
 export const getById = (id) =>
   apiClient.get(`${SYSTEM_URL}/${id}`);
 

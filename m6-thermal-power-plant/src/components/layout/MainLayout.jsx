@@ -31,7 +31,7 @@ export default function MainLayout() {
 
         <main className="main-content">
           <AppBreadcrumb />
-          <div className="main-content-inner">
+          <div className="main-content-inner page-transition">
             <Outlet />
           </div>
         </main>
