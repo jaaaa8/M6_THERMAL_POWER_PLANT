@@ -49,3 +49,5 @@ export const update = (id, formData) =>
       },
     }
   );
+export const createEquipmentType = (data) =>
+  apiClient.post(TYPE_URL, data);
