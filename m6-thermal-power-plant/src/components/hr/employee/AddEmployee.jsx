@@ -15,6 +15,7 @@ import {
   BsCamera,
 } from 'react-icons/bs';
 import { employeeService } from '../../../services/hr/employeeService';
+import { departmentService } from '../../../services/hr/departmentService';
 import './style/AddEmployee.css';
 
 /* ============================================================
@@ -46,6 +47,9 @@ const validationSchema = Yup.object({
   positionId: Yup.string()
     .required('Vui lòng chọn chức vụ'),
 
+  isActive: Yup.string()
+    .required('Vui lòng chọn trạng thái làm việc'),
+
 });
 
 const INITIAL_VALUES = {
@@ -56,6 +60,7 @@ const INITIAL_VALUES = {
   departmentId: '',
   expertiseId: '',
   positionId: '',
+  isActive: 'ACTIVE',
 };
 
 function ImageCropModal({ show, imageSrc, onClose, onCropComplete }) {
@@ -227,6 +232,180 @@ function ImageCropModal({ show, imageSrc, onClose, onCropComplete }) {
     </Modal>
   );
 }
+const dataURLtoFile = (dataurl, filename) => {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
+
+const AddDepartmentModal = ({ show, onClose, onSave }) => {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!code.trim() || !name.trim()) {
+      toast.error('Mã và tên phòng ban không được để trống');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await departmentService.create({
+        maPhongBan: code,
+        tenPhongBan: name,
+        moTa: description
+      });
+      const newDept = res.data?.data || res.data;
+      toast.success('Thêm phòng ban thành công');
+      onSave(newDept);
+      onClose();
+      setCode('');
+      setName('');
+      setDescription('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Lỗi thêm phòng ban');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal show={show} onHide={onClose} centered backdrop="static">
+      <Modal.Header closeButton>
+        <Modal.Title className="fs-5 fw-bold text-primary">Thêm phòng ban mới</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Mã phòng ban <span className="text-danger">*</span></BsForm.Label>
+          <BsForm.Control value={code} onChange={e => setCode(e.target.value)} placeholder="VD: OPERATIONS" />
+        </BsForm.Group>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Tên phòng ban <span className="text-danger">*</span></BsForm.Label>
+          <BsForm.Control value={name} onChange={e => setName(e.target.value)} placeholder="VD: Phòng vận hành" />
+        </BsForm.Group>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Mô tả</BsForm.Label>
+          <BsForm.Control as="textarea" rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Nhập mô tả..." />
+        </BsForm.Group>
+      </Modal.Body>
+      <Modal.Footer className="border-0">
+        <Button variant="outline-secondary" onClick={onClose} disabled={saving} className="px-4">Hủy</Button>
+        <Button variant="primary" onClick={handleSave} disabled={saving} className="px-4">{saving ? 'Đang lưu...' : 'Lưu'}</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
+
+const AddExpertiseModal = ({ show, onClose, onSave }) => {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!code.trim() || !name.trim()) {
+      toast.error('Mã và tên chuyên môn không được để trống');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await employeeService.createExpertise({
+        expertiseCode: code,
+        name: name
+      });
+      const newExp = res.data?.data || res.data;
+      toast.success('Thêm chuyên môn thành công');
+      onSave(newExp);
+      onClose();
+      setCode('');
+      setName('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Lỗi thêm chuyên môn');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal show={show} onHide={onClose} centered backdrop="static">
+      <Modal.Header closeButton>
+        <Modal.Title className="fs-5 fw-bold text-primary">Thêm chuyên môn mới</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Mã chuyên môn <span className="text-danger">*</span></BsForm.Label>
+          <BsForm.Control value={code} onChange={e => setCode(e.target.value)} placeholder="VD: BOILER_OP" />
+        </BsForm.Group>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Tên chuyên môn <span className="text-danger">*</span></BsForm.Label>
+          <BsForm.Control value={name} onChange={e => setName(e.target.value)} placeholder="VD: Vận hành lò hơi" />
+        </BsForm.Group>
+      </Modal.Body>
+      <Modal.Footer className="border-0">
+        <Button variant="outline-secondary" onClick={onClose} disabled={saving} className="px-4">Hủy</Button>
+        <Button variant="primary" onClick={handleSave} disabled={saving} className="px-4">{saving ? 'Đang lưu...' : 'Lưu'}</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
+
+const AddPositionModal = ({ show, onClose, onSave }) => {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!code.trim() || !name.trim()) {
+      toast.error('Mã và tên chức vụ không được để trống');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await employeeService.createPosition({
+        positionCode: code,
+        name: name
+      });
+      const newPos = res.data?.data || res.data;
+      toast.success('Thêm chức vụ thành công');
+      onSave(newPos);
+      onClose();
+      setCode('');
+      setName('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Lỗi thêm chức vụ');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal show={show} onHide={onClose} centered backdrop="static">
+      <Modal.Header closeButton>
+        <Modal.Title className="fs-5 fw-bold text-primary">Thêm chức vụ mới</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Mã chức vụ <span className="text-danger">*</span></BsForm.Label>
+          <BsForm.Control value={code} onChange={e => setCode(e.target.value)} placeholder="VD: WORKER" />
+        </BsForm.Group>
+        <BsForm.Group className="mb-3">
+          <BsForm.Label className="fs-7 fw-semibold text-secondary">Tên chức vụ <span className="text-danger">*</span></BsForm.Label>
+          <BsForm.Control value={name} onChange={e => setName(e.target.value)} placeholder="VD: Công nhân" />
+        </BsForm.Group>
+      </Modal.Body>
+      <Modal.Footer className="border-0">
+        <Button variant="outline-secondary" onClick={onClose} disabled={saving} className="px-4">Hủy</Button>
+        <Button variant="primary" onClick={handleSave} disabled={saving} className="px-4">{saving ? 'Đang lưu...' : 'Lưu'}</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
 
 export default function AddEmployee({
   onSuccess,
@@ -240,6 +419,9 @@ export default function AddEmployee({
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [deptModalOpen, setDeptModalOpen] = useState(false);
+  const [expModalOpen, setExpModalOpen] = useState(false);
+  const [posModalOpen, setPosModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -260,21 +442,34 @@ export default function AddEmployee({
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      const payload = {
+      const formData = new FormData();
+      
+      const employeeData = {
         fullName: values.fullName,
         gmail: values.gmail,
-        imgPath: values.imgPath || '',
+        imgPath: values.imgPath && !values.imgPath.startsWith('data:image/') ? values.imgPath : '',
         phone: values.phone,
         departmentId: parseInt(values.departmentId),
         expertiseId: parseInt(values.expertiseId),
-        positionId: parseInt(values.positionId)
+        positionId: parseInt(values.positionId),
+        isActive: values.isActive
       };
 
+      formData.append(
+        "employee",
+        new Blob([JSON.stringify(employeeData)], { type: "application/json" })
+      );
+
+      if (values.imgPath && values.imgPath.startsWith('data:image/')) {
+        const file = dataURLtoFile(values.imgPath, 'avatar.jpg');
+        formData.append("image", file);
+      }
+
       if (isEdit && initialData?.id) {
-        await employeeService.update(initialData.id, payload);
+        await employeeService.update(initialData.id, formData);
         toast.success('Cập nhật nhân sự thành công!');
       } else {
-        await employeeService.create(payload);
+        await employeeService.create(formData);
         toast.success('Thêm mới nhân sự thành công!');
       }
 
@@ -304,6 +499,7 @@ export default function AddEmployee({
         departmentId: initialData.department?.id || '',
         expertiseId: initialData.expertise?.id || '',
         positionId: initialData.position?.id || '',
+        isActive: initialData.isActive || 'ACTIVE',
       }
     : INITIAL_VALUES;
 
@@ -464,9 +660,20 @@ export default function AddEmployee({
                       touched.departmentId && errors.departmentId ? 'is-invalid' : ''
                     }`}
                     disabled={loadingOptions}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'CREATE_NEW') {
+                        setDeptModalOpen(true);
+                      } else {
+                        setFieldValue('departmentId', val);
+                      }
+                    }}
                   >
                     <option value="">
                       {loadingOptions ? 'Đang tải...' : '— Chọn phòng ban —'}
+                    </option>
+                    <option value="CREATE_NEW" style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                      + Thêm phòng ban mới
                     </option>
                     {departments.map((pb) => (
                       <option key={pb.id} value={pb.id}>
@@ -493,9 +700,20 @@ export default function AddEmployee({
                       touched.expertiseId && errors.expertiseId ? 'is-invalid' : ''
                     }`}
                     disabled={loadingOptions}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'CREATE_NEW') {
+                        setExpModalOpen(true);
+                      } else {
+                        setFieldValue('expertiseId', val);
+                      }
+                    }}
                   >
                     <option value="">
                       {loadingOptions ? 'Đang tải...' : '— Chọn chuyên môn —'}
+                    </option>
+                    <option value="CREATE_NEW" style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                      + Thêm chuyên môn mới
                     </option>
                     {expertises.map((exp) => (
                       <option key={exp.id} value={exp.id}>
@@ -524,9 +742,20 @@ export default function AddEmployee({
                       touched.positionId && errors.positionId ? 'is-invalid' : ''
                     }`}
                     disabled={loadingOptions}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'CREATE_NEW') {
+                        setPosModalOpen(true);
+                      } else {
+                        setFieldValue('positionId', val);
+                      }
+                    }}
                   >
                     <option value="">
                       {loadingOptions ? 'Đang tải...' : '— Chọn chức vụ —'}
+                    </option>
+                    <option value="CREATE_NEW" style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                      + Thêm chức vụ mới
                     </option>
                     {positions.map((pos) => (
                       <option key={pos.id} value={pos.id}>
@@ -536,6 +765,29 @@ export default function AddEmployee({
                   </Field>
                   <ErrorMessage
                     name="positionId"
+                    component="div"
+                    className="invalid-feedback"
+                  />
+                </Col>
+
+                <Col md={6}>
+                  <label htmlFor="isActive" className="form-label">
+                    Trạng thái làm việc <span className="required-asterisk">*</span>
+                  </label>
+                  <Field
+                    as="select"
+                    id="isActive"
+                    name="isActive"
+                    className={`form-select ${
+                      touched.isActive && errors.isActive ? 'is-invalid' : ''
+                    }`}
+                  >
+                    <option value="ACTIVE">Đang làm việc</option>
+                    <option value="ON_LEAVE">Nghỉ phép</option>
+                    <option value="INACTIVE">Nghỉ việc</option>
+                  </Field>
+                  <ErrorMessage
+                    name="isActive"
                     component="div"
                     className="invalid-feedback"
                   />
@@ -592,6 +844,33 @@ export default function AddEmployee({
                 setFieldValue('imgPath', croppedDataUrl);
                 setCropModalOpen(false);
                 setSelectedImage(null);
+              }}
+            />
+
+            <AddDepartmentModal
+              show={deptModalOpen}
+              onClose={() => setDeptModalOpen(false)}
+              onSave={(newDept) => {
+                setDepartments(prev => [newDept, ...prev]);
+                setFieldValue('departmentId', newDept.id.toString());
+              }}
+            />
+
+            <AddExpertiseModal
+              show={expModalOpen}
+              onClose={() => setExpModalOpen(false)}
+              onSave={(newExp) => {
+                setExpertises(prev => [newExp, ...prev]);
+                setFieldValue('expertiseId', newExp.id.toString());
+              }}
+            />
+
+            <AddPositionModal
+              show={posModalOpen}
+              onClose={() => setPosModalOpen(false)}
+              onSave={(newPos) => {
+                setPositions(prev => [newPos, ...prev]);
+                setFieldValue('positionId', newPos.id.toString());
               }}
             />
           </Form>

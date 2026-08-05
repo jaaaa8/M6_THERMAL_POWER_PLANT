@@ -246,7 +246,17 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
         {/* Footer — User info */}
         <div className="sidebar-footer">
           <div className="sidebar-footer-user">
-            <div className="sidebar-footer-avatar">{userInitials || 'U'}</div>
+            <div className="sidebar-footer-avatar">
+              {currentUser?.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl.startsWith('http') ? currentUser.avatarUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${currentUser.avatarUrl}`}
+                  alt="Avatar"
+                  className="sidebar-avatar-img"
+                />
+              ) : (
+                userInitials || 'U'
+              )}
+            </div>
             <div className="sidebar-footer-info">
               <div className="name">{userName}</div>
               <div className="role">{roleLabel}</div>
