@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import {
-  BsArrowRepeat, BsXCircle, BsPenFill, BsPlayCircle, BsPauseCircle,
-  BsCheckCircle, BsSendCheck, BsTrash,
+  BsArrowRepeat, BsXCircle, BsPlayCircle, BsPauseCircle,
+  BsCheckCircle, BsTrash,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import StatusBadge from '../common/StatusBadge';
-import { workOrderService, nextExtensionDate } from '../../services/workOrderService';
+import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
+import { OPERATE_ROLES, CANCEL_ROLES, canCancel } from './workOrderPermissions';
 
 /**
  * WorkOrderStatusModal — modal "Cập nhật trạng thái" mở từ danh sách PCT.
  * Hiện trạng thái hiện tại + các bước chuyển hợp lệ (lọc theo vai trò, gating
- * chỉ ở UI như các nút cũ) theo máy trạng thái:
+ * chỉ ở UI — backend chặn thật) theo máy trạng thái:
  *
- *   Chờ duyệt (OPEN) ─duyệt phiếu─► APPROVED ─bắt đầu─► IN_PROGRESS
- *   IN_PROGRESS ─làm không kịp─► STOPPED ─gửi duyệt gia hạn─►
- *   WAITING_FOR_APPROVAL ─duyệt gia hạn (ký bản giấy)─► APPROVED ─► ...
- *   ─► COMPLETED; mọi trạng thái sống ─huỷ─► CANCELLED.
+ *   Tạm dừng (STOPPED) ─mở phiếu ngày─► IN_PROGRESS ─khoá phiếu ngày─► STOPPED
+ *                                             └─khoá phiếu hoàn thành─► COMPLETED
+ *   STOPPED ─huỷ (chưa chạy ngày nào, đúng người tạo)─► CANCELLED.
  *
  * @param {boolean} props.show
  * @param {object}  props.workOrder - Dòng WorkOrderDTO từ danh sách
@@ -26,84 +26,43 @@ import { authService } from '../../services/authService';
  */
 
 const STATUS_MAP = {
-  OPEN: { label: 'Chờ duyệt', status: 'info' },
   IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
-  WAITING_FOR_APPROVAL: { label: 'Chờ duyệt gia hạn', status: 'warning' },
-  APPROVED: { label: 'Đã duyệt', status: 'info' },
   STOPPED: { label: 'Tạm dừng', status: 'inactive' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
 
-/** "2026-07-24" -> "24/07/2026" (ngày trần, không dựng Date để khỏi lệch múi giờ). */
-function toDmy(isoDate) {
-  if (!isoDate) return '—';
-  const [y, m, d] = String(isoDate).split('-');
-  return d && m && y ? `${d}/${m}/${y}` : String(isoDate);
-}
-
-const OPERATE_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
-const APPROVE_ROLES = ['SHIFT_LEADER', 'WORKSHOP_FOREMAN', 'ADMIN'];
-
 /**
  * Bảng chuyển trạng thái: option hiển thị theo trạng thái hiện tại.
- * roles: nhóm được bấm (gating UI); needsExtension: bắt buộc lý do (tạo dòng
- * gia hạn in lên bản giấy PCT đưa Trưởng ca ký); needsAllowedDate: Trưởng ca
- * chốt NGÀY cho phép làm tiếp khi duyệt.
+ * roles: nhóm được bấm (gating UI); allowsNote: hiện ô ghi chú (không bắt buộc).
  */
 const TRANSITIONS = {
-  OPEN: [
-    {
-      target: 'APPROVED', roles: APPROVE_ROLES, icon: <BsPenFill />, variant: 'warning',
-      label: 'Duyệt phiếu',
-      desc: 'Trưởng ca / Quản đốc duyệt, cho phép thực hiện công tác.',
-    },
-  ],
-  APPROVED: [
+  STOPPED: [
     {
       target: 'IN_PROGRESS', roles: OPERATE_ROLES, icon: <BsPlayCircle />, variant: 'primary',
-      label: 'Bắt đầu / tiếp tục làm việc',
-      desc: 'Trưởng ca/kíp mở phiếu cho đội bắt đầu (hoặc làm tiếp sau gia hạn).',
+      label: 'Mở phiếu ngày',
+      desc: 'Cho đội vào làm hôm nay — lần mở đầu tiên chính là bắt đầu phiếu.',
     },
   ],
   IN_PROGRESS: [
     {
-      target: 'COMPLETED', roles: OPERATE_ROLES, icon: <BsCheckCircle />, variant: 'success',
-      label: 'Hoàn thành',
-      desc: 'Toàn bộ công việc đã kết thúc — phiếu chốt sổ, không mở lại được.',
-    },
-    {
       target: 'STOPPED', roles: OPERATE_ROLES, icon: <BsPauseCircle />, variant: 'secondary',
-      label: 'Tạm dừng (làm không kịp)',
-      desc: 'Hết ngày / không kịp tiến độ — dừng lại, hôm sau gửi duyệt gia hạn.',
-    },
-  ],
-  STOPPED: [
-    {
-      target: 'WAITING_FOR_APPROVAL', roles: OPERATE_ROLES, icon: <BsSendCheck />, variant: 'warning',
-      label: 'Gửi duyệt gia hạn', needsExtension: true,
-      desc: 'Xin phép làm tiếp — lý do được in lên bản giấy PCT đưa Trưởng ca ký, Trưởng ca chọn ngày khi duyệt.',
+      label: 'Khoá phiếu ngày', allowsNote: true,
+      desc: 'Hết ngày mà chưa xong việc — đóng ngày công tác, hôm sau mở lại.',
     },
     {
       target: 'COMPLETED', roles: OPERATE_ROLES, icon: <BsCheckCircle />, variant: 'success',
-      label: 'Hoàn thành',
-      desc: 'Nghiệm lại thấy công việc đã xong — chốt sổ luôn, không cần gia hạn.',
-    },
-  ],
-  WAITING_FOR_APPROVAL: [
-    {
-      target: 'APPROVED', roles: APPROVE_ROLES, icon: <BsPenFill />, variant: 'warning',
-      label: 'Duyệt gia hạn (Trưởng ca đã ký bản giấy)', needsAllowedDate: true,
-      desc: 'Chỉ bấm khi ĐANG CẦM bản giấy có chữ ký — tài khoản của bạn được ghi vào mục "Người cho phép".',
+      label: 'Khoá phiếu hoàn thành',
+      desc: 'Công việc sửa chữa đã xong — phiếu chốt sổ, không mở lại được.',
     },
   ],
   COMPLETED: [],
   CANCELLED: [],
 };
 
-// Huỷ phiếu được phép từ mọi trạng thái sống (thêm vào cuối mỗi danh sách).
+// Huỷ phiếu chỉ hiện khi phiếu CHƯA chạy ngày nào (xem canCancel bên dưới).
 const CANCEL_OPTION = {
-  target: 'CANCELLED', roles: OPERATE_ROLES, icon: <BsTrash />, variant: 'danger',
+  target: 'CANCELLED', roles: CANCEL_ROLES, icon: <BsTrash />, variant: 'danger',
   label: 'Huỷ phiếu',
   desc: 'Huỷ VĨNH VIỄN — yêu cầu sửa chữa quay lại hàng chờ để tạo phiếu mới.',
 };
@@ -112,58 +71,52 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
   // Parent truyền key={workOrder.id} → mỗi phiếu là một instance mới, state
   // tự sạch khi đổi dòng (không cần reset trong effect).
   const [selected, setSelected] = useState(null); // target status đã chọn
-  const [reason, setReason] = useState('');
-  // Ngày Trưởng ca cho phép làm tiếp — mặc định NGÀY MAI (mỗi lần gia hạn chỉ
-  // kéo dài 1 ngày), Trưởng ca đổi được sang ngày xa hơn nếu chưa cô lập xong.
-  const [allowedDate, setAllowedDate] = useState(
-    () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-  );
-  const today = new Date().toISOString().slice(0, 10);
+  const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
-
-  // Ngày làm tiếp suy ra từ lịch sử gia hạn, mà danh sách KHÔNG trả extensions
-  // -> phải lấy chi tiết. Chỉ cần ở 2 bước có dính tới ngày.
-  useEffect(() => {
-    const st = workOrder?.status;
-    if (!show || !workOrder?.id || !['STOPPED', 'WAITING_FOR_APPROVAL'].includes(st)) return undefined;
-    let cancelled = false;
-    workOrderService.getById(workOrder.id)
-      .then((res) => {
-        if (cancelled) return;
-        const computed = nextExtensionDate(res.data?.workOrder?.startTime, res.data?.extensions);
-        if (computed) setAllowedDate(computed);
-      })
-      .catch(() => { /* không lấy được thì giữ mặc định ngày mai */ });
-    return () => { cancelled = true; };
-  }, [show, workOrder?.id, workOrder?.status]);
+  // Phiếu đã chạy ngày công tác nào chưa — danh sách KHÔNG trả nhật ký ngày nên
+  // phải lấy chi tiết. Chỉ cần khi đang cân nhắc hiện nút Huỷ.
+  const [ranAWorkDay, setRanAWorkDay] = useState(false);
 
   const userRoles = authService.getCurrentUser()?.roles || [];
   const status = workOrder?.status;
   const isTerminal = status === 'COMPLETED' || status === 'CANCELLED';
+  const cancellable = canCancel(workOrder, userRoles);
+
+  useEffect(() => {
+    if (!show || !cancellable || !workOrder?.id) return undefined;
+    let ignore = false;
+    workOrderService.getById(workOrder.id)
+      .then((res) => {
+        if (!ignore) setRanAWorkDay((res.data?.extensions || []).length > 0);
+      })
+      // Không lấy được thì cứ hiện nút — backend vẫn chặn bằng 409.
+      .catch(() => { /* bỏ qua */ });
+    return () => { ignore = true; };
+  }, [show, cancellable, workOrder?.id]);
 
   // Option theo trạng thái + lọc theo vai trò người đang đăng nhập.
-  const options = [...(TRANSITIONS[status] || []), ...(isTerminal ? [] : [CANCEL_OPTION])]
+  const options = [...(TRANSITIONS[status] || []), ...(cancellable && !ranAWorkDay ? [CANCEL_OPTION] : [])]
     .filter((o) => o.roles.some((r) => userRoles.includes(r)));
 
   const selectedOption = options.find((o) => o.target === selected);
 
   const submit = async () => {
     if (!selectedOption) return;
-    if (selectedOption.needsExtension && !reason.trim()) {
-      toast.warning('Phải nhập lý do — lý do được in lên bản giấy đưa Trưởng ca ký');
-      return;
-    }
-    if (selectedOption.needsAllowedDate && !allowedDate) {
-      toast.warning('Phải chọn ngày cho phép tiếp tục làm việc');
-      return;
-    }
     setSaving(true);
     try {
-      await workOrderService.updateStatus(workOrder.id, {
-        targetStatus: selectedOption.target,
-        reason: selectedOption.needsExtension ? reason.trim() : null,
-        allowedDate: selectedOption.needsAllowedDate ? allowedDate : null,
-      });
+      // Huỷ phiếu đi CỔNG RIÊNG /cancel, không dùng /status: BE gate /status cho
+      // Trưởng ca / Trưởng kíp nên Tổ trưởng gọi vào là 403 ngay ở controller,
+      // chưa kịp tới nhánh CANCELLED trong service. Đừng "sửa" bằng cách nới
+      // @PreAuthorize của /status — làm vậy là cho Tổ trưởng mở/khoá phiếu ngày
+      // luôn, vì các nhánh đó không kiểm role lại ở service.
+      if (selectedOption.target === 'CANCELLED') {
+        await workOrderService.cancel(workOrder.id);
+      } else {
+        await workOrderService.updateStatus(workOrder.id, {
+          targetStatus: selectedOption.target,
+          reason: selectedOption.allowsNote ? (note.trim() || null) : null,
+        });
+      }
       toast.success(`${workOrder.orderCode}: ${STATUS_MAP[status]?.label || status} → ${STATUS_MAP[selectedOption.target]?.label || selectedOption.target}`);
       onClose();
       onChanged?.();
@@ -201,8 +154,9 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
           </div>
         ) : options.length === 0 ? (
           <div className="alert alert-secondary" style={{ fontSize: 'var(--text-sm)' }}>
-            Tài khoản của bạn không có quyền chuyển trạng thái phiếu — chỉ
-            Trưởng ca / Trưởng kíp (hoặc Admin) được duyệt, mở/đóng, khoá phiếu.
+            Tài khoản của bạn không có quyền chuyển trạng thái phiếu — chỉ Trưởng ca /
+            Trưởng kíp được mở và khoá phiếu ngày. Huỷ phiếu thì phải đúng người
+            cấp phiếu, và chỉ khi phiếu chưa chạy ngày công tác nào.
           </div>
         ) : (
           <>
@@ -239,56 +193,23 @@ export default function WorkOrderStatusModal({ show, workOrder, onClose, onChang
               />
             ))}
 
-            {/* Lý do — chỉ khi Tổ trưởng gửi duyệt gia hạn (KHÔNG chọn ngày ở
-                bước này: ngày làm tiếp do Trưởng ca chốt lúc duyệt). */}
-            {selectedOption?.needsExtension && (
+            {/* Ghi chú — chỉ khi khoá phiếu ngày, và KHÔNG bắt buộc. */}
+            {selectedOption?.allowsNote && (
               <div className="mt-3 p-3 border rounded" style={{ background: 'var(--color-surface-container)' }}>
-                <Form.Group className="mb-3">
+                <Form.Group>
                   <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                    Lý do gia hạn / xin làm tiếp <span className="text-danger">*</span>
+                    Ghi chú
                   </Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={2}
-                    placeholder="VD: Khối lượng còn lại nhiều, xin tiếp tục ngày mai..."
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                </Form.Group>
-                <Form.Group className="mt-3">
-                  <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                    Xin làm việc ngày
-                  </Form.Label>
-                  {/* Hiển thị bằng CHỮ, không dùng input disabled: input bị khoá
-                      trên nền tối bạc màu gần như không đọc được. */}
-                  <div style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-                    {toDmy(allowedDate)}
-                  </div>
-                  <Form.Text muted style={{ fontSize: 'var(--text-xs)' }}>
-                    Mỗi lần gia hạn chỉ kéo dài 1 ngày nên ngày này tự suy ra (hôm sau
-                    ngày làm việc gần nhất). Ngày được làm tiếp do Trưởng ca chốt khi duyệt.
-                  </Form.Text>
-                </Form.Group>
-              </div>
-            )}
-
-            {/* Ngày cho phép làm tiếp — chỉ khi Trưởng ca duyệt gia hạn */}
-            {selectedOption?.needsAllowedDate && (
-              <div className="mt-3 p-3 border rounded" style={{ background: 'var(--bg-secondary)' }}>
-                <Form.Group>
-                  <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-                    Ngày cho phép tiếp tục làm việc <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    type="date"
-                    min={today}
-                    value={allowedDate}
-                    onChange={(e) => setAllowedDate(e.target.value)}
+                    placeholder="VD: Khối lượng còn lại nhiều, mai làm tiếp..."
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
                   />
                   <Form.Text muted style={{ fontSize: 'var(--text-xs)' }}>
-                    Mặc định là ngày Tổ trưởng xin (hôm sau ngày làm việc gần nhất).
-                    Chọn xa hơn nếu chưa cô lập được thiết bị — ngày này được in vào
-                    bảng gia hạn trên bản giấy PCT.
+                    Không bắt buộc. Nếu có nhập, ghi chú được in vào bảng công tác
+                    hàng ngày trên bản giấy PCT.
                   </Form.Text>
                 </Form.Group>
               </div>

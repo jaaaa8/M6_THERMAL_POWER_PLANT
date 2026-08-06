@@ -14,6 +14,7 @@ import EmptyState from '../common/EmptyState';
 import WorkOrderDetailModal from './WorkOrderDetailModal';
 import WorkOrderEditModal from './WorkOrderEditModal';
 import WorkOrderStatusModal from './WorkOrderStatusModal';
+import { canCancel } from './workOrderPermissions';
 import SuppliesIssueModal from './SuppliesIssueModal';
 import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
@@ -24,11 +25,8 @@ import './WorkOrderList.css';
    MAP — Trạng thái PCT
    ============================================================ */
 const TRANG_THAI_MAP = {
-  OPEN: { label: 'Chờ duyệt', status: 'info' },
-  IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
-  WAITING_FOR_APPROVAL: { label: 'Chờ duyệt gia hạn', status: 'warning' },
-  APPROVED: { label: 'Đã duyệt', status: 'info' },
   STOPPED: { label: 'Tạm dừng', status: 'inactive' },
+  IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
@@ -38,19 +36,19 @@ const TRANG_THAI_MAP = {
    ============================================================ */
 const FILTERS = [
   { key: 'ALL', label: 'Tất cả' },
-  { key: 'OPEN', label: 'Chờ duyệt' },
-  { key: 'APPROVED', label: 'Đã duyệt' },
-  { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
   { key: 'STOPPED', label: 'Tạm dừng' },
-  { key: 'WAITING_FOR_APPROVAL', label: 'Chờ duyệt gia hạn' },
+  { key: 'IN_PROGRESS', label: 'Đang thực hiện' },
   { key: 'COMPLETED', label: 'Hoàn thành' },
   { key: 'CANCELLED', label: 'Đã huỷ' },
 ];
 
 /**
- * Gating vai trò (khớp BE @PreAuthorize — chốt 2026-07-20):
- * - Sửa hồ sơ phiếu: Quản đốc SC / Tổ trưởng (OPERATE).
- * - Chuyển trạng thái (duyệt/mở/đóng/khoá/huỷ): Trưởng ca / Trưởng kíp (STATUS).
+ * Gating vai trò (khớp BE @PreAuthorize):
+ * - Sửa hồ sơ phiếu + cấp vật tư: Quản đốc SC / Tổ trưởng (OPERATE).
+ * - Mở / khoá phiếu ngày, khoá hoàn thành: Trưởng ca / Trưởng kíp (STATUS).
+ * - HUỶ phiếu KHÔNG nằm trong STATUS_ROLES — nó thuộc người CẤP phiếu và phụ
+ *   thuộc từng dòng (đúng người tạo + đang Tạm dừng), nên xét bằng canCancel()
+ *   dùng chung với modal thay vì thêm một hằng role thứ ba ở đây.
  */
 const OPERATE_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 const STATUS_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
@@ -108,13 +106,12 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
 
   /* --- Thống kê (từ dữ liệu đã tải + totalElements) --- */
   const stats = useMemo(() => {
-    const open = workOrders.filter((r) => r.status === 'OPEN').length;
+    const stopped = workOrders.filter((r) => r.status === 'STOPPED').length;
     const inProgress = workOrders.filter((r) => r.status === 'IN_PROGRESS').length;
     const completed = workOrders.filter((r) => r.status === 'COMPLETED').length;
-    const cancelled = workOrders.filter((r) => r.status === 'CANCELLED').length;
     return [
       { key: 'total', label: 'Tổng PCT', value: totalElements, icon: <BsListUl />, color: 'var(--color-primary)' },
-      { key: 'open', label: 'Chờ duyệt', value: open, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
+      { key: 'stopped', label: 'Tạm dừng', value: stopped, icon: <BsHourglassSplit />, color: 'var(--color-status-info)' },
       { key: 'in_progress', label: 'Đang thực hiện', value: inProgress, icon: <BsPlayCircle />, color: 'var(--color-status-warning)' },
       { key: 'completed', label: 'Hoàn thành', value: completed, icon: <BsCheckCircle />, color: 'var(--color-status-normal)' },
     ];
@@ -165,6 +162,9 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   /* --- Hành động dòng --- */
   function renderActions(row) {
     const finished = row.status === 'COMPLETED' || row.status === 'CANCELLED';
+    // Trưởng ca/kíp thao tác được mọi phiếu chưa chốt; Tổ trưởng/Quản đốc chỉ
+    // vào được modal ở đúng phiếu mình cấp và đang Tạm dừng (để huỷ).
+    const showStatusBtn = canChangeStatus || canCancel(row, userRoles);
     return (
       <div className="d-flex gap-1">
         <Button
@@ -175,11 +175,15 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         >
           <BsEye className="me-1" /> Xem
         </Button>
-        {canChangeStatus && (
+        {showStatusBtn && (
           <Button
             variant="outline-warning"
             size="sm"
-            title={finished ? 'Phiếu đã chốt — không thể chuyển trạng thái' : 'Cập nhật trạng thái phiếu (duyệt / bắt đầu / tạm dừng / hoàn thành / huỷ)'}
+            title={finished
+              ? 'Phiếu đã chốt — không thể chuyển trạng thái'
+              : (canChangeStatus
+                ? 'Cập nhật trạng thái phiếu (mở / khoá phiếu ngày, khoá hoàn thành)'
+                : 'Huỷ phiếu công tác này')}
             disabled={finished}
             onClick={() => setStatusTarget(row)}
           >
