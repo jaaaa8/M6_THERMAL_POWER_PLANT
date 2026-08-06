@@ -13,6 +13,7 @@ import {
   BsXCircle,
   BsArrowClockwise,
   BsCamera,
+  BsExclamationTriangleFill,
 } from 'react-icons/bs';
 import { employeeService } from '../../../services/hr/employeeService';
 import { departmentService } from '../../../services/hr/departmentService';
@@ -609,7 +610,7 @@ export default function AddEmployee({
     });
   }, []);
 
-  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+  const handleSubmit = async (values, { setSubmitting, resetForm, setFieldError }) => {
     try {
       const formData = new FormData();
       
@@ -649,11 +650,32 @@ export default function AddEmployee({
       resetForm();
       onSuccess?.();
     } catch (err) {
-      const message =
+      let rawMsg =
         err.response?.data?.message ||
-        err.response?.data?.errors?.join(', ') ||
+        err.response?.data?.errors ||
+        err.response?.data ||
+        err.message ||
         'Có lỗi xảy ra, vui lòng thử lại';
-      toast.error(message);
+
+      if (Array.isArray(rawMsg)) {
+        rawMsg = rawMsg.join('; ');
+      } else if (typeof rawMsg === 'object' && rawMsg !== null) {
+        rawMsg = rawMsg.message || JSON.stringify(rawMsg);
+      }
+
+      let message = String(rawMsg);
+      const cleanMessage = message.replace(/^([a-zA-Z_]+:\s*)+/, '');
+      const lower = message.toLowerCase();
+
+      if (lower.includes('email') || lower.includes('gmail')) {
+        setFieldError('gmail', cleanMessage);
+      } else if (lower.includes('điện thoại') || lower.includes('phone') || lower.includes('sđt')) {
+        setFieldError('phone', cleanMessage);
+      } else if (lower.includes('họ và tên') || lower.includes('tên') || lower.includes('fullname')) {
+        setFieldError('fullName', cleanMessage);
+      }
+
+      toast.error(cleanMessage);
     } finally {
       setSubmitting(false);
     }
@@ -665,9 +687,9 @@ export default function AddEmployee({
         gmail: initialData.gmail || '',
         imgPath: initialData.imgPath || '',
         phone: initialData.phone || '',
-        departmentId: initialData.department?.id || '',
-        expertiseId: initialData.expertise?.id || '',
-        positionId: initialData.position?.id || '',
+        departmentId: initialData.department?.id ? String(initialData.department.id) : '',
+        expertiseId: initialData.expertise?.id ? String(initialData.expertise.id) : '',
+        positionId: initialData.position?.id ? String(initialData.position.id) : '',
         isActive: initialData.isActive || 'ACTIVE',
       }
     : INITIAL_VALUES;
@@ -694,9 +716,17 @@ export default function AddEmployee({
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {({ isSubmitting, touched, errors, resetForm, setFieldValue, values }) => (
+        {({ isSubmitting, touched, errors, resetForm, setFieldValue, values, submitCount, isValid }) => (
           <Form noValidate>
             <div className="employee-form-body nhansu-form-body">
+              {!isValid && submitCount > 0 && (
+                <div className="alert alert-danger d-flex align-items-center gap-2 mb-4 fs-7 py-2.5 px-3 rounded-3 shadow-sm border-danger">
+                  <BsExclamationTriangleFill className="fs-5 flex-shrink-0 text-danger" />
+                  <div>
+                    <strong>Vui lòng kiểm tra lại thông tin:</strong> Một số trường dữ liệu bên dưới không hợp lệ hoặc bị thiếu.
+                  </div>
+                </div>
+              )}
               <div className="form-section-title">
                 <BsPersonBadge />
                 Thông tin cơ bản
@@ -758,14 +788,14 @@ export default function AddEmployee({
                     type="text"
                     placeholder="Nguyễn Văn A"
                     className={`form-control ${
-                      touched.fullName && errors.fullName ? 'is-invalid' : ''
+                      (touched.fullName || submitCount > 0) && errors.fullName ? 'is-invalid' : ''
                     }`}
                   />
-                  <ErrorMessage
-                    name="fullName"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.fullName || submitCount > 0) && errors.fullName && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.fullName}
+                    </div>
+                  )}
                 </Col>
 
                 <Col md={6}>
@@ -778,14 +808,14 @@ export default function AddEmployee({
                     type="email"
                     placeholder="nguyenvana@gmail.com"
                     className={`form-control ${
-                      touched.gmail && errors.gmail ? 'is-invalid' : ''
+                      (touched.gmail || submitCount > 0) && errors.gmail ? 'is-invalid' : ''
                     }`}
                   />
-                  <ErrorMessage
-                    name="gmail"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.gmail || submitCount > 0) && errors.gmail && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.gmail}
+                    </div>
+                  )}
                 </Col>
               </Row>
 
@@ -800,14 +830,14 @@ export default function AddEmployee({
                     type="tel"
                     placeholder="0912345678"
                     className={`form-control ${
-                      touched.phone && errors.phone ? 'is-invalid' : ''
+                      (touched.phone || submitCount > 0) && errors.phone ? 'is-invalid' : ''
                     }`}
                   />
-                  <ErrorMessage
-                    name="phone"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.phone || submitCount > 0) && errors.phone && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.phone}
+                    </div>
+                  )}
                 </Col>
               </Row>
 
@@ -826,7 +856,7 @@ export default function AddEmployee({
                     id="departmentId"
                     name="departmentId"
                     className={`form-select ${
-                      touched.departmentId && errors.departmentId ? 'is-invalid' : ''
+                      (touched.departmentId || submitCount > 0) && errors.departmentId ? 'is-invalid' : ''
                     }`}
                     disabled={loadingOptions}
                     onChange={(e) => {
@@ -850,11 +880,11 @@ export default function AddEmployee({
                       </option>
                     ))}
                   </Field>
-                  <ErrorMessage
-                    name="departmentId"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.departmentId || submitCount > 0) && errors.departmentId && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.departmentId}
+                    </div>
+                  )}
                 </Col>
 
                 <Col md={6}>
@@ -866,7 +896,7 @@ export default function AddEmployee({
                     id="expertiseId"
                     name="expertiseId"
                     className={`form-select ${
-                      touched.expertiseId && errors.expertiseId ? 'is-invalid' : ''
+                      (touched.expertiseId || submitCount > 0) && errors.expertiseId ? 'is-invalid' : ''
                     }`}
                     disabled={loadingOptions}
                     onChange={(e) => {
@@ -890,11 +920,11 @@ export default function AddEmployee({
                       </option>
                     ))}
                   </Field>
-                  <ErrorMessage
-                    name="expertiseId"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.expertiseId || submitCount > 0) && errors.expertiseId && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.expertiseId}
+                    </div>
+                  )}
                 </Col>
               </Row>
 
@@ -908,7 +938,7 @@ export default function AddEmployee({
                     id="positionId"
                     name="positionId"
                     className={`form-select ${
-                      touched.positionId && errors.positionId ? 'is-invalid' : ''
+                      (touched.positionId || submitCount > 0) && errors.positionId ? 'is-invalid' : ''
                     }`}
                     disabled={loadingOptions}
                     onChange={(e) => {
@@ -932,11 +962,11 @@ export default function AddEmployee({
                       </option>
                     ))}
                   </Field>
-                  <ErrorMessage
-                    name="positionId"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.positionId || submitCount > 0) && errors.positionId && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.positionId}
+                    </div>
+                  )}
                 </Col>
 
                 <Col md={6}>
@@ -948,18 +978,18 @@ export default function AddEmployee({
                     id="isActive"
                     name="isActive"
                     className={`form-select ${
-                      touched.isActive && errors.isActive ? 'is-invalid' : ''
+                      (touched.isActive || submitCount > 0) && errors.isActive ? 'is-invalid' : ''
                     }`}
                   >
                     <option value="ACTIVE">Đang làm việc</option>
                     <option value="ON_LEAVE">Nghỉ phép</option>
                     <option value="INACTIVE">Nghỉ việc</option>
                   </Field>
-                  <ErrorMessage
-                    name="isActive"
-                    component="div"
-                    className="invalid-feedback"
-                  />
+                  {(touched.isActive || submitCount > 0) && errors.isActive && (
+                    <div className="invalid-feedback d-block mt-1">
+                      {errors.isActive}
+                    </div>
+                  )}
                 </Col>
               </Row>
 
