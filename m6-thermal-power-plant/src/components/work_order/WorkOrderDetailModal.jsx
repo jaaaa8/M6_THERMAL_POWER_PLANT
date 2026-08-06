@@ -1,28 +1,24 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Modal, Button, Tabs, Tab, Form } from 'react-bootstrap';
+import { Modal, Button, Tabs, Tab } from 'react-bootstrap';
 import {
   BsXCircle, BsCpu, BsPeopleFill, BsClockHistory,
   BsBoxArrowInRight, BsBoxArrowLeft, BsPersonBadge,
   BsCircleFill, BsPersonPlus, BsSearch,
-  BsPauseCircle, BsPenFill, BsCalendarWeek,
-  BsPrinter,
+  BsCalendarWeek, BsPrinter,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import StatusBadge from '../common/StatusBadge';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmModal from '../common/ConfirmModal';
-import { workOrderService, nextExtensionDate } from '../../services/workOrderService';
+import { workOrderService } from '../../services/workOrderService';
 import { employeeService } from '../../services/hr/employeeService';
 import { authService } from '../../services/authService';
 import { isTerminalStatus, openPdfBlob, blobErrorMessage } from './pdfUtils';
 import './WorkOrderDetailModal.css';
 
 const STATUS_MAP = {
-  OPEN: { label: 'Chờ duyệt', status: 'info' },
-  IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
-  WAITING_FOR_APPROVAL: { label: 'Chờ duyệt gia hạn', status: 'warning' },
-  APPROVED: { label: 'Đã duyệt', status: 'info' },
   STOPPED: { label: 'Tạm dừng', status: 'inactive' },
+  IN_PROGRESS: { label: 'Đang thực hiện', status: 'warning' },
   COMPLETED: { label: 'Hoàn thành', status: 'normal' },
   CANCELLED: { label: 'Đã huỷ', status: 'inactive' },
 };
@@ -30,14 +26,11 @@ const STATUS_MAP = {
 /**
  * Gating theo vai trò (chỉ ở UI — backend chặn riêng ở từng endpoint):
  * - MANAGE_MEMBER_ROLES: Quản đốc SC / Tổ trưởng thao tác thành viên (thêm/rời).
- * - EXTEND_ROLES: Trưởng ca / Trưởng kíp gửi duyệt gia hạn (bước chuyển trạng
- *   thái — khớp BE requireWorkOrderStatusRole = SHIFT_LEADER/CREW_LEADER).
- * Các bước chuyển trạng thái khác (duyệt phiếu, bắt đầu, tạm dừng, hoàn thành,
- * huỷ) và chỉnh sửa thông tin nằm ở DANH SÁCH PCT (WorkOrderStatusModal /
+ * Mọi bước chuyển trạng thái (mở / khoá phiếu ngày, khoá hoàn thành, huỷ) và
+ * chỉnh sửa thông tin nằm ở DANH SÁCH PCT (WorkOrderStatusModal /
  * WorkOrderEditModal).
  */
 const MANAGE_MEMBER_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
-const EXTEND_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
 
 const EQUIPMENT_STATUS_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 
@@ -68,18 +61,14 @@ function extractErrorMessage(err) {
  * @param {boolean} props.show - Hiển thị modal
  * @param {Function} props.onClose - Callback khi đóng modal
  * @param {number} props.workOrderId - ID phiếu công tác
- * @param {Function} [props.onChanged] - Gọi sau khi status phiếu thay đổi (để list refetch)
+ * Modal này chỉ ĐỌC — mọi bước chuyển trạng thái nằm ở WorkOrderStatusModal,
+ * nên không còn cần callback onChanged để danh sách refetch.
  */
-export default function WorkOrderDetailModal({ show, onClose, workOrderId, onChanged }) {
+export default function WorkOrderDetailModal({ show, onClose, workOrderId }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Form GIA HẠN (dừng công việc + gửi Trưởng ca duyệt): lý do + ngày.
-  const [actionLoading, setActionLoading] = useState(false);
-  const [showStopForm, setShowStopForm] = useState(false);
-  const [stopReason, setStopReason] = useState('');
-  const [stopUntil, setStopUntil] = useState('');
   const [printing, setPrinting] = useState(false);
 
   // Quản lý thành viên (rời / thêm mới)
@@ -531,39 +520,39 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
               </div>
             </div>
 
-            {/* ===== SECTION: TẠM DỪNG / GIA HẠN HÀNG NGÀY ===== */}
+            {/* ===== SECTION: NHẬT KÝ CÔNG TÁC HÀNG NGÀY ===== */}
             {(detail.extensions || []).length > 0 && (
               <div className="wo-detail-section">
                 <div className="wo-detail-section-title">
                   <BsCalendarWeek />
-                  Tạm dừng cuối ngày / gia hạn ({detail.extensions.length})
+                  Nhật ký công tác hàng ngày ({detail.extensions.length})
                 </div>
                 <div className="text-muted mb-2" style={{ fontSize: 'var(--text-xs)' }}>
-                  Trưởng ca duyệt bằng chữ ký thật trên bản giấy PCT; cột "Người xác nhận"
-                  là tài khoản đã nhập lại kết quả duyệt vào hệ thống.
+                  Mỗi dòng là một ngày công tác, ghi từ lúc Trưởng ca mở phiếu ngày
+                  đến lúc khoá. Bảng này được in vào bản giấy PCT.
                 </div>
                 <table className="table table-sm table-bordered mb-0" style={{ fontSize: 'var(--text-sm)' }}>
                   <thead>
                     <tr>
                       <th style={{ width: 40 }}>#</th>
-                      <th>Lý do</th>
-                      <th style={{ width: 150 }}>Ngày gửi duyệt</th>
-                      <th style={{ width: 150 }}>Ngày cho phép tiếp tục làm việc</th>
-                      <th style={{ width: 190 }}>Người xác nhận</th>
+                      <th style={{ width: 130 }}>Ngày công tác</th>
+                      <th style={{ width: 160 }}>Giờ mở</th>
+                      <th style={{ width: 160 }}>Giờ khoá</th>
+                      <th>Ghi chú</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {detail.extensions.map((ext, idx) => (
-                      <tr key={ext.id}>
+                    {detail.extensions.map((day, idx) => (
+                      <tr key={day.id}>
                         <td className="text-center">{idx + 1}</td>
-                        <td>{ext.reason || '—'}</td>
-                        <td>{formatDateTime(ext.requestedAt)}</td>
-                        <td>{formatDate(ext.allowedDate)}</td>
+                        <td>{formatDate(day.allowedDate)}</td>
+                        <td>{formatDateTime(day.requestedAt)}</td>
                         <td>
-                          {ext.approvedByName
-                            ? <span><BsPenFill className="me-1" style={{ color: 'var(--color-status-normal)' }} />{ext.approvedByName}</span>
-                            : <span className="text-muted fst-italic">Chờ Trưởng ca ký bản giấy...</span>}
+                          {day.closedAt
+                            ? formatDateTime(day.closedAt)
+                            : <span className="text-muted fst-italic">Đang làm việc...</span>}
                         </td>
+                        <td>{day.reason || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -605,20 +594,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
             <BsPrinter className="me-1" /> {printing ? 'Đang in...' : 'In PCT'}
           </Button>
         )}
-        {/* ===== GIA HẠN (bước chuyển trạng thái — thuộc Trưởng ca/kíp;
-             các bước khác nằm ở modal "Cập nhật trạng thái" ngoài danh sách) ===== */}
-        {detail && canExtend && ['IN_PROGRESS', 'APPROVED', 'STOPPED'].includes(detail.status) && (
-          <Button
-            variant="outline-warning"
-            size="sm"
-            title={detail.status === 'STOPPED'
-              ? 'Xin phép làm tiếp — chờ Trưởng ca ký duyệt bản giấy'
-              : 'Chỉ xin gia hạn được khi phiếu đang tạm dừng'}
-            onClick={openStopForm}
-          >
-            <BsPauseCircle className="me-1" /> Gia hạn phiếu
-          </Button>
-        )}
+        {/* Mọi bước chuyển trạng thái (mở / khoá phiếu ngày, khoá hoàn thành,
+            huỷ) nằm ở modal "Cập nhật trạng thái" ngoài danh sách PCT. */}
         <Button variant="outline-secondary" size="sm" onClick={onClose}>
           <BsXCircle className="me-1" /> Đóng
         </Button>
@@ -637,59 +614,6 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
       loading={leaveLoading}
     />
 
-    {/* Form gia hạn: lý do + xin phép làm việc đến ngày */}
-    <Modal show={showStopForm} onHide={() => !actionLoading && setShowStopForm(false)} centered>
-      <Modal.Header closeButton>
-        <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-          <BsPauseCircle className="me-2" style={{ color: 'var(--color-status-warning)' }} />
-          Gia hạn phiếu — {detail?.orderCode}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <div className="alert alert-warning" style={{ fontSize: 'var(--text-sm)' }}>
-          Sau khi gửi, phiếu chuyển sang <strong>Chờ duyệt gia hạn</strong>.
-          Việc duyệt được thực hiện <strong>bằng chữ ký thật trên bản giấy PCT</strong> (in
-          bản PDF mới — lý do dưới đây được in vào mục "Cho phép làm việc và kết
-          thúc công tác hàng ngày") rồi mới được xác nhận lại trên hệ thống.
-        </div>
-        <Form.Group className="mb-3">
-          <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-            Lý do gia hạn / xin làm tiếp <span className="text-danger">*</span>
-          </Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={2}
-            placeholder="VD: Hết giờ làm việc, khối lượng còn lại xin tiếp tục ngày mai..."
-            value={stopReason}
-            onChange={(e) => setStopReason(e.target.value)}
-          />
-        </Form.Group>
-        <Form.Group>
-          <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
-            Xin làm việc ngày
-          </Form.Label>
-          {/* Hiển thị bằng CHỮ, không dùng input disabled: input bị khoá trên
-              nền tối bạc màu gần như không đọc được. */}
-          <div style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
-            {formatDate(stopUntil)}
-          </div>
-          <Form.Text muted style={{ fontSize: 'var(--text-xs)' }}>
-            Mỗi lần gia hạn chỉ kéo dài 1 ngày nên ngày này tự suy ra (hôm sau ngày
-            làm việc gần nhất). Ngày được làm tiếp do Trưởng ca chốt khi duyệt.
-          </Form.Text>
-        </Form.Group>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="outline-secondary" size="sm" disabled={actionLoading}
-                onClick={() => setShowStopForm(false)}>
-          <BsXCircle className="me-1" /> Huỷ
-        </Button>
-        <Button variant="warning" size="sm" disabled={actionLoading} onClick={submitStop}>
-          <BsPauseCircle className="me-1" />{' '}
-          {actionLoading ? 'Đang lưu...' : 'Gửi duyệt gia hạn'}
-        </Button>
-      </Modal.Footer>
-    </Modal>
     </>
   );
 }
