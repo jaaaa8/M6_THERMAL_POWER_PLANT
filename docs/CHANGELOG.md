@@ -1,5 +1,362 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-08-07] — Xác nhận OTP qua email khi đổi mật khẩu
+
+Đổi mật khẩu vốn **đã chạy hoàn chỉnh** (modal FE + `POST /auth/change-password`). Thay đổi này
+chèn thêm **lớp xác nhận thứ hai**: mã OTP 6 số gửi qua email. Mật khẩu cũ **vẫn bắt buộc** —
+OTP không thay thế nó.
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **Mới `db/migration/V28__password_otp.sql`**: bảng `password_otps`. Chỉ THÊM bảng mới, không
+  sửa bảng nào sẵn có → không cần backup.
+- **Mới `entity/PasswordOtp.java`**: entity **thuần**, cố ý KHÔNG kế thừa `BaseSoftDeleteEntity`
+  như các entity khác — xoá mềm một mã OTP sống 5 phút là vô nghĩa.
+- **Mới `repository/PasswordOtpRepository.java`**: một truy vấn
+  `findFirstByAccount_IdAndConsumedAtIsNullOrderByCreatedAtDesc` phục vụ cả xác thực lẫn chống spam.
+- **Mới `service/auth/PasswordOtpService.java`**: mã 6 số sinh bằng **`SecureRandom`**, lưu
+  **BCrypt hash** chứ không lưu mã thô, hiệu lực 5 phút, dùng một lần, **tối đa 5 lần nhập sai**,
+  giãn cách 60 giây giữa 2 lần xin mã. Tái dùng `JavaMailSender` + SMTP đã cấu hình sẵn.
+- **`AuthService.changePassword`**: gọi `verifyAndConsume` **ngay đầu**, trước cả kiểm mật khẩu cũ.
+- **`AuthController`**: thêm `POST /auth/change-password/request-otp`. `accountId` lấy từ token,
+  **không** nhận từ body — nhận từ body là cho phép bắn mã vào hòm thư người khác.
+- **`ChangePasswordRequestDTO`**: thêm `otp`, bắt buộc, đúng 6 ký tự.
+
+Hai chi tiết đáng ghi lại:
+- **Trần số lần sai phải xét TRƯỚC khi so mã.** So trước rồi mới xét thì kẻ dò đủ 5 lần vẫn còn
+  cơ hội thứ 6, trần thành vô nghĩa. Có test riêng cho nhánh này.
+- **Bộ đếm `attempts` phải lưu xuống DB NGAY trong nhánh sai**, không đợi cuối method — nhánh đó
+  ném exception, không lưu thì trần không tồn tại trên thực tế.
+- Địa chỉ nhận mail: `account.email` → `employee.gmail` → **ném lỗi rõ ràng**. Khác
+  `ToolBorrowOverdueNotifier` vốn lặng lẽ `continue`: bỏ một mail nhắc nhở thì không sao, còn ở
+  đây người dùng sẽ ngồi đợi mã không bao giờ tới.
+
+### Frontend (`m6-thermal-power-plant`)
+- **`services/authService.js`**: thêm `requestChangePasswordOtp()`; `changePassword` nhận thêm `otp`.
+- **`components/profile/ChangePasswordModal.jsx`**: thêm ô mã 6 số + nút "Gửi mã" với đếm ngược
+  60 giây. Ô chỉ nhận chữ số (dán từ email kèm khoảng trắng vẫn sạch). `clearInterval` khi đóng
+  modal và khi unmount.
+
+### Test
+`PasswordOtpServiceTest` mới — 9 case phủ đủ vòng đời mã. `AuthServiceTest` được bổ sung
+`@Mock PasswordOtpService` (thiếu nó thì 4 test cũ NPE). Full suite: **133 tests, 20 failed** —
+đúng 20 lỗi có sẵn ở 3 lớp `*SearchServiceDbTest` (lỗi H2), không liên quan.
+
+**File ảnh hưởng**: `db/migration/V28__password_otp.sql`, `entity/PasswordOtp.java`,
+`repository/PasswordOtpRepository.java`, `service/auth/PasswordOtpService.java`,
+`service/AuthService.java`, `controller/auth/AuthController.java`, `dto/ChangePasswordRequestDTO.java`,
+`services/authService.js`, `components/profile/ChangePasswordModal.jsx`.
+
+---
+
+## [2026-08-07] — Ẩn 2 mục "Lịch sử" khỏi sidebar
+
+- **`components/layout/Sidebar.jsx`**: bỏ mục **"Lịch sử sửa chữa"** (`/repair/history`) khỏi
+  nhóm *Sửa chữa* và mục **"Lịch sử"** (`/lubrication/history`) khỏi *Bảo dưỡng Dầu mỡ*. Gỡ luôn
+  import `BsClockHistory` — icon này chỉ được dùng ở đúng hai dòng đó.
+
+**Giữ nguyên route** ở `App.jsx`: gõ thẳng URL vẫn vào được, bookmark cũ không chết, bật lại sau
+này chỉ là thêm lại một dòng. Riêng `/lubrication/history` vốn mới chỉ là `PlaceholderPage`.
+
+**KHÔNG xoá component.** `RepairHistoryList.jsx` còn export `RepairHistoryTab`, và
+`LubricationHistoryTab.jsx` — cả hai đang được `DetailEquipment.jsx` dùng làm tab trong trang chi
+tiết thiết bị. Xoá file là trang chi tiết thiết bị trắng màn hình, trong khi sidebar vẫn trông
+đúng nên rất dễ bỏ sót. Lịch sử vì vậy vẫn xem được theo từng thiết bị, chỉ là không còn cửa vào
+từ menu.
+
+**File ảnh hưởng**: `components/layout/Sidebar.jsx`. Backend không đổi.
+
+---
+
+## [2026-08-06] — Thêm cột STT cho trang Yêu cầu sửa chữa
+
+`RepairRequestPage.jsx` dựng bảng bằng `<Table>` thuần của react-bootstrap chứ không dùng
+`DataTable`, nên không thừa hưởng cột `#` mà `DataTable.jsx:141` vốn có sẵn — phải thêm tay.
+
+- **`pages/RepairRequestPage.jsx`**: thêm cột `STT` ở đầu bảng, đánh số **liên tục qua các
+  trang** bằng `page * size + idx + 1` (`page` 0-based, khớp Spring Page). Dùng `idx` trần sẽ
+  sai vì trang này phân trang **server-side** — mỗi trang chỉ nhận đúng `size` bản ghi nên
+  `idx` luôn chạy từ 0. Chia lại độ rộng cột cho đủ 100%: Mã KKS 15%→13%, Thiết bị 25%→22%.
+
+Không thay bằng `DataTable`: component đó tự phân trang trong bộ nhớ, còn trang này phân trang
+server-side với `PaginationPanel` riêng — đổi sang sẽ vỡ luồng phân trang hiện có.
+
+**File ảnh hưởng**: `pages/RepairRequestPage.jsx`. Backend không đổi.
+
+---
+
+## [2026-08-06] — Sửa 4 file crash do merge "keep both sides"
+
+Commit `b354399 merge: resolve conflicts with origin/main (keep both sides)` giữ code của **cả
+hai nhánh** thay vì chọn một, để lại 15 tham chiếu tới biến không tồn tại. `npm run build` vẫn
+xanh vì Vite không kiểm tên chưa khai báo — lỗi chỉ lộ ra lúc chạy.
+
+### Nguyên nhân "Xem chi tiết phiếu công tác" chết
+`WorkOrderDetailModal.jsx` bị ghép từ **ba** phiên bản: bản chỉ-đọc, bản từ `main` (PCT thủ công
+nhiều thiết bị), và bản cũ có form "gửi duyệt gia hạn". Handler của cả ba còn nguyên nhưng khai
+báo state chỉ còn của một. Dòng gây chết nằm trong **thân component** nên nổ mỗi lần render:
+
+```js
+const canExtend = userRoles.some((r) => EXTEND_ROLES.includes(r));  // EXTEND_ROLES không tồn tại
+```
+
+### Frontend (`m6-thermal-power-plant`)
+- **`WorkOrderDetailModal.jsx`**: xoá form gia hạn đã hồi sinh (`openStopForm`, `submitStop` —
+  gọi `workOrderService.stop` và `nextExtensionDate`, cả hai đã bị xoá từ đợt bỏ 2 vòng duyệt) và
+  xoá `canExtend`/`EXTEND_ROLES`. **Khôi phục** phần state mà tính năng của `main` cần: thêm
+  `actionLoading` (dùng ở JSX nút đổi trạng thái thiết bị — cũng crash lúc render) và nhận lại
+  prop `onChanged` (`WorkOrderList.jsx:387` vẫn truyền nhưng chữ ký đã bỏ nhận).
+- **`workOrderService.js`**: xoá `approveExtension` và `reopen` — hai endpoint tương ứng đã bị
+  xoá/đổi tên ở backend, gọi vào chỉ nhận 404.
+- **`DetailEquipment.jsx`**: thêm `PDFViewer` vào import từ `@react-pdf/renderer` (dùng ở `:309`
+  nhưng không import) — crash khi mở xem trước PDF thiết bị.
+- **`ListEquipment.jsx`**: xoá 5 handler mồ côi của modal thông số kỹ thuật (`handleOpenTechParamModal`,
+  `handleAddParamRow`, `handleEditParamRowField`, `handleDeleteParamRow`, `handleSaveTechParams`)
+  cùng 2 state chỉ chúng dùng. Phần JSX modal đã biến mất và không nơi nào gọi 5 handler này;
+  tính năng sửa thông số hiện sống ở `TechnicalParameterTab.jsx`.
+- **`UpdateEquipment.jsx`**: `catch` dùng `res.data.systemId` trong khi `res` khai báo trong `try`
+  → khi getById lỗi thì catch ném tiếp `ReferenceError`, nuốt mất lỗi gốc. Đổi sang điều hướng
+  không phụ thuộc `res`.
+
+### Cách phát hiện — dùng lại được cho lần sau
+`npm run build` **không** bắt được loại lỗi này. Câu lệnh bắt được:
+```bash
+npx eslint src --rule '{"no-undef":"error"}'
+```
+Trước: 4 file hỏng. Sau: **0 lỗi trên toàn `src`**. Nên chạy nó sau mỗi lần merge có conflict.
+
+Backend không đổi: `compileJava` sạch, migration Flyway không trùng version (V1–V26).
+
+**File ảnh hưởng**: `components/work_order/WorkOrderDetailModal.jsx`, `services/workOrderService.js`,
+`components/equipment/DetailEquipment.jsx`, `components/equipment/ListEquipment.jsx`,
+`components/equipment/UpdateEquipment.jsx`.
+
+---
+
+## [2026-08-06] — Khoá phiếu hoàn thành: trả thiết bị từ "Sự cố" về "Hoạt động"
+
+Vòng đời trạng thái thiết bị trước đây **chỉ có chiều đi, không có chiều về**: `RepairService`
+đặt `FAILURE` khi tạo yêu cầu sửa chữa, nhưng `completeWorkOrder` không đụng gì tới thiết bị —
+sửa xong rồi mà bảng thiết bị vẫn báo Sự cố vĩnh viễn, chỉ chữa được bằng sửa tay.
+
+(Phần ghi lịch sử sửa chữa **đã có sẵn** từ trước qua `repairHistoryService.createRepairHistory`,
+tự chống trùng bằng `existsByWorkOrderId` — task này chỉ bổ sung vế trạng thái thiết bị.)
+
+### Quy tắc
+Thiết bị chỉ về `ACTIVE` khi thoả **cả ba**: đang ở `FAILURE`, không còn yêu cầu nào `PENDING`,
+và không còn phiếu công tác nào `STOPPED`/`IN_PROGRESS` ngoài phiếu vừa khoá.
+
+Phải kiểm **hai vế** hư hỏng chứ không phải một. Yêu cầu sửa chữa chuyển `COMPLETED` **ngay lúc
+tạo phiếu công tác** (xem entry `[2026-08-05]` về PYC 2 trạng thái), nên thiết bị đang có phiếu
+chạy dở sẽ **không** lộ ra khi đếm yêu cầu `PENDING` — chỉ đếm một vế là báo "Hoạt động" trong
+khi đội sửa chữa vẫn đang ở hiện trường.
+
+Thiết bị ở `MAINTENANCE` / `STANDBY` / `RETIRED` **không bị đụng tới**: đó là quyết định vận hành
+khác, khoá một phiếu sửa chữa không đủ tư cách ghi đè.
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **`MaintenanceService`**: thêm helper `restoreEquipmentIfRepaired(workOrder)`, gọi trong
+  `completeWorkOrder` **sau** `setStatus(COMPLETED)` — đặt trước đó thì phiếu tự tính mình là
+  phiếu sống và tự chặn việc phục hồi. Không gọi `save` cho equipment: entity đang managed trong
+  `@Transactional` nên dirty-checking tự flush, giống cách `RepairService` đặt `FAILURE`.
+- **`RepairRequestRepository`**: thêm `existsByEquipment_IdAndStatus(equipmentId, status)`.
+- **`WorkOrderRepository`**: thêm `existsOtherLiveWorkOrderForEquipment(...)` — loại trừ chính
+  phiếu đang khoá vì lúc gọi nó đã sang `COMPLETED` trong bộ nhớ nhưng chưa chắc đã flush.
+- **`cancelWorkOrder` KHÔNG đổi**: huỷ phiếu cuối cùng đưa yêu cầu về `PENDING`, nên vế thứ nhất
+  tự giữ thiết bị ở `FAILURE` — không cần thêm code.
+
+### Test
+`MaintenanceServiceTest` thêm 4 case, đúng 4 nhánh của helper: phục hồi được / còn yêu cầu
+`PENDING` / còn phiếu sống / thiết bị không ở `FAILURE`. Case "còn phiếu sống" là case bẫy —
+stub vế `PENDING` trả `false` để test thật sự kiểm vế thứ hai chứ không ăn may.
+`./gradlew test --tests "*MaintenanceService*"` → 26 tests, 0 failures.
+
+**File ảnh hưởng**: `service/maintenance/MaintenanceService.java`,
+`repository/RepairRequestRepository.java`, `repository/WorkOrderRepository.java`,
+`test/.../MaintenanceServiceTest.java`. Frontend không đổi — trạng thái thiết bị vốn lấy từ BE.
+
+---
+
+## [2026-08-06] — Hiện lại nút huỷ phiếu công tác cho Tổ trưởng / Quản đốc SC
+
+Sửa nốt phần hụt của entry `[2026-08-05]`: backend đã cho Tổ trưởng / Quản đốc SC huỷ phiếu
+mình cấp, nhưng **ngoài danh sách PCT họ không thấy nút nào để vào** — nút "Trạng thái" ở
+`WorkOrderList.jsx` bị gate sau `STATUS_ROLES` (Trưởng ca / Trưởng kíp) từ đợt phân quyền
+trước. Chức năng huỷ vì thế không thao tác được trên UI dù API đã sẵn sàng.
+
+Chọn cách **giữ một nút duy nhất và lọc theo từng dòng**, thay vì thêm nút "Huỷ phiếu" riêng:
+luật huỷ chỉ nằm một chỗ, không có 2 đường vào cùng một API. Nới thẳng cổng cho cả 4 role
+cũng bị loại — Tổ trưởng sẽ thấy nút ở mọi dòng nhưng đa số bấm vào là click chết, vì huỷ còn
+đòi đúng người tạo + phiếu đang Tạm dừng.
+
+### Frontend (`m6-thermal-power-plant`)
+- **Mới**: `components/work_order/workOrderPermissions.js` — gom `OPERATE_ROLES`,
+  `CANCEL_ROLES` và `canCancel()` ra một module dùng chung giữa danh sách và modal. Trước đó
+  `canCancel` nằm trong `WorkOrderStatusModal.jsx`; export trực tiếp từ file component làm vỡ
+  rule `react-refresh/only-export-components`, nên tách file (theo đúng pattern `pdfUtils.js`
+  sẵn có trong thư mục) thay vì chép logic sang file thứ hai.
+- **`WorkOrderList.jsx`**: nút "Trạng thái" hiện khi `canChangeStatus || canCancel(row, userRoles)`.
+  Tổ trưởng / Quản đốc chỉ thấy nút ở **phiếu do chính mình cấp và đang Tạm dừng**; Trưởng ca /
+  Trưởng kíp không đổi gì. `title` của nút đổi theo vai trò, đồng thời bỏ chữ "duyệt / bắt đầu"
+  còn sót từ luồng cũ.
+- **`WorkOrderStatusModal.jsx`**: xoá bản định nghĩa cục bộ của `OPERATE_ROLES` / `CANCEL_ROLES` /
+  `canCancel`, import từ module mới.
+
+### Sửa lỗi 403 khi bấm "Huỷ phiếu"
+Sau khi nút đã hiện, bấm Xác nhận vẫn báo *"bạn không có quyền thực hiện hành động này"*. Nguyên
+nhân **không nằm ở gating vừa sửa**: `submit()` của modal gọi `updateStatus()` → `PATCH /{id}/status`,
+mà endpoint đó gate `SHIFT_LEADER`/`CREW_LEADER`, nên Tổ trưởng bị chặn ngay ở controller — chưa
+bao giờ tới được nhánh `CANCELLED` trong `updateWorkOrderStatus`. Endpoint đúng `PATCH /{id}/cancel`
+và hàm `workOrderService.cancel()` đã tồn tại sẵn từ entry `[2026-08-05]`, chỉ là modal chưa gọi tới.
+
+- **`WorkOrderStatusModal.jsx`**: `submit()` tách nhánh — `target === 'CANCELLED'` gọi
+  `workOrderService.cancel(id)`, còn lại giữ `updateStatus()`.
+- **`WorkOrderController.java`**: viết lại javadoc của `PATCH /{id}/status` — bỏ mô tả
+  "duyệt phiếu / gửi duyệt gia hạn" còn sót từ luồng cũ và bỏ tuyên bố "endpoint DUY NHẤT cho modal".
+
+**KHÔNG** sửa bằng cách thêm `TEAM_LEADER`/`MAINTENANCE_FOREMAN` vào `@PreAuthorize` của `/status`:
+các nhánh mở/khoá phiếu ngày trong `updateWorkOrderStatus` không kiểm role lại ở tầng service, nên
+nới cổng ở đó là cho Tổ trưởng thao tác luôn phiếu ngày — nâng quyền ngoài ý muốn. Đã ghi cảnh báo
+này vào javadoc của endpoint để lần sau không ai "sửa cho tiện".
+
+`canCancel` kiểm được 2 trong 3 điều kiện ngay tại dòng danh sách vì `WorkOrderDTO` đã mang sẵn
+`status` + `createdById`. Điều kiện "chưa chạy ngày nào" vẫn phải chờ modal fetch chi tiết, nên
+phiếu **đã chạy vài ngày rồi quay về Tạm dừng** vẫn hiện nút — modal ẩn option huỷ, và backend
+chặn bằng 409. Muốn khử nốt thì phải thêm cờ "đã chạy ngày nào chưa" vào `WorkOrderDTO`.
+
+**File ảnh hưởng**: `components/work_order/workOrderPermissions.js` (mới),
+`components/work_order/WorkOrderList.jsx`, `components/work_order/WorkOrderStatusModal.jsx`,
+`controller/work_order/WorkOrderController.java` (chỉ javadoc).
+
+---
+
+## [2026-08-05] — Phiếu công tác: bỏ 2 vòng duyệt, chuyển sang mở/khoá "phiếu ngày"
+
+Bỏ hẳn **duyệt phiếu lần đầu** (`OPEN → APPROVED`) và **duyệt gia hạn**
+(`STOPPED → WAITING_FOR_APPROVAL → APPROVED`). PCT giờ chỉ xoay quanh việc mở và khoá công
+tác theo từng ngày:
+
+```
+Tổ trưởng / Quản đốc SC tạo PCT → TẠM DỪNG
+   TẠM DỪNG ──mở phiếu ngày──► ĐANG THỰC HIỆN ──khoá phiếu ngày──► TẠM DỪNG
+                                     └──khoá phiếu hoàn thành──► HOÀN THÀNH
+   TẠM DỪNG ──huỷ (chưa chạy ngày nào, đúng người tạo)──► ĐÃ HUỶ
+```
+
+Enum còn 4 giá trị; `STOPPED` là **trạng thái khởi đầu**. Nút "Mở phiếu ngày" là DUY NHẤT —
+lần mở đầu tiên chính là bắt đầu phiếu, không có thao tác "bắt đầu" riêng.
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **`WorkOrderStatus`**: bỏ `OPEN`, `APPROVED`, `WAITING_FOR_APPROVAL`.
+- **Mới**: `db/migration/V20__work_order_day_log.sql`. **Thứ tự 3 bước bắt buộc**: nới cột
+  `work_orders.status` thành hợp của giá trị cũ + mới → UPDATE 3 trạng thái bỏ đi (kèm dòng
+  NULL/rỗng) về `STOPPED` → chốt lại đúng 4 giá trị. Lý do: `V1__init_schema` khai báo cột là
+  `enum('CANCELLED','COMPLETED','IN_PROGRESS','OPEN')` và chưa migration nào nới ra, nên UPDATE
+  sang `'STOPPED'` sẽ bị từ chối nếu ALTER sau. Đồng thời thêm cột `work_order_extensions.closed_at`.
+- **`WorkOrderExtension` ĐỔI NGHĨA**: từ "đơn xin gia hạn" thành **nhật ký công tác hàng ngày**
+  (1 dòng = 1 ngày): `allowed_date` = ngày công tác, `requested_at` = giờ mở, `closed_at` = giờ
+  khoá, `reason` = ghi chú. Bỏ quan hệ `approvedBy` (cột DB **giữ lại**, ngừng ghi — không mất
+  lịch sử duyệt cũ). Giữ nguyên tên bảng/class: đổi tên sẽ kéo theo template PDF + DTO + FE mà
+  không thêm hành vi nào.
+- **`MaintenanceService`**: `createWorkOrderFromRequest` tạo phiếu ở `STOPPED`;
+  `reopenWorkOrder` → **`openWorkDay`** (ghi dòng ngày, idempotent với ngày còn bỏ ngỏ);
+  `stopWorkOrder` → **`closeWorkDay`** (đóng dòng ngày + ghi chú tuỳ chọn); `approveExtension`
+  **xoá hẳn**; `completeWorkOrder` đóng nốt ngày đang mở qua helper dùng chung `closeOpenWorkDay`;
+  `updateWorkOrderStatus` rút `switch` còn 4 nhánh uỷ quyền, `isLive` còn `STOPPED`+`IN_PROGRESS`.
+- **`cancelWorkOrder(id, username)`** — thêm 2 guard: **409** nếu phiếu đã chạy ≥ 1 ngày công tác,
+  **403** nếu người bấm không phải người tạo phiếu (ADMIN **không** miễn trừ). Endpoint
+  `PATCH /{id}/cancel` đổi `@PreAuthorize` sang `TEAM_LEADER`/`MAINTENANCE_FOREMAN` — role gate
+  ở controller là chưa đủ vì mọi Tổ trưởng đều cùng role.
+- **Endpoint**: xoá `PATCH /{id}/approve-extension`; `/{id}/reopen` → `/{id}/open-day`;
+  `/{id}/stop` → `/{id}/close-day` (body không bắt buộc).
+- **`WorkOrderDTO`**: thêm `createdById` để FE gate nút Huỷ. Chỉ trả id — đọc tên phải khởi tạo
+  proxy LAZY mà `from()` còn chạy ngoài transaction ở luồng danh sách.
+- **`WorkOrderRepository`**: `ORDER BY CASE` rút còn đang sống → hoàn thành → huỷ.
+  **`WorkOrderExtensionRepository`**: thêm `findFirstByWorkOrder_IdAndClosedAtIsNullOrderByRequestedAtDesc`
+  và `countByWorkOrder_Id`.
+- **`DashboardService`**: KPI `pendingWorkOrders` đổi `countByStatus(OPEN)` → `countByStatus(STOPPED)`.
+- **PDF**: `WorkOrderPdfService` + `templates/pdf/work-order.html` mục 5 đổi cột thành
+  *Ngày công tác / Giờ bắt đầu / Giờ kết thúc / Ghi chú* (bỏ "Thời gian tạm hoãn").
+- **Test**: cập nhật `MaintenanceServiceTest`, `MaintenanceServiceDbTest`,
+  `WorkOrderRepositorySearchTest` theo luồng mới; **thêm 8 test mới** cho mở/khoá phiếu ngày,
+  hoàn thành đóng nốt ngày dở, và 2 guard huỷ (đã chạy ngày / sai người tạo).
+
+### Frontend (`m6-thermal-power-plant`)
+- **`workOrderService.js`**: xoá `approveExtension` (**đang bị khai báo trùng 2 lần** — lỗi lint
+  `no-dupe-keys` có sẵn, xoá là hết) và helper `nextExtensionDate`; `stop` → `closeDay`,
+  `reopen` → `openDay`.
+- **`WorkOrderStatusModal.jsx`**: `TRANSITIONS` còn 2 nhánh (Mở phiếu ngày / Khoá phiếu ngày +
+  Khoá phiếu hoàn thành). Bỏ `APPROVE_ROLES`, ô chọn ngày, ràng buộc bắt buộc lý do → thành ô
+  ghi chú tuỳ chọn. Nút Huỷ chỉ hiện khi đủ **cả 3** điều kiện: đúng role, đúng người tạo, và
+  phiếu chưa chạy ngày nào (lấy chi tiết để biết — danh sách không trả nhật ký ngày).
+- **`WorkOrderList.jsx`**: `TRANG_THAI_MAP` + `FILTERS` còn 4 trạng thái; stat card "Chờ duyệt"
+  → **"Tạm dừng"**.
+- **`WorkOrderDetailModal.jsx`**: gỡ toàn bộ form "Gửi duyệt gia hạn" + nút mở form; bảng
+  "Tạm dừng cuối ngày / gia hạn" → **"Nhật ký công tác hàng ngày"** (ngày / giờ mở / giờ khoá /
+  ghi chú, bỏ cột người duyệt). Modal này giờ chỉ ĐỌC nên bỏ luôn prop `onChanged`.
+
+### Nghiệm thu
+`./gradlew test --tests "*MaintenanceService*" --tests "*WorkOrder*" --tests "*Pdf*"` pass.
+Toàn bộ suite: 95 tests, 20 fail — tất cả thuộc `AccountSearchServiceDbTest` /
+`DepartmentSearchServiceDbTest` / `EmployeeSearchServiceDbTest`, lỗi schema H2 có sẵn từ trước
+(`Column "A1_0.IS_DELETED" not found` khi xoá `account_roles`), không liên quan phiếu công tác.
+`npx eslint src/components/work_order src/services/workOrderService.js` không phát sinh lỗi mới.
+
+**V20 chưa được test tự động che phủ** (`application-test.properties:21` tắt Flyway) — bắt buộc
+verify tay trên MySQL, và **backup `work_orders` + `work_order_extensions` trước khi chạy**.
+
+---
+
+## [2026-08-05] — Yêu cầu sửa chữa: rút còn 2 trạng thái, ưu tiên "Chờ xử lý" lên đầu
+
+Phiếu yêu cầu sửa chữa (PYC) chỉ tồn tại để đẻ ra Phiếu công tác (PCT), nên vòng đời rút còn
+`PENDING` (Chờ xử lý) → `COMPLETED` (Đã đóng). Trước đây enum có 4 trạng thái nhưng **không có chỗ
+nào set `COMPLETED`**, và transition khi tạo PCT bị comment out từ lâu — mọi yêu cầu nằm `PENDING`
+vĩnh viễn, danh sách phình dần và không phân biệt được cái nào còn phải xử lý.
+
+Giữ tên hằng `COMPLETED` (không đổi thành `CLOSED`) vì native query `getMonthlyTrend` hardcode
+`status = 'COMPLETED'`; nhãn tiếng Việt "Đã đóng" chỉ nằm ở FE.
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **`entity/enums/RepairRequestStatus.java`**: bỏ `APPROVED`, `IN_PROGRESS` — còn `PENDING` +
+  `COMPLETED`. `COMPLETED` mang nghĩa "đã có PCT", KHÔNG phải "đã sửa xong".
+- **Mới**: `db/migration/V19__repair_request_two_statuses.sql` — gộp `APPROVED`/`IN_PROGRESS` vào
+  `COMPLETED` rồi `ALTER TABLE ... MODIFY status enum('COMPLETED','PENDING')` (cột là MySQL enum,
+  Hibernate chạy `ddl-auto=validate` nên phải thu cả kiểu cột). **Không khôi phục được.**
+- **`MaintenanceService.createWorkOrderFromRequest`**: bật lại khối set trạng thái đang bị comment,
+  đổi sang `COMPLETED`. Đây là thay đổi hành vi duy nhất. Đường về đã có sẵn ở `cancelWorkOrder`
+  (huỷ hết PCT → yêu cầu quay lại `PENDING`).
+- **`RepairRequestStatsDTO`** + **`RepairService.getStats()`**: bỏ field/count `approved`, `inProgress`.
+- **`RepairRequestRepository`**: xoá `countActiveRequests()` (JPQL liệt kê 3 trạng thái cũ);
+  `DashboardService.getSummary` chuyển sang dùng `countByStatus(PENDING)` sẵn có — KPI "yêu cầu
+  đang active" giờ đồng nghĩa "chưa có phiếu công tác", **con số sẽ đổi**.
+- **Test**: `MaintenanceServiceTest` (fixture + assert) và `MaintenanceServiceDbTest:119` đổi
+  `IN_PROGRESS` → `COMPLETED`. Riêng case `createWorkOrderFromRequest_...` trước đây assert
+  "request giữ nguyên PENDING" (mã hoá đúng hành vi đang tắt) → nay assert `COMPLETED` + có gọi save.
+
+### Frontend (`m6-thermal-power-plant`)
+- **`services/repairRequestService.js`**: `REQUEST_STATUS`/`_LABEL`/`_VARIANT` còn 2 khoá,
+  `COMPLETED: 'Đã đóng'`. `getList` đổi `sort` → `'status,createdAt,desc'`: Spring hiểu
+  `"a,b,dir"` là sort cả 2 cột, cột `status` lưu chuỗi nên `'PENDING' > 'COMPLETED'` → Chờ xử lý
+  lên đầu, trong mỗi nhóm mới nhất trước. **0 dòng code BE cho phần sắp xếp.**
+  Ràng buộc đã ghi comment tại chỗ: chỉ đúng khi enum còn đúng 2 giá trị; thêm trạng thái thứ 3
+  phải chuyển sang `ORDER BY CASE` trong `@Query` của `RepairRequestRepository.search`.
+  Không dùng mảng `sort: [...]` vì `apiClient` không set `paramsSerializer` (axios phát `sort[]=`).
+- **`pages/RepairRequestPage.jsx`**: `FILTER_PILLS` còn *Tất cả / Chờ xử lý / Đã đóng*;
+  `STAT_KEY_BY_STATUS` + state `stats` bỏ 2 khoá; stat card "Đang thực hiện"/`inProgress` →
+  **"Đã đóng"**/`completed`. Các nhánh gate `req.status === PENDING` (nút tạo PCT, nút Xoá) giữ
+  nguyên — tự động đúng: yêu cầu đã đóng không tạo PCT hay xoá được nữa.
+
+### Nghiệm thu
+`./gradlew test --tests "*MaintenanceService*"` → 16 tests pass (H2, `flyway.enabled=false` ở profile
+test nên **V19 không được test tự động che phủ** — phải verify tay trên MySQL). `npm run lint` không
+phát sinh lỗi mới ở 2 file FE đã sửa.
+
+### Chưa làm
+`components/repair_request/RepairRequest.jsx` và `RepairRequestDetailModal.jsx` là code chết (không
+file nào import) và vẫn chứa bảng 4 trạng thái. Theo RULE.MD không tự xoá — tách task riêng.
+
+---
+
 ## [2026-07-22] — Dashboard dùng dữ liệu thật (thay toàn bộ mock)
 
 Thay toàn bộ mock data trên Dashboard bằng dữ liệu thật qua **1 endpoint tổng hợp**

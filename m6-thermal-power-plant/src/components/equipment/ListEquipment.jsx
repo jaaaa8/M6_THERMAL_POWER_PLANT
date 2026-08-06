@@ -36,10 +36,8 @@ export default function ListEquipment() {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  // Active view states
-  const [selectedEqId, setSelectedEqId] = useState(null); // When viewing detail
-  const [selectedEqData, setSelectedEqData] = useState(null);
-
+  // Xem chi tiết thiết bị giờ điều hướng sang trang riêng (handleViewDetails),
+  // không giữ state cục bộ nữa.
 
   // Modals state
   const [deleteModal, setDeleteModal] = useState({ show: false, data: null });
@@ -172,72 +170,9 @@ export default function ListEquipment() {
     navigate(`/equipment/equipments/${eq.id}`);
   };
 
-  // Open parameter edit modal
-  const handleOpenTechParamModal = () => {
-    const params = selectedEqData?.technicalParameters || [];
-    // Deep clone parameters
-    setTempParams(params.map((p, idx) => ({ ...p, tempId: idx + 1 })));
-    setTechParamModalShow(true);
-  };
-
-  // Add technical parameter row in modal
-  const handleAddParamRow = () => {
-    const nextId = tempParams.length > 0 ? Math.max(...tempParams.map(p => p.tempId || 0)) + 1 : 1;
-    setTempParams([
-      ...tempParams,
-      { tempId: nextId, name: '', value: '', unit: unitsList[0] || '' }
-    ]);
-  };
-
-  // Edit technical parameter field inside row
-  const handleEditParamRowField = (tempId, field, value) => {
-    setTempParams(prev => prev.map(p => {
-      if (p.tempId === tempId) {
-        return { ...p, [field]: value };
-      }
-      return p;
-    }));
-  };
-
-  // Delete technical parameter row in modal
-  const handleDeleteParamRow = (tempId) => {
-    setTempParams(prev => prev.filter(p => p.tempId !== tempId));
-  };
-
-  // Save technical parameters
-  const handleSaveTechParams = async () => {
-    // Validate rows
-    const hasEmpty = tempParams.some(p => !p.name.trim() || !p.value.trim());
-    if (hasEmpty) {
-      toast.warning('Vui lòng điền đầy đủ Tên thông số và Giá trị');
-      return;
-    }
-
-    try {
-      // Map back to standard parameters (removing tempId)
-      const cleanParams = tempParams.map((p, idx) => ({
-        id: p.id || idx + 1,
-        name: p.name.trim(),
-        value: p.value.trim(),
-        unit: p.unit
-      }));
-
-      const updatedData = {
-        ...selectedEqData,
-        technicalParameters: cleanParams
-      };
-
-      const res = await equipmentService.update(selectedEqId, updatedData);
-      setSelectedEqData(res.data);
-      setTechParamModalShow(false);
-      toast.success('Cập nhật thông số kỹ thuật thành công!');
-      // Update data list to refresh
-      fetchEquipments(page);
-    } catch (e) {
-      console.error(e);
-      toast.error('Lỗi khi lưu thông số kỹ thuật');
-    }
-  };
+  // Sửa thông số kỹ thuật KHÔNG còn nằm ở đây — modal cũ đã bị gỡ, tính năng
+  // sống ở TechnicalParameterTab. Các handler của modal đó từng sót lại sau
+  // merge và tham chiếu state không còn tồn tại (tempParams, unitsList...).
 
   // Status mapping
   const getStatusProps = (status) => {

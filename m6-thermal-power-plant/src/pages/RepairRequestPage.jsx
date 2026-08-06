@@ -30,17 +30,13 @@ import './RepairRequestPage.css';
 const FILTER_PILLS = [
   { key: 'ALL', label: 'Tất cả' },
   { key: REQUEST_STATUS.PENDING, label: 'Chờ xử lý' },
-  { key: REQUEST_STATUS.APPROVED, label: 'Đã duyệt' },
-  { key: REQUEST_STATUS.IN_PROGRESS, label: 'Đang xử lý' },
-  { key: REQUEST_STATUS.COMPLETED, label: 'Hoàn thành' },
+  { key: REQUEST_STATUS.COMPLETED, label: 'Đã đóng' },
 ];
 
 // Map key stats trả về từ backend cho từng pill (ALL/status).
 const STAT_KEY_BY_STATUS = {
   ALL: 'total',
   [REQUEST_STATUS.PENDING]: 'pending',
-  [REQUEST_STATUS.APPROVED]: 'approved',
-  [REQUEST_STATUS.IN_PROGRESS]: 'inProgress',
   [REQUEST_STATUS.COMPLETED]: 'completed',
 };
 
@@ -127,7 +123,7 @@ export default function RepairRequestPage() {
 
   // Số liệu tổng hợp (đếm toàn bộ) cho stat cards + pill counts
   const [stats, setStats] = useState({
-    total: 0, pending: 0, approved: 0, inProgress: 0, completed: 0, emergencyPending: 0,
+    total: 0, pending: 0, completed: 0, emergencyPending: 0,
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -205,7 +201,7 @@ export default function RepairRequestPage() {
   const statCards = [
     { key: 'total', label: 'Tổng yêu cầu', value: stats.total, icon: <BsListUl />, color: 'var(--color-primary)' },
     { key: 'pending', label: 'Đang chờ xử lý', value: stats.pending, icon: <BsHourglassSplit />, color: 'var(--color-status-warning)' },
-    { key: 'in_progress', label: 'Đang thực hiện', value: stats.inProgress, icon: <BsFileEarmarkCheck />, color: 'var(--color-status-info)' },
+    { key: 'completed', label: 'Đã đóng', value: stats.completed, icon: <BsFileEarmarkCheck />, color: 'var(--color-status-normal)' },
     { key: 'urgent', label: 'Khẩn cấp (chờ xử lý)', value: stats.emergencyPending, icon: <BsLightningChargeFill />, color: 'var(--color-status-danger)' },
   ];
 
@@ -338,9 +334,10 @@ export default function RepairRequestPage() {
             <Table hover className="data-table rr-table">
               <thead>
                 <tr>
+                  <th style={{ width: '5%' }}>STT</th>
                   <th style={{ width: '10%' }}>Mã YC</th>
-                  <th style={{ width: '15%' }}>Mã KKS</th>
-                  <th style={{ width: '25%' }}>Thiết bị</th>
+                  <th style={{ width: '13%' }}>Mã KKS</th>
+                  <th style={{ width: '22%' }}>Thiết bị</th>
                   <th style={{ width: '12%' }}>Ưu tiên</th>
                   <th style={{ width: '12%' }}>Trạng thái</th>
                   <th style={{ width: '15%' }}>Ngày tạo</th>
@@ -348,8 +345,11 @@ export default function RepairRequestPage() {
                 </tr>
               </thead>
               <tbody>
-                {requests.map((req) => (
+                {requests.map((req, idx) => (
                   <tr key={req.id}>
+                    {/* Phân trang là SERVER-SIDE nên phải cộng offset của trang,
+                        không dùng idx trần — page là 0-based khớp Spring Page. */}
+                    <td className="text-muted">{page * size + idx + 1}</td>
                     <td>
                       <code className="code-tag">{req.requestCode}</code>
                     </td>

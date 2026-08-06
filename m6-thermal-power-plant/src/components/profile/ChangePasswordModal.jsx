@@ -1,20 +1,73 @@
-import { useState } from 'react';
-import { Modal, Button, Form, Spinner } from 'react-bootstrap';
+import { useState, useEffect, useRef } from 'react';
+import { Modal, Button, Form, Spinner, InputGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { BsX, BsKey, BsEye, BsEyeSlash } from 'react-icons/bs';
+import { BsX, BsKey, BsEye, BsEyeSlash, BsEnvelopeAt } from 'react-icons/bs';
 import { authService } from '../../services/authService';
+
+/** Giây phải đợi giữa 2 lần xin mã — khớp RESEND_COOLDOWN ở PasswordOtpService. */
+const RESEND_COOLDOWN = 60;
 
 export default function ChangePasswordModal({ show, onClose }) {
   const navigate = useNavigate();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [errors, setErrors] = useState({});
+  const timerRef = useRef(null);
+
+  // Dọn interval khi modal đóng / component unmount — không dọn thì đếm ngược
+  // chạy tiếp dưới nền và setState vào component đã gỡ.
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  const startCooldown = () => {
+    setCooldown(RESEND_COOLDOWN);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCooldown((s) => {
+        if (s <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const handleClose = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setOtp('');
+    setErrors({});
+    setShowOld(false);
+    setShowNew(false);
+    setShowConfirm(false);
+    clearInterval(timerRef.current);
+    setCooldown(0);
+    if (onClose) onClose();
+  };
+
+  const handleSendOtp = async () => {
+    setSendingOtp(true);
+    try {
+      const maskedEmail = await authService.requestChangePasswordOtp();
+      toast.success(`Đã gửi mã xác nhận tới ${maskedEmail}. Mã có hiệu lực 5 phút.`);
+      startCooldown();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Không gửi được mã xác nhận.';
+      toast.error(msg, { autoClose: 8000 });
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
   const validate = () => {
     const errs = {};
@@ -35,6 +88,12 @@ export default function ChangePasswordModal({ show, onClose }) {
       errs.confirmPassword = 'Xác nhận mật khẩu mới không trùng khớp';
     }
 
+    if (!otp) {
+      errs.otp = 'Mã xác nhận không được để trống';
+    } else if (!/^\d{6}$/.test(otp)) {
+      errs.otp = 'Mã xác nhận gồm đúng 6 chữ số';
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -45,7 +104,7 @@ export default function ChangePasswordModal({ show, onClose }) {
 
     setLoading(true);
     try {
-      await authService.changePassword(oldPassword, newPassword);
+      await authService.changePassword(oldPassword, newPassword, otp);
       toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
       onClose();
       // Thực hiện logout và chuyển hướng
@@ -77,8 +136,8 @@ export default function ChangePasswordModal({ show, onClose }) {
         </h5>
         <Button 
           variant="light" 
-          className="btn-close-custom ms-auto" 
-          onClick={onClose}
+          className="btn-icon-only rounded-circle ms-auto" 
+          onClick={handleClose}
           disabled={loading}
         >
           <BsX size={24} />
@@ -86,7 +145,7 @@ export default function ChangePasswordModal({ show, onClose }) {
       </Modal.Header>
 
       <Modal.Body className="px-4 pb-4">
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} noValidate>
           {/* Old Password */}
           <Form.Group className="mb-3">
             <Form.Label className="fs-7 fw-semibold text-secondary">Mật khẩu cũ <span className="text-danger">*</span></Form.Label>
@@ -103,6 +162,7 @@ export default function ChangePasswordModal({ show, onClose }) {
                 }}
                 isInvalid={!!errors.oldPassword}
                 disabled={loading}
+                className="pe-5"
               />
               <button 
                 type="button"
@@ -113,9 +173,11 @@ export default function ChangePasswordModal({ show, onClose }) {
                 {showOld ? <BsEyeSlash size={16} /> : <BsEye size={16} />}
               </button>
             </div>
-            <Form.Control.Feedback type="invalid">
-              {errors.oldPassword}
-            </Form.Control.Feedback>
+            {errors.oldPassword && (
+              <div className="invalid-feedback d-block mt-1">
+                {errors.oldPassword}
+              </div>
+            )}
           </Form.Group>
 
           {/* New Password */}
@@ -134,6 +196,7 @@ export default function ChangePasswordModal({ show, onClose }) {
                 }}
                 isInvalid={!!errors.newPassword}
                 disabled={loading}
+                className="pe-5"
               />
               <button 
                 type="button"
@@ -144,9 +207,11 @@ export default function ChangePasswordModal({ show, onClose }) {
                 {showNew ? <BsEyeSlash size={16} /> : <BsEye size={16} />}
               </button>
             </div>
-            <Form.Control.Feedback type="invalid">
-              {errors.newPassword}
-            </Form.Control.Feedback>
+            {errors.newPassword && (
+              <div className="invalid-feedback d-block mt-1">
+                {errors.newPassword}
+              </div>
+            )}
           </Form.Group>
 
           {/* Confirm Password */}
@@ -165,6 +230,7 @@ export default function ChangePasswordModal({ show, onClose }) {
                 }}
                 isInvalid={!!errors.confirmPassword}
                 disabled={loading}
+                className="pe-5"
               />
               <button 
                 type="button"
@@ -175,16 +241,63 @@ export default function ChangePasswordModal({ show, onClose }) {
                 {showConfirm ? <BsEyeSlash size={16} /> : <BsEye size={16} />}
               </button>
             </div>
-            <Form.Control.Feedback type="invalid">
-              {errors.confirmPassword}
-            </Form.Control.Feedback>
+            {errors.confirmPassword && (
+              <div className="invalid-feedback d-block mt-1">
+                {errors.confirmPassword}
+              </div>
+            )}
+          </Form.Group>
+
+          {/* Mã OTP gửi qua email — lớp xác nhận thứ hai, không thay mật khẩu cũ */}
+          <Form.Group className="mb-4">
+            <Form.Label className="fs-7 fw-semibold text-secondary">
+              Mã xác nhận <span className="text-danger">*</span>
+            </Form.Label>
+            <InputGroup>
+              <Form.Control
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Nhập mã 6 số trong email"
+                value={otp}
+                onChange={(e) => {
+                  // Chỉ nhận chữ số: dán từ email hay kèm khoảng trắng vẫn sạch.
+                  setOtp(e.target.value.replace(/\D/g, ''));
+                  if (errors.otp) setErrors((prev) => ({ ...prev, otp: null }));
+                }}
+                isInvalid={!!errors.otp}
+                disabled={loading}
+              />
+              <Button
+                variant="outline-primary"
+                type="button"
+                onClick={handleSendOtp}
+                disabled={loading || sendingOtp || cooldown > 0}
+                style={{ minWidth: 130 }}
+              >
+                {sendingOtp ? (
+                  <Spinner size="sm" animation="border" />
+                ) : cooldown > 0 ? `Gửi lại (${cooldown}s)` : (
+                  <>
+                    <BsEnvelopeAt className="me-1" /> Gửi mã
+                  </>
+                )}
+              </Button>
+            </InputGroup>
+            {errors.otp ? (
+              <div className="invalid-feedback d-block mt-1">{errors.otp}</div>
+            ) : (
+              <Form.Text muted className="fs-7">
+                Bấm &quot;Gửi mã&quot; để nhận mã xác nhận qua email. Mã có hiệu lực 5 phút.
+              </Form.Text>
+            )}
           </Form.Group>
 
           {/* Actions */}
           <div className="d-flex justify-content-end gap-2">
             <Button 
               variant="outline-secondary" 
-              onClick={onClose}
+              onClick={handleClose}
               disabled={loading}
               className="px-4"
             >
