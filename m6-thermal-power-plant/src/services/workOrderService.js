@@ -46,15 +46,20 @@ export const workOrderService = {
   getById: (id) => apiClient.get(`${BASE_URL}/api/v1/work-orders/${id}`),
 
   /**
-   * Tạo phiếu công tác từ một yêu cầu sửa chữa.
-   * → POST /api/maintenance/work-orders
+   * Tạo phiếu công tác (PCT) — 2 chế độ, backend dispatch theo field có mặt:
+   *  - Từ yêu cầu sửa chữa: `repairRequestId` (thiết bị lấy từ request).
+   *  - Thủ công nhiều thiết bị: `equipmentIds` (không cần RepairRequest).
+   * XOR: phải có đúng 1 trong 2, không được cả hai (400 nếu sai).
+   * → POST /api/v1/work-orders
    * Body khớp với CreateWorkOrderRequest DTO:
    * @param {object} data
-   * @param {number}  data.repairRequestId
+   * @param {number}  [data.repairRequestId]
+   * @param {number[]} [data.equipmentIds]        - danh sách id thiết bị (chế độ thủ công)
    * @param {number}  data.leaderId               - bắt buộc
    * @param {number}  data.directSupervisorId      - bắt buộc
    * @param {number}  data.safetySupervisorId      - bắt buộc
    * @param {string}  data.startTime               - bắt buộc (ISO datetime)
+   * @param {string}  [data.repairDescription]     - mô tả công việc
    *   (KHÔNG có mốc kết thúc — end_time là giờ kết thúc THỰC TẾ, hệ thống tự ghi
    *    khi phiếu hoàn thành)
    * @param {Array<{employeeId: number, roleInTask?: string}>} [data.members]
@@ -179,4 +184,26 @@ export const workOrderService = {
    * → PATCH /api/v1/work-orders/{id}/open-day
    */
   openDay: (id) => apiClient.patch(`${BASE}/${id}/open-day`),
+
+  approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
+
+  /**
+   * Cập nhật trạng thái làm việc của MỘT thiết bị trong PCT thủ công nhiều
+   * thiết bị (IN_PROGRESS ↔ COMPLETED). Chỉ áp dụng cho WO thủ công còn sống;
+   * 409 nếu phiếu từ yêu cầu / đã kết thúc / status = CANCELED; 404 nếu thiết
+   * bị không thuộc phiếu.
+   * → PATCH /api/v1/work-orders/{id}/equipment/{equipmentId}/status
+   * @param {number} workOrderId
+   * @param {number} equipmentId
+   * @param {string} status - 'IN_PROGRESS' | 'COMPLETED'
+   */
+  updateEquipmentStatus: (workOrderId, equipmentId, status) =>
+    apiClient.patch(`${BASE}/${workOrderId}/equipment/${equipmentId}/status`, { status }),
+
+  /**
+   * Mở (lại) phiếu để làm việc: OPEN → IN_PROGRESS (bắt đầu lần đầu) hoặc
+   * APPROVED → IN_PROGRESS (bật lại nút đã tắt hôm trước, sau khi duyệt).
+   * → PATCH /api/v1/work-orders/{id}/reopen
+   */
+  reopen: (id) => apiClient.patch(`${BASE}/${id}/reopen`),
 };

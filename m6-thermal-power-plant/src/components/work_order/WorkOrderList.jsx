@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import {
   BsClipboardCheck, BsArrowClockwise, BsListUl,
   BsHourglassSplit, BsCheckCircle, BsPlayCircle,
-  BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat,
+  BsEye, BsBoxSeam, BsPencilSquare, BsArrowRepeat, BsFileEarmarkPlus,
 } from 'react-icons/bs';
 import PageHeader from '../common/PageHeader';
 import DataTable from '../common/DataTable';
@@ -16,6 +16,7 @@ import WorkOrderEditModal from './WorkOrderEditModal';
 import WorkOrderStatusModal from './WorkOrderStatusModal';
 import { canCancel } from './workOrderPermissions';
 import SuppliesIssueModal from './SuppliesIssueModal';
+import CreateManualWorkOrderModal from './CreateManualWorkOrderModal';
 import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
 import { toast } from 'react-toastify';
@@ -68,6 +69,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
+  const [showCreateManual, setShowCreateManual] = useState(false);
   const [suppliesIssueTarget, setSuppliesIssueTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);     // dòng đang sửa thông tin
   const [statusTarget, setStatusTarget] = useState(null); // dòng đang đổi trạng thái
@@ -128,16 +130,41 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
     { key: 'orderCode', label: 'Mã PCT', mono: true, width: 160 },
     {
       key: 'equipmentName', label: 'Thiết bị',
-      render: (_, row) => (
-        <div>
-          <div style={{ fontWeight: 'var(--font-semibold)' }}>{row.equipmentName}</div>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-            {row.equipmentKksCode}
-          </span>
-        </div>
-      ),
+      render: (_, row) => {
+        const equipments = Array.isArray(row.equipments) ? row.equipments : [];
+        if (row.equipmentName || !equipments.length) {
+          return (
+            <div>
+              <div style={{ fontWeight: 'var(--font-semibold)' }}>{row.equipmentName}</div>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                {row.equipmentKksCode}
+              </span>
+            </div>
+          );
+        }
+        // PCT thủ công nhiều thiết bị (không có repairRequest)
+        const shown = equipments.slice(0, 2);
+        const rest = equipments.length - shown.length;
+        return (
+          <div>
+            {shown.map((e) => (
+              <div key={e.id}>
+                <span style={{ fontWeight: 'var(--font-semibold)' }}>{e.name}</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginLeft: 6 }}>
+                  {e.kksCode}
+                </span>
+              </div>
+            ))}
+            {rest > 0 && (
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                +{rest} thiết bị khác
+              </div>
+            )}
+          </div>
+        );
+      },
     },
-    { key: 'requestCode', label: 'Mã YC', mono: true, width: 130 },
+    { key: 'requestCode', label: 'Mã YC', mono: true, width: 130, render: (v) => v || '—' },
     { key: 'leaderName', label: 'Người LĐ', width: 150 },
     {
       key: 'startTime', label: 'Thời gian', width: 170,
@@ -223,9 +250,16 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         subtitle="Danh sách phiếu công tác (PCT) được tạo từ yêu cầu sửa chữa"
         icon={<BsClipboardCheck />}
         actions={
-          <Button variant="outline-secondary" size="sm" onClick={fetchWorkOrders}>
-            <BsArrowClockwise className="me-1" /> Làm mới
-          </Button>
+          <>
+            {canOperate && (
+              <Button variant="primary" size="sm" onClick={() => setShowCreateManual(true)}>
+                <BsFileEarmarkPlus className="me-1" /> Tạo PCT thủ công
+              </Button>
+            )}
+            <Button variant="outline-secondary" size="sm" onClick={fetchWorkOrders}>
+              <BsArrowClockwise className="me-1" /> Làm mới
+            </Button>
+          </>
         }
       />
 
@@ -337,6 +371,13 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
           )}
         </>
       )}
+
+      {/* ===== MODAL: TẠO PCT THỦ CÔNG (NHIỀU THIẾT BỊ) ===== */}
+      <CreateManualWorkOrderModal
+        show={showCreateManual}
+        onClose={() => setShowCreateManual(false)}
+        onCreated={fetchWorkOrders}
+      />
 
       {/* ===== MODAL: CHI TIẾT PCT ===== */}
       <WorkOrderDetailModal

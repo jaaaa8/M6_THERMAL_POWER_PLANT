@@ -32,6 +32,14 @@ const STATUS_MAP = {
  */
 const MANAGE_MEMBER_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 
+const EQUIPMENT_STATUS_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
+
+const EQUIPMENT_STATUS_MAP = {
+  IN_PROGRESS: { status: 'warning', label: 'Đang thực hiện' },
+  COMPLETED: { status: 'normal', label: 'Đã xong' },
+  CANCELED: { status: 'inactive', label: 'Đã huỷ' },
+};
+
 /**
  * Lấy nguyên văn message lỗi backend trả về (GlobalExceptionHandler trả về
  * cả dạng JSON có `message` lẫn dạng CHUỖI THUẦN tuỳ exception).
@@ -220,6 +228,58 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId }) {
     }
   };
 
+  /* ============================================================
+     GIA HẠN PHIẾU: chỉ xin được khi phiếu ĐANG TẠM DỪNG (STOPPED) — đúng quy
+     trình hiện trường: hết ngày thì dừng việc, trả phiếu giấy về phòng Trưởng
+     ca, HÔM SAU mới xin làm tiếp. Gửi đi tạo dòng gia hạn (lý do) in lên bản
+     giấy PCT, trạng thái chuyển sang WAITING_FOR_APPROVAL.
+     ============================================================ */
+
+  const openStopForm = () => {
+    if (detail?.status !== 'STOPPED') {
+      toast.warning('Phiếu công tác phải chuyển sang trạng thái dừng mới được phép xin gia hạn');
+      return;
+    }
+    setStopReason('');
+    // Ngày xin làm tiếp là SUY RA được (hôm sau ngày làm việc gần nhất) nên chỉ
+    // hiển thị, Tổ trưởng không sửa; Trưởng ca mới chốt ngày lúc duyệt.
+    setStopUntil(nextExtensionDate(detail?.startTime, detail?.extensions));
+    setShowStopForm(true);
+  };
+
+  const submitStop = async () => {
+    if (!stopReason.trim()) {
+      toast.warning('Phải nhập lý do — lý do được in lên bản giấy đưa Trưởng ca ký');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await workOrderService.stop(workOrderId, stopReason.trim());
+      toast.success('Đã gửi duyệt gia hạn — in bản PCT mới và đưa Trưởng ca ký');
+      setShowStopForm(false);
+      await loadDetail(true);
+      onChanged?.();
+    } catch (err) {
+      toast.error(`Không thể gửi duyệt: ${extractErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateEquipmentStatus = async (equipmentId, status) => {
+    setActionLoading(true);
+    try {
+      await workOrderService.updateEquipmentStatus(workOrderId, equipmentId, status);
+      toast.success(status === 'COMPLETED' ? 'Đã đánh dấu thiết bị hoàn thành' : 'Đã mở lại thiết bị');
+      await loadDetail(true);
+      onChanged?.();
+    } catch (err) {
+      toast.error(`Không thể cập nhật trạng thái thiết bị: ${extractErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (!show) return null;
 
   // Cho thao tác thành viên / chỉnh sửa với MỌI phiếu còn sống — chỉ phiếu đã
@@ -229,6 +289,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId }) {
   // Gating theo vai trò của tài khoản đang đăng nhập (chỉ ở UI).
   const userRoles = authService.getCurrentUser()?.roles || [];
   const canManageMembers = userRoles.some((r) => MANAGE_MEMBER_ROLES.includes(r));
+  const canExtend = userRoles.some((r) => EXTEND_ROLES.includes(r));
+  const canUpdateEquipmentStatus = userRoles.some((r) => EQUIPMENT_STATUS_ROLES.includes(r));
 
   const statusInfo = detail?.status ? STATUS_MAP[detail.status] || { label: detail.status, status: 'info' } : null;
 
@@ -292,12 +354,48 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId }) {
                     <BsCpu />
                     Thông tin thiết bị
                   </div>
-                  <div className="wo-detail-info-grid">
-                    <InfoItem label="Mã KKS" value={detail.equipmentKksCode} mono />
-                    <InfoItem label="Tên thiết bị" value={detail.equipmentName} />
-                    <InfoItem label="Mã yêu cầu" value={detail.requestCode} mono />
-                    <InfoItem label="Mô tả" value={detail.repairDescription} />
-                  </div>
+                  {detail.equipments?.length ? (
+                    <div className="wo-detail-info-grid">
+                      <div className="wo-detail-equipments-list">
+                        {detail.equipments.map((e) => (
+                          <div key={e.id} className="wo-detail-equipment-item">
+                            <div style={{ fontWeight: 'var(--font-semibold)' }}>{e.name}</div>
+                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                              {e.kksCode}
+                              {e.systemName ? ` · ${e.systemName}` : ''}
+                            </div>
+                            <div className="wo-detail-equipment-status">
+                              <StatusBadge
+                                status={EQUIPMENT_STATUS_MAP[e.status]?.status || 'inactive'}
+                                label={EQUIPMENT_STATUS_MAP[e.status]?.label || e.status}
+                              />
+                              {canUpdateEquipmentStatus && canManage && detail.repairRequestId == null && (
+                                <button
+                                  type="button"
+                                  className={`btn btn-sm ${e.status === 'IN_PROGRESS' ? 'btn-outline-success' : 'btn-outline-secondary'}`}
+                                  disabled={actionLoading}
+                                  onClick={() => handleUpdateEquipmentStatus(
+                                    e.id,
+                                    e.status === 'IN_PROGRESS' ? 'COMPLETED' : 'IN_PROGRESS',
+                                  )}
+                                >
+                                  {e.status === 'IN_PROGRESS' ? 'Hoàn thành' : 'Mở lại'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <InfoItem label="Mô tả" value={detail.repairDescription} />
+                    </div>
+                  ) : (
+                    <div className="wo-detail-info-grid">
+                      <InfoItem label="Mã KKS" value={detail.equipmentKksCode} mono />
+                      <InfoItem label="Tên thiết bị" value={detail.equipmentName} />
+                      <InfoItem label="Mã yêu cầu" value={detail.requestCode} mono />
+                      <InfoItem label="Mô tả" value={detail.repairDescription} />
+                    </div>
+                  )}
                 </div>
 
                 {/* ===== SECTION: NHÂN SỰ QUẢN LÝ ===== */}
