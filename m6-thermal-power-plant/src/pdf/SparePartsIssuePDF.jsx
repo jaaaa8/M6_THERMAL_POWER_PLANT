@@ -148,11 +148,12 @@ export default function SparePartsIssuePDF({
 
     const dmy = getDayMonthYear(data?.issuedAt);
 
-    const workOrder = workOrders?.find(
+    const workOrderObj = workOrders?.find(
         w => Number(w.id) === Number(data?.workOrderId)
-    )?.orderCode || "";
+    );
+    const workOrder = workOrderObj?.workOrderCode || workOrderObj?.orderCode || data?.workOrderCode || "";
 
-    const requesterName = data?.issuedBy?.employee?.employeeName || data?.issuedBy?.username || "[Họ và tên người đề nghị]";
+    const requesterName = data?.issuedBy?.employee?.fullName || data?.issuedBy?.employee?.employeeName || data?.issuedBy?.username || "[Họ và tên người đề nghị]";
 
     return (
         <Document>
@@ -184,7 +185,7 @@ export default function SparePartsIssuePDF({
                         </View>
                         <View style={{ flexDirection: "row", marginVertical: 3 }}>
                             <Text style={{ width: 85 }}>Số phiếu xuất:</Text>
-                            <Text>{data?.sparePartCode || "............................................"}</Text>
+                            <Text>{data?.sparePartCode || data?.issueCode || "............................................"}</Text>
                         </View>
                         <View style={{ flexDirection: "row" }}>
                             <Text style={{ width: 85 }}>Ngày:</Text>
@@ -233,12 +234,15 @@ export default function SparePartsIssuePDF({
                         const sp = spareParts?.find(
                             s => s.id?.toString() === item.sparePartId?.toString()
                         );
+                        const code = sp?.sparePartCode || sp?.partCode || sp?.code || item.sparePartCode || "";
+                        const name = sp?.name || item.sparePartName || "";
+                        const unit = sp?.unitName || item.unit || "";
                         return (
                             <View key={index} style={styles.tableRow}>
                                 <Text style={styles.cell1}>{index + 1}</Text>
-                                <Text style={styles.cell2}>{sp?.partCode || sp?.code || ""}</Text>
-                                <Text style={styles.cell3}>{sp?.name || ""}</Text>
-                                <Text style={styles.cell4}>{sp?.unitName || ""}</Text>
+                                <Text style={styles.cell2}>{code}</Text>
+                                <Text style={styles.cell3}>{name}</Text>
+                                <Text style={styles.cell4}>{unit}</Text>
                                 <Text style={styles.cell5}>{item.quantity}</Text>
                                 <Text style={styles.cell6}></Text>
                                 <Text style={styles.cell7}></Text>
