@@ -342,12 +342,29 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                     <BsCpu />
                     Thông tin thiết bị
                   </div>
-                  <div className="wo-detail-info-grid">
-                    <InfoItem label="Mã KKS" value={detail.equipmentKksCode} mono />
-                    <InfoItem label="Tên thiết bị" value={detail.equipmentName} />
-                    <InfoItem label="Mã yêu cầu" value={detail.requestCode} mono />
-                    <InfoItem label="Mô tả" value={detail.repairDescription} />
-                  </div>
+                  {detail.equipments?.length ? (
+                    <div className="wo-detail-info-grid">
+                      <div className="wo-detail-equipments-list">
+                        {detail.equipments.map((e) => (
+                          <div key={e.id} className="wo-detail-equipment-item">
+                            <div style={{ fontWeight: 'var(--font-semibold)' }}>{e.name}</div>
+                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                              {e.kksCode}
+                              {e.systemName ? ` · ${e.systemName}` : ''}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <InfoItem label="Mô tả" value={detail.repairDescription} />
+                    </div>
+                  ) : (
+                    <div className="wo-detail-info-grid">
+                      <InfoItem label="Mã KKS" value={detail.equipmentKksCode} mono />
+                      <InfoItem label="Tên thiết bị" value={detail.equipmentName} />
+                      <InfoItem label="Mã yêu cầu" value={detail.requestCode} mono />
+                      <InfoItem label="Mô tả" value={detail.repairDescription} />
+                    </div>
+                  )}
                 </div>
 
                 {/* ===== SECTION: NHÂN SỰ QUẢN LÝ ===== */}
