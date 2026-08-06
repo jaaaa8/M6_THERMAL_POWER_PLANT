@@ -39,13 +39,23 @@ export default function ProfileDetail({ show, onClose, onChangePasswordClick }) 
     fetchDetail();
   }, [accountId, show]);
 
+  const formatValue = (obj) => {
+    if (!obj) return 'N/A';
+    if (typeof obj === 'object') {
+      const name = obj.name || obj.departmentCode || obj.positionCode || obj.expertiseCode;
+      return name ? name : 'N/A';
+    }
+    if (typeof obj === 'number') return 'N/A';
+    return String(obj);
+  };
+
   if (!show) return null;
 
   return (
     <Modal 
       show={show} 
       onHide={onClose}
-      size="lg"
+      size="xl"
       centered
       className="profile-detail-modal"
     >
@@ -82,7 +92,7 @@ export default function ProfileDetail({ show, onClose, onChangePasswordClick }) 
                     <BsShieldLock size={48} className="text-primary" />
                   )}
                 </div>
-                <h4 className="mb-1">{account.username}</h4>
+                <h4 className="mb-1 username-text px-2">{account.username}</h4>
                 <p className="text-muted mb-2">Tên đăng nhập</p>
                 <div className="mt-2">
                   <StatusBadge 
@@ -92,7 +102,7 @@ export default function ProfileDetail({ show, onClose, onChangePasswordClick }) 
                 </div>
               </div>
 
-              <div className="detail-section">
+              <div className="detail-section mb-0">
                 <h6 className="section-title">Bảo mật tài khoản</h6>
                 <div className="info-grid">
                   <div className="info-item mb-3">
@@ -138,7 +148,7 @@ export default function ProfileDetail({ show, onClose, onChangePasswordClick }) 
               </h5>
               
               {employee ? (
-                <div className="detail-section h-100">
+                <div className="detail-section mb-0">
                   <div className="row g-3">
                     <div className="col-6">
                       <div className="info-item">
@@ -167,19 +177,19 @@ export default function ProfileDetail({ show, onClose, onChangePasswordClick }) 
                     <div className="col-6">
                       <div className="info-item">
                         <span className="info-label">Phòng ban</span>
-                        <span className="info-value text-dark">{employee.department?.name || 'N/A'}</span>
+                        <span className="info-value text-dark">{formatValue(employee.department)}</span>
                       </div>
                     </div>
                     <div className="col-6">
                       <div className="info-item">
                         <span className="info-label">Chức vụ</span>
-                        <span className="info-value text-dark">{employee.position?.name || 'N/A'}</span>
+                        <span className="info-value text-dark">{formatValue(employee.position)}</span>
                       </div>
                     </div>
                     <div className="col-12">
                       <div className="info-item">
                         <span className="info-label">Trình độ chuyên môn</span>
-                        <span className="info-value text-dark">{employee.expertise?.name || 'N/A'}</span>
+                        <span className="info-value text-dark">{formatValue(employee.expertise)}</span>
                       </div>
                     </div>
                     <div className="col-12">
@@ -187,8 +197,14 @@ export default function ProfileDetail({ show, onClose, onChangePasswordClick }) 
                         <span className="info-label">Trạng thái làm việc</span>
                         <div className="mt-1">
                           <StatusBadge 
-                            status={employee.isActive ? 'normal' : 'inactive'} 
-                            label={employee.isActive ? 'Đang làm việc' : 'Nghỉ việc'}
+                            status={
+                              employee.isActive === 'ACTIVE' ? 'normal' : 
+                              employee.isActive === 'ON_LEAVE' ? 'warning' : 'inactive'
+                            } 
+                            label={
+                              employee.isActive === 'ACTIVE' ? 'Đang làm việc' : 
+                              employee.isActive === 'ON_LEAVE' ? 'Nghỉ phép' : 'Nghỉ việc'
+                            }
                           />
                         </div>
                       </div>

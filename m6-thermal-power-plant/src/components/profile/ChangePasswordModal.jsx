@@ -16,6 +16,17 @@ export default function ChangePasswordModal({ show, onClose }) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const handleClose = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setErrors({});
+    setShowOld(false);
+    setShowNew(false);
+    setShowConfirm(false);
+    if (onClose) onClose();
+  };
+
   const validate = () => {
     const errs = {};
     if (!oldPassword) {
@@ -77,8 +88,8 @@ export default function ChangePasswordModal({ show, onClose }) {
         </h5>
         <Button 
           variant="light" 
-          className="btn-close-custom ms-auto" 
-          onClick={onClose}
+          className="btn-icon-only rounded-circle ms-auto" 
+          onClick={handleClose}
           disabled={loading}
         >
           <BsX size={24} />
@@ -86,7 +97,7 @@ export default function ChangePasswordModal({ show, onClose }) {
       </Modal.Header>
 
       <Modal.Body className="px-4 pb-4">
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} noValidate>
           {/* Old Password */}
           <Form.Group className="mb-3">
             <Form.Label className="fs-7 fw-semibold text-secondary">Mật khẩu cũ <span className="text-danger">*</span></Form.Label>
@@ -103,6 +114,7 @@ export default function ChangePasswordModal({ show, onClose }) {
                 }}
                 isInvalid={!!errors.oldPassword}
                 disabled={loading}
+                className="pe-5"
               />
               <button 
                 type="button"
@@ -113,9 +125,11 @@ export default function ChangePasswordModal({ show, onClose }) {
                 {showOld ? <BsEyeSlash size={16} /> : <BsEye size={16} />}
               </button>
             </div>
-            <Form.Control.Feedback type="invalid">
-              {errors.oldPassword}
-            </Form.Control.Feedback>
+            {errors.oldPassword && (
+              <div className="invalid-feedback d-block mt-1">
+                {errors.oldPassword}
+              </div>
+            )}
           </Form.Group>
 
           {/* New Password */}
@@ -134,6 +148,7 @@ export default function ChangePasswordModal({ show, onClose }) {
                 }}
                 isInvalid={!!errors.newPassword}
                 disabled={loading}
+                className="pe-5"
               />
               <button 
                 type="button"
@@ -144,9 +159,11 @@ export default function ChangePasswordModal({ show, onClose }) {
                 {showNew ? <BsEyeSlash size={16} /> : <BsEye size={16} />}
               </button>
             </div>
-            <Form.Control.Feedback type="invalid">
-              {errors.newPassword}
-            </Form.Control.Feedback>
+            {errors.newPassword && (
+              <div className="invalid-feedback d-block mt-1">
+                {errors.newPassword}
+              </div>
+            )}
           </Form.Group>
 
           {/* Confirm Password */}
@@ -165,6 +182,7 @@ export default function ChangePasswordModal({ show, onClose }) {
                 }}
                 isInvalid={!!errors.confirmPassword}
                 disabled={loading}
+                className="pe-5"
               />
               <button 
                 type="button"
@@ -175,16 +193,18 @@ export default function ChangePasswordModal({ show, onClose }) {
                 {showConfirm ? <BsEyeSlash size={16} /> : <BsEye size={16} />}
               </button>
             </div>
-            <Form.Control.Feedback type="invalid">
-              {errors.confirmPassword}
-            </Form.Control.Feedback>
+            {errors.confirmPassword && (
+              <div className="invalid-feedback d-block mt-1">
+                {errors.confirmPassword}
+              </div>
+            )}
           </Form.Group>
 
           {/* Actions */}
           <div className="d-flex justify-content-end gap-2">
             <Button 
               variant="outline-secondary" 
-              onClick={onClose}
+              onClick={handleClose}
               disabled={loading}
               className="px-4"
             >
