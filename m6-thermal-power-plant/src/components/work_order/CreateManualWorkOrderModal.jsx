@@ -22,8 +22,7 @@ const SAFETY_SUPERVISOR_ROLE = 'SAFETY_SUPERVISOR';
    equipmentIds validate bằng Yup array min 1 (backend trả 400
    nếu rỗng — validate sớm ở client cho UX).
    ============================================================ */
-const validationSchema = Yup.object({
-  equipmentIds: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 thiết bị'),
+const baseValidationSchema = Yup.object({
   leaderId: Yup.number()
     .typeError('Vui lòng chọn người lãnh đạo')
     .required('Vui lòng chọn người lãnh đạo công việc'),
@@ -35,6 +34,14 @@ const validationSchema = Yup.object({
     .required('Vui lòng chọn người giám sát an toàn'),
   startTime: Yup.string()
     .required('Vui lòng nhập thời gian bắt đầu'),
+});
+
+const validationSchema = baseValidationSchema.shape({
+  equipmentIds: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 thiết bị'),
+});
+
+const lubricationValidationSchema = baseValidationSchema.shape({
+  equipmentLines: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 thiết bị'),
 });
 
 /**
@@ -54,11 +61,17 @@ function extractErrorMessage(err) {
  * equipmentIds). Nội dung giống modal từ request, thay card thông tin request
  * bằng picker đa chọn thiết bị + ô nhập mô tả công việc.
  *
+ * Khi truyền {@code lubricationPlans} (danh sách plan bôi trơn đã chọn từ
+ * checklist) → chế độ WO bôi trơn: thiết bị cố định (bảng read-only),
+ * payload type=LUBRICATION + equipmentLines.
+ *
  * @param {boolean}  props.show
  * @param {Function} props.onClose
  * @param {Function} props.onCreated - (createdWorkOrder) => void, gọi sau khi tạo thành công
+ * @param {Array}    [props.lubricationPlans] - plan bôi trơn được chọn (chế độ LUBRICATION)
  */
-export default function CreateManualWorkOrderModal({ show, onClose, onCreated }) {
+export default function CreateManualWorkOrderModal({ show, onClose, onCreated, lubricationPlans }) {
+  const isLubrication = Array.isArray(lubricationPlans) && lubricationPlans.length > 0;
   const [equipmentList, setEquipmentList] = useState(null); // null = đang tải
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [accountEmployees, setAccountEmployees] = useState(null);
@@ -118,6 +131,9 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
 
   const initialValues = {
     equipmentIds: [], // [number]
+    equipmentLines: isLubrication
+      ? lubricationPlans.map((p) => ({ equipmentId: p.equipment?.id, lubricationPlanId: p.id }))
+      : [],
     leaderId: '',
     directSupervisorId: '',
     safetySupervisorId: '',
@@ -130,12 +146,11 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
     <Modal show={show} onHide={onClose} centered size="lg" scrollable dialogClassName="pct-modal">
       <Formik
         initialValues={initialValues}
-        validationSchema={validationSchema}
+        validationSchema={isLubrication ? lubricationValidationSchema : validationSchema}
         enableReinitialize
         onSubmit={async (values, { setSubmitting }) => {
           try {
-            const payload = {
-              equipmentIds: values.equipmentIds,
+            const common = {
               leaderId: Number(values.leaderId),
               directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
               safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
@@ -146,6 +161,9 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                 roleInTask: m.roleInTask || undefined,
               })),
             };
+            const payload = isLubrication
+              ? { ...common, type: 'LUBRICATION', equipmentLines: values.equipmentLines }
+              : { ...common, equipmentIds: values.equipmentIds };
 
             const res = await workOrderService.create(payload);
             toast.success(`Đã tạo phiếu công tác ${res.data.orderCode}`);
@@ -230,8 +248,12 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                     <BsFileEarmarkPlus />
                   </span>
                   <div>
-                    <span className="pct-modal-title-main">Tạo Phiếu Công tác thủ công</span>
-                    <span className="pct-modal-title-sub">Nhiều thiết bị trong phạm vi công tác</span>
+                    <span className="pct-modal-title-main">
+                      {isLubrication ? 'Tạo Phiếu công tác bảo dưỡng dầu mỡ' : 'Tạo Phiếu Công tác thủ công'}
+                    </span>
+                    <span className="pct-modal-title-sub">
+                      {isLubrication ? 'Theo kế hoạch bôi trơn đã chọn từ checklist' : 'Nhiều thiết bị trong phạm vi công tác'}
+                    </span>
                   </div>
                 </Modal.Title>
               </Modal.Header>
@@ -240,10 +262,33 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                 {/* ===== SECTION: CHỌN THIẾT BỊ (đa chọn) ===== */}
                 <div className="pct-section-title">
                   <BsCpu />
-                  Chọn thiết bị trong phạm vi công tác
+                  {isLubrication ? 'Thiết bị trong phạm vi công tác' : 'Chọn thiết bị trong phạm vi công tác'}
                 </div>
 
-                {equipmentList === null ? (
+                {isLubrication ? (
+                  <div className="pct-equipment-picker">
+                    <Table size="sm" bordered className="mb-0">
+                      <thead>
+                        <tr>
+                          <th>Mã KHBD</th>
+                          <th>Mã thiết bị</th>
+                          <th>Tên thiết bị</th>
+                          <th>Hệ thống</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lubricationPlans.map((p) => (
+                          <tr key={p.id}>
+                            <td>{p.lubricationCode}</td>
+                            <td>{p.equipment?.equipmentCode}</td>
+                            <td>{p.equipment?.name}</td>
+                            <td>{p.equipment?.system?.name}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                ) : equipmentList === null ? (
                   <LoadingSpinner />
                 ) : (
                   <>
