@@ -1,5 +1,70 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-08-06] — Thêm cột STT cho trang Yêu cầu sửa chữa
+
+`RepairRequestPage.jsx` dựng bảng bằng `<Table>` thuần của react-bootstrap chứ không dùng
+`DataTable`, nên không thừa hưởng cột `#` mà `DataTable.jsx:141` vốn có sẵn — phải thêm tay.
+
+- **`pages/RepairRequestPage.jsx`**: thêm cột `STT` ở đầu bảng, đánh số **liên tục qua các
+  trang** bằng `page * size + idx + 1` (`page` 0-based, khớp Spring Page). Dùng `idx` trần sẽ
+  sai vì trang này phân trang **server-side** — mỗi trang chỉ nhận đúng `size` bản ghi nên
+  `idx` luôn chạy từ 0. Chia lại độ rộng cột cho đủ 100%: Mã KKS 15%→13%, Thiết bị 25%→22%.
+
+Không thay bằng `DataTable`: component đó tự phân trang trong bộ nhớ, còn trang này phân trang
+server-side với `PaginationPanel` riêng — đổi sang sẽ vỡ luồng phân trang hiện có.
+
+**File ảnh hưởng**: `pages/RepairRequestPage.jsx`. Backend không đổi.
+
+---
+
+## [2026-08-06] — Sửa 4 file crash do merge "keep both sides"
+
+Commit `b354399 merge: resolve conflicts with origin/main (keep both sides)` giữ code của **cả
+hai nhánh** thay vì chọn một, để lại 15 tham chiếu tới biến không tồn tại. `npm run build` vẫn
+xanh vì Vite không kiểm tên chưa khai báo — lỗi chỉ lộ ra lúc chạy.
+
+### Nguyên nhân "Xem chi tiết phiếu công tác" chết
+`WorkOrderDetailModal.jsx` bị ghép từ **ba** phiên bản: bản chỉ-đọc, bản từ `main` (PCT thủ công
+nhiều thiết bị), và bản cũ có form "gửi duyệt gia hạn". Handler của cả ba còn nguyên nhưng khai
+báo state chỉ còn của một. Dòng gây chết nằm trong **thân component** nên nổ mỗi lần render:
+
+```js
+const canExtend = userRoles.some((r) => EXTEND_ROLES.includes(r));  // EXTEND_ROLES không tồn tại
+```
+
+### Frontend (`m6-thermal-power-plant`)
+- **`WorkOrderDetailModal.jsx`**: xoá form gia hạn đã hồi sinh (`openStopForm`, `submitStop` —
+  gọi `workOrderService.stop` và `nextExtensionDate`, cả hai đã bị xoá từ đợt bỏ 2 vòng duyệt) và
+  xoá `canExtend`/`EXTEND_ROLES`. **Khôi phục** phần state mà tính năng của `main` cần: thêm
+  `actionLoading` (dùng ở JSX nút đổi trạng thái thiết bị — cũng crash lúc render) và nhận lại
+  prop `onChanged` (`WorkOrderList.jsx:387` vẫn truyền nhưng chữ ký đã bỏ nhận).
+- **`workOrderService.js`**: xoá `approveExtension` và `reopen` — hai endpoint tương ứng đã bị
+  xoá/đổi tên ở backend, gọi vào chỉ nhận 404.
+- **`DetailEquipment.jsx`**: thêm `PDFViewer` vào import từ `@react-pdf/renderer` (dùng ở `:309`
+  nhưng không import) — crash khi mở xem trước PDF thiết bị.
+- **`ListEquipment.jsx`**: xoá 5 handler mồ côi của modal thông số kỹ thuật (`handleOpenTechParamModal`,
+  `handleAddParamRow`, `handleEditParamRowField`, `handleDeleteParamRow`, `handleSaveTechParams`)
+  cùng 2 state chỉ chúng dùng. Phần JSX modal đã biến mất và không nơi nào gọi 5 handler này;
+  tính năng sửa thông số hiện sống ở `TechnicalParameterTab.jsx`.
+- **`UpdateEquipment.jsx`**: `catch` dùng `res.data.systemId` trong khi `res` khai báo trong `try`
+  → khi getById lỗi thì catch ném tiếp `ReferenceError`, nuốt mất lỗi gốc. Đổi sang điều hướng
+  không phụ thuộc `res`.
+
+### Cách phát hiện — dùng lại được cho lần sau
+`npm run build` **không** bắt được loại lỗi này. Câu lệnh bắt được:
+```bash
+npx eslint src --rule '{"no-undef":"error"}'
+```
+Trước: 4 file hỏng. Sau: **0 lỗi trên toàn `src`**. Nên chạy nó sau mỗi lần merge có conflict.
+
+Backend không đổi: `compileJava` sạch, migration Flyway không trùng version (V1–V26).
+
+**File ảnh hưởng**: `components/work_order/WorkOrderDetailModal.jsx`, `services/workOrderService.js`,
+`components/equipment/DetailEquipment.jsx`, `components/equipment/ListEquipment.jsx`,
+`components/equipment/UpdateEquipment.jsx`.
+
+---
+
 ## [2026-08-06] — Khoá phiếu hoàn thành: trả thiết bị từ "Sự cố" về "Hoạt động"
 
 Vòng đời trạng thái thiết bị trước đây **chỉ có chiều đi, không có chiều về**: `RepairService`

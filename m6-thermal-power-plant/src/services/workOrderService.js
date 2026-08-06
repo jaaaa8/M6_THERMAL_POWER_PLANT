@@ -185,8 +185,6 @@ export const workOrderService = {
    */
   openDay: (id) => apiClient.patch(`${BASE}/${id}/open-day`),
 
-  approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
-
   /**
    * Cập nhật trạng thái làm việc của MỘT thiết bị trong PCT thủ công nhiều
    * thiết bị (IN_PROGRESS ↔ COMPLETED). Chỉ áp dụng cho WO thủ công còn sống;
@@ -199,11 +197,4 @@ export const workOrderService = {
    */
   updateEquipmentStatus: (workOrderId, equipmentId, status) =>
     apiClient.patch(`${BASE}/${workOrderId}/equipment/${equipmentId}/status`, { status }),
-
-  /**
-   * Mở (lại) phiếu để làm việc: OPEN → IN_PROGRESS (bắt đầu lần đầu) hoặc
-   * APPROVED → IN_PROGRESS (bật lại nút đã tắt hôm trước, sau khi duyệt).
-   * → PATCH /api/v1/work-orders/{id}/reopen
-   */
-  reopen: (id) => apiClient.patch(`${BASE}/${id}/reopen`),
 };

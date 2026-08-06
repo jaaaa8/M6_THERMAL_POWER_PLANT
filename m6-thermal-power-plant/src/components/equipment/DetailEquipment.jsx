@@ -15,7 +15,8 @@ import StatusBadge from '../common/StatusBadge';
 import { toast } from 'react-toastify';
 import './style/ListEquipment.css';
 import {
-  pdf
+  pdf,
+  PDFViewer
 } from "@react-pdf/renderer";
 import EquipmentPdf from "./EquipmentPDF";
 import './style/DetailEquipment.css';
