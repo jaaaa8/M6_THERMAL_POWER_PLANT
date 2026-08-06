@@ -32,8 +32,8 @@ export const workOrderService = {
    * @param {number} page - Trang (0-based)
    * @param {number} size - Số dòng / trang
    */
-  getAll: ({ code, description, fromDate, toDate } = {}, page = 0, size = 20) =>
-    apiClient.get(`${BASE}`, { params: { code, description, fromDate, toDate, page, size } }),
+  getAll: ({ code, description, fromDate, toDate, type } = {}, page = 0, size = 20) =>
+    apiClient.get(`${BASE}`, { params: { code, description, fromDate, toDate, type, page, size } }),
 
   /**
    * Lấy chi tiết một phiếu công tác bao gồm:
