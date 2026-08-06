@@ -49,7 +49,6 @@ export default function ManageUnits() {
                 /^[A-Za-zÀ-ỹ0-9\s]+$/,
                 "Tên thông số chỉ được chứa chữ cái, số và khoảng trắng"
             ),
-
         description: Yup.string()
             .max(255, "Mô tả tối đa 255 ký tự"),
         units: Yup.array()
@@ -111,10 +110,11 @@ export default function ManageUnits() {
                 fetchCatalogs();
 
             } catch (e) {
-
-                console.log(e);
-
-                toast.error("Thêm thất bại");
+                toast.error(
+                    e.response?.data?.message ||
+                    e.response?.data ||
+                    "Thêm thất bại"
+                );
             }
         }
     });
@@ -161,11 +161,11 @@ export default function ManageUnits() {
                 fetchCatalogs();
 
             } catch (e) {
-
-                console.log(e);
-
-                toast.error("Cập nhật thất bại");
-
+                toast.error(
+                    e.response?.data?.message ||
+                    e.response?.data ||
+                    "Thêm thất bại"
+                );
             }
 
         }
@@ -178,7 +178,10 @@ export default function ManageUnits() {
                     <div className="d-flex justify-content-end mb-3">
                         <Button
                             variant="primary"
-                            onClick={() => setShowAddModal(true)}
+                            onClick={async () => {
+                                await fetchUnits();
+                                setShowAddModal(true);
+                            }}
                         >
                             <BsPlusLg className="me-2" />
                             Thêm thông số
@@ -231,10 +234,9 @@ export default function ManageUnits() {
                                                         className="system-action-btn edit-btn me-2"
                                                         size="sm"
                                                         title="Sửa"
-                                                        onClick={() => {
-
+                                                        onClick={async () => {
+                                                            await fetchUnits();
                                                             setEditingCatalog(catalog);
-
                                                             setShowUpdateModal(true);
                                                         }}
                                                     >
@@ -466,8 +468,8 @@ export default function ManageUnits() {
 
                         <Dropdown autoClose="outside">
                             <Dropdown.Toggle variant="outline-secondary" className="w-100 text-start">
-                                {addFormik.values.units.length > 0
-                                    ? addFormik.values.units.map(u => u.name).join(", ")
+                                {updateFormik.values.units.length > 0
+                                    ? updateFormik.values.units.map(u => u.name).join(", ")
                                     : "Chọn đơn vị"}
                             </Dropdown.Toggle>
 

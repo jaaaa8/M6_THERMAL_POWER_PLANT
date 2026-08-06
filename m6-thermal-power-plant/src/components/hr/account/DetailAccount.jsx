@@ -62,33 +62,38 @@ export default function DetailAccount({ data, onClose }) {
             <p className="text-muted mt-2 fs-7">Đang tải chi tiết tài khoản...</p>
           </div>
         ) : account ? (
-          <Row>
+          <Row className="g-4">
             {/* Left Column: Account Info */}
-            <Col md={5} className="border-end border-light">
-              <div className="text-center mb-4">
-                <div className="account-avatar mx-auto mb-3">
-                  {account.image ? (
-                    <img 
-                      src={account.image.startsWith('http') ? account.image : `${import.meta.env.VITE_API_BASE_URL || ''}${account.image}`} 
-                      alt={account.username} 
-                      className="w-100 h-100 rounded-circle object-fit-cover"
+            <Col md={5} className="border-end border-light d-flex flex-column">
+              <h5 className="mb-3 px-2 text-primary d-flex align-items-center gap-2">
+                <span className="border-start border-primary border-3 ps-2">Tài khoản & Bảo mật</span>
+              </h5>
+              
+              <div className="detail-section flex-grow-1">
+                <div className="text-center mb-4">
+                  <div className="account-avatar mx-auto mb-3">
+                    {account.image ? (
+                      <img 
+                        src={account.image.startsWith('http') ? account.image : `${import.meta.env.VITE_API_BASE_URL || ''}${account.image}`} 
+                        alt={account.username} 
+                        className="w-100 h-100 rounded-circle object-fit-cover"
+                      />
+                    ) : (
+                      <BsShieldLock size={48} className="text-primary" />
+                    )}
+                  </div>
+                  <h4 className="mb-1">{account.username}</h4>
+                  <p className="text-muted mb-2">Tên đăng nhập</p>
+                  <div className="mt-2">
+                    <StatusBadge 
+                      status={account.status === 'LOCKED' || account.status === 'KHOA' ? 'inactive' : 'normal'} 
+                      label={account.status === 'LOCKED' || account.status === 'KHOA' ? 'Đã khóa' : 'Hoạt động'}
                     />
-                  ) : (
-                    <BsShieldLock size={48} className="text-primary" />
-                  )}
+                  </div>
                 </div>
-                <h4 className="mb-1">{account.username}</h4>
-                <p className="text-muted mb-2">Tên đăng nhập</p>
-                <div className="mt-2">
-                  <StatusBadge 
-                    status={account.status === 'LOCKED' || account.status === 'KHOA' ? 'inactive' : 'normal'} 
-                    label={account.status === 'LOCKED' || account.status === 'KHOA' ? 'Đã khóa' : 'Hoạt động'}
-                  />
-                </div>
-              </div>
 
-              <div className="detail-section">
-                <h6 className="section-title">Bảo mật tài khoản</h6>
+                <hr className="my-3" style={{ borderStyle: 'dashed' }} />
+
                 <div className="info-grid">
                   <div className="info-item mb-3">
                     <span className="info-label">Email tài khoản</span>
@@ -114,13 +119,13 @@ export default function DetailAccount({ data, onClose }) {
             </Col>
 
             {/* Right Column: Employee Info */}
-            <Col md={7}>
+            <Col md={7} className="d-flex flex-column">
               <h5 className="mb-3 px-2 text-primary d-flex align-items-center gap-2">
                 <span className="border-start border-primary border-3 ps-2">Thông tin nhân viên</span>
               </h5>
               
               {employee ? (
-                <div className="detail-section h-100">
+                <div className="detail-section flex-grow-1">
                   <div className="row g-3">
                     <div className="col-6">
                       <div className="info-item">
@@ -169,8 +174,14 @@ export default function DetailAccount({ data, onClose }) {
                         <span className="info-label">Trạng thái làm việc</span>
                         <div className="mt-1">
                           <StatusBadge 
-                            status={employee.isActive ? 'normal' : 'inactive'} 
-                            label={employee.isActive ? 'Đang làm việc' : 'Nghỉ việc'}
+                            status={
+                              employee.isActive === 'ACTIVE' ? 'normal' : 
+                              employee.isActive === 'ON_LEAVE' ? 'warning' : 'inactive'
+                            } 
+                            label={
+                              employee.isActive === 'ACTIVE' ? 'Đang làm việc' : 
+                              employee.isActive === 'ON_LEAVE' ? 'Nghỉ phép' : 'Nghỉ việc'
+                            }
                           />
                         </div>
                       </div>
@@ -178,7 +189,7 @@ export default function DetailAccount({ data, onClose }) {
                   </div>
                 </div>
               ) : (
-                <div className="detail-section d-flex align-items-center justify-content-center h-100 text-center py-5">
+                <div className="detail-section flex-grow-1 d-flex align-items-center justify-content-center text-center py-5">
                   <div>
                     <p className="text-muted mb-0">Tài khoản hệ thống admin/quản trị viên,</p>
                     <p className="text-muted">chưa liên kết với hồ sơ nhân viên.</p>

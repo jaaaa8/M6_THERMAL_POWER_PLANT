@@ -73,7 +73,7 @@ export default function ListEmployee() {
         phone: appliedFilters.phone || undefined,
         gmail: appliedFilters.gmail || undefined,
         departmentId: appliedFilters.department || undefined,
-        isActive: appliedFilters.isActive !== '' ? appliedFilters.isActive === 'true' : undefined,
+        isActive: appliedFilters.isActive || undefined,
         size: 1000
       };
 
@@ -123,7 +123,11 @@ export default function ListEmployee() {
       key: 'isActive', 
       label: 'Trạng thái', 
       sortable: true,
-      render: (val) => <span className={val ? 'text-success fw-bold' : 'text-danger fw-bold'}>{val ? 'Đang làm việc' : 'Nghỉ việc'}</span>
+      render: (val) => {
+        if (val === 'ACTIVE') return <span className="text-success fw-bold">Đang làm việc</span>;
+        if (val === 'ON_LEAVE') return <span className="text-warning fw-bold">Nghỉ phép</span>;
+        return <span className="text-danger fw-bold">Nghỉ việc</span>;
+      }
     }
   ];
 
@@ -196,8 +200,9 @@ export default function ListEmployee() {
                 onChange={(e) => setFilterIsActive(e.target.value)}
               >
                 <option value="">Tất cả</option>
-                <option value="true">Làm việc</option>
-                <option value="false">Nghỉ việc</option>
+                <option value="ACTIVE">Đang làm việc</option>
+                <option value="ON_LEAVE">Nghỉ phép</option>
+                <option value="INACTIVE">Nghỉ việc</option>
               </Form.Select>
             </Form.Group>
           </Col>

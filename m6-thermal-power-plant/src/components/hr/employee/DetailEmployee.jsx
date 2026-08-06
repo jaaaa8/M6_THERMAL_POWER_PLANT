@@ -84,8 +84,15 @@ export default function DetailEmployee({ data: initialData, onClose, onRefreshLi
   const avatarUrl = employee.imgPath;
 
   const isActiveVal = employee.isActive;
-  const statusType = isActiveVal ? 'normal' : 'inactive';
-  const statusLabel = isActiveVal ? 'Đang làm việc' : 'Nghỉ việc';
+  let statusType = 'inactive';
+  let statusLabel = 'Nghỉ việc';
+  if (isActiveVal === 'ACTIVE') {
+    statusType = 'normal';
+    statusLabel = 'Đang làm việc';
+  } else if (isActiveVal === 'ON_LEAVE') {
+    statusType = 'warning';
+    statusLabel = 'Nghỉ phép';
+  }
 
   const account = employee.account;
 

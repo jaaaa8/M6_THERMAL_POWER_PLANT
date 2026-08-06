@@ -7,33 +7,6 @@ import apiClient from './apiClient';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BASE = `${BASE_URL}/api/v1/work-orders`;
 
-/** Cộng thêm ngày vào chuỗi "yyyy-MM-dd" bằng UTC — tránh lệch ngày theo múi giờ. */
-function addDays(isoDate, days) {
-  const [y, m, d] = isoDate.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
-}
-
-/**
- * NGÀY xin làm tiếp của lần gia hạn KẾ TIẾP. Mỗi lần gia hạn kéo dài đúng 1
- * ngày nên ngày này luôn là hôm sau ngày làm việc gần nhất đã được phép:
- *  - phiếu ĐÃ có gia hạn được duyệt -> allowedDate mới nhất + 1 ngày
- *  - chưa có gia hạn nào            -> ngày bắt đầu phiếu + 1 ngày
- *
- * Tổ trưởng KHÔNG chọn được ngày này (chỉ xem); Trưởng ca mới chốt allowedDate
- * lúc duyệt và có thể lùi xa hơn nếu chưa cô lập được thiết bị.
- *
- * @param {string} [startTime]    WorkOrder.startTime (ISO datetime)
- * @param {Array}  [extensions]   WorkOrderExtensionDTO[] (cần allowedDate)
- * @returns {string} "yyyy-MM-dd", hoặc '' nếu không suy ra được
- */
-export function nextExtensionDate(startTime, extensions) {
-  const granted = (extensions || []).map((e) => e.allowedDate).filter(Boolean).sort();
-  const base = granted.length
-    ? granted[granted.length - 1]
-    : (startTime ? String(startTime).slice(0, 10) : null);
-  return base ? addDays(base, 1) : '';
-}
-
 export const workOrderService = {
   /**
    * Lấy danh sách yêu cầu sửa chữa đang chờ xử lý (status = PENDING).
@@ -73,15 +46,20 @@ export const workOrderService = {
   getById: (id) => apiClient.get(`${BASE_URL}/api/v1/work-orders/${id}`),
 
   /**
-   * Tạo phiếu công tác từ một yêu cầu sửa chữa.
-   * → POST /api/maintenance/work-orders
+   * Tạo phiếu công tác (PCT) — 2 chế độ, backend dispatch theo field có mặt:
+   *  - Từ yêu cầu sửa chữa: `repairRequestId` (thiết bị lấy từ request).
+   *  - Thủ công nhiều thiết bị: `equipmentIds` (không cần RepairRequest).
+   * XOR: phải có đúng 1 trong 2, không được cả hai (400 nếu sai).
+   * → POST /api/v1/work-orders
    * Body khớp với CreateWorkOrderRequest DTO:
    * @param {object} data
-   * @param {number}  data.repairRequestId
+   * @param {number}  [data.repairRequestId]
+   * @param {number[]} [data.equipmentIds]        - danh sách id thiết bị (chế độ thủ công)
    * @param {number}  data.leaderId               - bắt buộc
    * @param {number}  data.directSupervisorId      - bắt buộc
    * @param {number}  data.safetySupervisorId      - bắt buộc
    * @param {string}  data.startTime               - bắt buộc (ISO datetime)
+   * @param {string}  [data.repairDescription]     - mô tả công việc
    *   (KHÔNG có mốc kết thúc — end_time là giờ kết thúc THỰC TẾ, hệ thống tự ghi
    *    khi phiếu hoàn thành)
    * @param {Array<{employeeId: number, roleInTask?: string}>} [data.members]
@@ -90,7 +68,12 @@ export const workOrderService = {
 
   /**
    * Huỷ một phiếu công tác (đặt status = CANCELLED).
-   * → PATCH /api/maintenance/work-orders/{id}/cancel
+   *
+   * Ba điều kiện chồng lên nhau, backend chặn cả ba:
+   *  - role TEAM_LEADER / MAINTENANCE_FOREMAN (403 nếu sai)
+   *  - phải ĐÚNG người tạo phiếu (403 nếu không) — ADMIN không được miễn trừ
+   *  - phiếu CHƯA chạy ngày công tác nào (409 nếu đã chạy)
+   * → PATCH /api/v1/work-orders/{id}/cancel
    */
   cancel: (id) => apiClient.patch(`${BASE}/${id}/cancel`),
 
@@ -157,37 +140,21 @@ export const workOrderService = {
   exportPdf: (id) => apiClient.get(`${BASE}/${id}/pdf`, { responseType: 'blob' }),
 
   /**
-   * Hoàn thành phiếu công tác (chỉ đổi status → COMPLETED, không sửa gì khác).
-   * Idempotent nếu đã COMPLETED; 409 nếu CANCELLED / đang chờ duyệt gia hạn.
+   * "Khoá phiếu hoàn thành" (chỉ đổi status → COMPLETED, không sửa gì khác).
+   * Đóng nốt ngày công tác còn đang mở. Idempotent nếu đã COMPLETED; 409 nếu CANCELLED.
    * → PATCH /api/v1/work-orders/{id}/complete
    */
   complete: (id) => apiClient.patch(`${BASE}/${id}/complete`),
 
   /**
-   * Tổ trưởng XIN GIA HẠN: status → WAITING_FOR_APPROVAL + tạo dòng gia hạn
-   * chờ Trưởng ca ký bản giấy.
-   *
-   * UI chỉ cho gọi khi phiếu ĐANG TẠM DỪNG (STOPPED) — hết ngày phải dừng việc
-   * và trả phiếu giấy về phòng Trưởng ca trước, hôm sau mới xin làm tiếp.
-   * Backend vẫn nhận từ mọi trạng thái đang sống (giữ đường lùi cho hiện trường).
-   * → PATCH /api/v1/work-orders/{id}/stop
+   * "Khoá phiếu ngày" khi hết ngày mà chưa xong việc: đóng dòng nhật ký ngày
+   * đang mở + status → STOPPED để hôm sau mở lại. 409 nếu phiếu không đang
+   * IN_PROGRESS.
+   * → PATCH /api/v1/work-orders/{id}/close-day
    * @param id
-   * @param {string} reason - Lý do gửi duyệt / xin làm tiếp (bắt buộc). KHÔNG
-   *                          gửi ngày: ngày cho phép làm tiếp do Trưởng ca chốt
-   *                          lúc duyệt (xem approveExtension).
+   * @param {string} [note] - Ghi chú, KHÔNG bắt buộc.
    */
-  stop: (id, reason) => apiClient.patch(`${BASE}/${id}/stop`, { reason }),
-
-  /**
-   * Trưởng ca duyệt gia hạn: ghi nhận tài khoản đang đăng nhập vào "Người cho
-   * phép" + chốt ngày cho đơn vị công tác làm tiếp.
-   * → PATCH /api/v1/work-orders/{id}/approve-extension?allowedDate=yyyy-MM-dd
-   * @param {number} id
-   * @param {string} [allowedDate] - Ngày cho phép tiếp tục làm việc (yyyy-MM-dd);
-   *                                 bỏ trống = hôm sau ngày Tổ trưởng gửi duyệt.
-   */
-  approveExtension: (id, allowedDate) =>
-    apiClient.patch(`${BASE}/${id}/approve-extension`, null, { params: { allowedDate } }),
+  closeDay: (id, note) => apiClient.patch(`${BASE}/${id}/close-day`, { reason: note }),
 
   /**
    * Sửa thông tin phiếu đang sống (partial update — chỉ trường khác null được
@@ -200,27 +167,38 @@ export const workOrderService = {
 
   /**
    * Cập nhật TRẠNG THÁI phiếu — endpoint duy nhất cho modal "Cập nhật trạng thái":
-   *   OPEN ─duyệt phiếu─► APPROVED ─bắt đầu─► IN_PROGRESS ─không kịp─► STOPPED
-   *   ─gửi duyệt lại─► WAITING_FOR_APPROVAL ─duyệt gia hạn─► APPROVED ─► ...
-   *   ─► COMPLETED; mọi trạng thái sống ─► CANCELLED.
+   *   STOPPED ─mở phiếu ngày─► IN_PROGRESS ─khoá phiếu ngày─► STOPPED
+   *                                 └─khoá phiếu hoàn thành─► COMPLETED;
+   *   STOPPED ─huỷ (chưa chạy ngày nào, đúng người tạo)─► CANCELLED.
    * → PATCH /api/v1/work-orders/{id}/status
    * @param id
    * @param {object} data
-   * @param {string} data.targetStatus   - Trạng thái đích (bắt buộc)
-   * @param {string} [data.reason]      - Bắt buộc khi target = WAITING_FOR_APPROVAL
-   * @param {string} [data.allowedDate] - Ngày cho phép làm tiếp (yyyy-MM-dd), chỉ
-   *                                      dùng khi duyệt gia hạn (target = APPROVED
-   *                                      từ WAITING_FOR_APPROVAL)
+   * @param {string} data.targetStatus - Trạng thái đích (bắt buộc)
+   * @param {string} [data.reason]     - Ghi chú khi khoá phiếu ngày (target = STOPPED)
    */
   updateStatus: (id, data) => apiClient.patch(`${BASE}/${id}/status`, data),
 
   /**
-   * Ghi nhận online việc Trưởng ca ĐÃ ký duyệt bản giấy (người bấm chịu trách
-   * nhiệm nhập đúng theo bản giấy — tài khoản của họ được lưu vào approvedBy).
-   * status → APPROVED.
-   * → PATCH /api/v1/work-orders/{id}/approve-extension
+   * "Mở phiếu ngày": ghi một dòng nhật ký ngày công tác + status → IN_PROGRESS.
+   * Lần mở ĐẦU TIÊN chính là bắt đầu phiếu. 409 nếu phiếu không đang STOPPED.
+   * → PATCH /api/v1/work-orders/{id}/open-day
    */
+  openDay: (id) => apiClient.patch(`${BASE}/${id}/open-day`),
+
   approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
+
+  /**
+   * Cập nhật trạng thái làm việc của MỘT thiết bị trong PCT thủ công nhiều
+   * thiết bị (IN_PROGRESS ↔ COMPLETED). Chỉ áp dụng cho WO thủ công còn sống;
+   * 409 nếu phiếu từ yêu cầu / đã kết thúc / status = CANCELED; 404 nếu thiết
+   * bị không thuộc phiếu.
+   * → PATCH /api/v1/work-orders/{id}/equipment/{equipmentId}/status
+   * @param {number} workOrderId
+   * @param {number} equipmentId
+   * @param {string} status - 'IN_PROGRESS' | 'COMPLETED'
+   */
+  updateEquipmentStatus: (workOrderId, equipmentId, status) =>
+    apiClient.patch(`${BASE}/${workOrderId}/equipment/${equipmentId}/status`, { status }),
 
   /**
    * Mở (lại) phiếu để làm việc: OPEN → IN_PROGRESS (bắt đầu lần đầu) hoặc
