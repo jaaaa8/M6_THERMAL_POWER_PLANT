@@ -126,8 +126,27 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   }, [workOrders, filter]);
 
   /* --- Cột bảng --- */
+  const rowClassName = (row) => {
+    if (row.type === 'LUBRICATION') return 'wo-row-lubrication';
+    if (row.type === 'REPAIR' && !row.repairRequestId) return 'wo-row-repair-manual';
+    return '';
+  };
+
   const columns = [
-    { key: 'orderCode', label: 'Mã PCT', mono: true, width: 160 },
+    {
+      key: 'orderCode', label: 'Mã PCT', mono: true, width: 160,
+      render: (v, row) => (
+        <div>
+          <div>{v}</div>
+          {row.type === 'LUBRICATION' && (
+            <span className="wo-type-note wo-type-note-lubrication">Bảo dưỡng</span>
+          )}
+          {row.type === 'REPAIR' && !row.repairRequestId && (
+            <span className="wo-type-note wo-type-note-repair">Sửa chữa hệ thống</span>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'equipmentName', label: 'Thiết bị',
       render: (_, row) => {
@@ -344,7 +363,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} rowClassName={rowClassName} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">

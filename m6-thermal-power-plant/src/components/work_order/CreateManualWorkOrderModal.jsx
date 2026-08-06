@@ -349,134 +349,134 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
                       Đã chọn: <strong>{values.equipmentIds.length}</strong> thiết bị
                     </div>
                     <ErrorMessage name="equipmentIds" component="div" className="invalid-feedback d-block" />
-
-                    {/* ===== SECTION: MÔ TẢ ===== */}
-                    <div className="pct-section-title mt-4">Mô tả công việc</div>
-                    <Field
-                      as="textarea"
-                      name="repairDescription"
-                      rows={3}
-                      className={`form-control ${touched.repairDescription && errors.repairDescription ? 'is-invalid' : ''}`}
-                      placeholder="Mô tả nội dung công việc (in lên phiếu giấy)"
-                    />
-
-                    {/* ===== SECTION: THỜI GIAN ===== */}
-                    <div className="pct-section-title mt-4">
-                      <BsSave />
-                      Thời gian thực hiện
-                    </div>
-                    <Row className="mb-3">
-                      <Col md={6}>
-                        <label htmlFor="pct-startTime" className="form-label">
-                          Thời gian bắt đầu <span className="required-asterisk">*</span>
-                        </label>
-                        <Field
-                          id="pct-startTime"
-                          name="startTime"
-                          type="datetime-local"
-                          className={`form-control ${touched.startTime && errors.startTime ? 'is-invalid' : ''}`}
-                        />
-                        <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
-                      </Col>
-                      <Col md={6}>
-                        <div className="form-text mt-4">
-                          Giờ kết thúc được hệ thống ghi nhận khi phiếu hoàn thành.
-                        </div>
-                      </Col>
-                    </Row>
-
-                    {/* ===== SECTION: NHÂN SỰ ===== */}
-                    <div className="pct-section-title mt-4">
-                      <BsPeopleFill />
-                      Nhân sự thực hiện
-                    </div>
-
-                    <Row className="mb-3">
-                      {[
-                        { field: 'leaderId', label: 'Người lãnh đạo công việc' },
-                        { field: 'directSupervisorId', label: 'Chỉ huy trực tiếp' },
-                        { field: 'safetySupervisorId', label: 'Người giám sát an toàn' },
-                      ].map(({ field, label }) => (
-                        <Col md={4} key={field}>
-                          <label htmlFor={`pct-${field}`} className="form-label">
-                            {label} <span className="required-asterisk">*</span>
-                          </label>
-                          <Field
-                            as="select"
-                            id={`pct-${field}`}
-                            name={field}
-                            className={`form-select ${touched[field] && errors[field] ? 'is-invalid' : ''}`}
-                          >
-                            <option value="">— Chọn —</option>
-                            {optionsFor(field).map((e) => (
-                              <option key={e.id} value={e.id}>
-                                {e.label}
-                              </option>
-                            ))}
-                          </Field>
-                          <ErrorMessage name={field} component="div" className="invalid-feedback" />
-                        </Col>
-                      ))}
-                    </Row>
-
-                    {/* --- Nhiều thành viên --- */}
-                    <div className="mb-2">
-                      <label className="form-label">
-                        Nhiều thành viên
-                      </label>
-                      <div className="pct-add-nv">
-                        <select
-                          className="form-select"
-                          value={selectedEmployeeId}
-                          onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                          aria-label="Chọn nhân viên làm việc"
-                        >
-                          <option value="">— Chọn nhân viên để thêm —</option>
-                          {available.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          type="button"
-                          variant="outline-primary"
-                          onClick={addMember}
-                          disabled={!selectedEmployeeId}
-                        >
-                          <BsPersonPlus /> Thêm
-                        </Button>
-                      </div>
-
-                      {values.members.length > 0 && (
-                        <div className="pct-nv-list">
-                          {values.members.map((m, idx) => {
-                            const emp = employeeList.find((e) => e.id === m.employeeId);
-                            const name = emp?.fullName || `ID ${m.employeeId}`;
-                            const role = m.roleInTask || emp?.position || '';
-                            return (
-                              <div key={m.employeeId} className="pct-nv-chip">
-                                <span className="pct-nv-chip-index">{idx + 1}</span>
-                                <span className="pct-nv-chip-info">
-                                  <strong>{name}</strong>
-                                  <span>{role}</span>
-                                </span>
-                                <button
-                                  type="button"
-                                  className="pct-nv-chip-remove"
-                                  onClick={() => removeMember(m.employeeId)}
-                                  title="Xoá khỏi danh sách"
-                                >
-                                  <BsTrash />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
                   </>
                 )}
+
+                {/* ===== SECTION: MÔ TẢ — chung cho cả 2 chế độ ===== */}
+                <div className="pct-section-title mt-4">Mô tả công việc</div>
+                <Field
+                  as="textarea"
+                  name="repairDescription"
+                  rows={3}
+                  className={`form-control ${touched.repairDescription && errors.repairDescription ? 'is-invalid' : ''}`}
+                  placeholder="Mô tả nội dung công việc (in lên phiếu giấy)"
+                />
+
+                {/* ===== SECTION: THỜI GIAN — chung cho cả 2 chế độ ===== */}
+                <div className="pct-section-title mt-4">
+                  <BsSave />
+                  Thời gian thực hiện
+                </div>
+                <Row className="mb-3">
+                  <Col md={6}>
+                    <label htmlFor="pct-startTime" className="form-label">
+                      Thời gian bắt đầu <span className="required-asterisk">*</span>
+                    </label>
+                    <Field
+                      id="pct-startTime"
+                      name="startTime"
+                      type="datetime-local"
+                      className={`form-control ${touched.startTime && errors.startTime ? 'is-invalid' : ''}`}
+                    />
+                    <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
+                  </Col>
+                  <Col md={6}>
+                    <div className="form-text mt-4">
+                      Giờ kết thúc được hệ thống ghi nhận khi phiếu hoàn thành.
+                    </div>
+                  </Col>
+                </Row>
+
+                {/* ===== SECTION: NHÂN SỰ — chung cho cả 2 chế độ ===== */}
+                <div className="pct-section-title mt-4">
+                  <BsPeopleFill />
+                  Nhân sự thực hiện
+                </div>
+
+                <Row className="mb-3">
+                  {[
+                    { field: 'leaderId', label: 'Người lãnh đạo công việc' },
+                    { field: 'directSupervisorId', label: 'Chỉ huy trực tiếp' },
+                    { field: 'safetySupervisorId', label: 'Người giám sát an toàn' },
+                  ].map(({ field, label }) => (
+                    <Col md={4} key={field}>
+                      <label htmlFor={`pct-${field}`} className="form-label">
+                        {label} <span className="required-asterisk">*</span>
+                      </label>
+                      <Field
+                        as="select"
+                        id={`pct-${field}`}
+                        name={field}
+                        className={`form-select ${touched[field] && errors[field] ? 'is-invalid' : ''}`}
+                      >
+                        <option value="">— Chọn —</option>
+                        {optionsFor(field).map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.label}
+                          </option>
+                        ))}
+                      </Field>
+                      <ErrorMessage name={field} component="div" className="invalid-feedback" />
+                    </Col>
+                  ))}
+                </Row>
+
+                {/* --- Nhiều thành viên --- */}
+                <div className="mb-2">
+                  <label className="form-label">
+                    Nhiều thành viên
+                  </label>
+                  <div className="pct-add-nv">
+                    <select
+                      className="form-select"
+                      value={selectedEmployeeId}
+                      onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                      aria-label="Chọn nhân viên làm việc"
+                    >
+                      <option value="">— Chọn nhân viên để thêm —</option>
+                      {available.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      onClick={addMember}
+                      disabled={!selectedEmployeeId}
+                    >
+                      <BsPersonPlus /> Thêm
+                    </Button>
+                  </div>
+
+                  {values.members.length > 0 && (
+                    <div className="pct-nv-list">
+                      {values.members.map((m, idx) => {
+                        const emp = employeeList.find((e) => e.id === m.employeeId);
+                        const name = emp?.fullName || `ID ${m.employeeId}`;
+                        const role = m.roleInTask || emp?.position || '';
+                        return (
+                          <div key={m.employeeId} className="pct-nv-chip">
+                            <span className="pct-nv-chip-index">{idx + 1}</span>
+                            <span className="pct-nv-chip-info">
+                              <strong>{name}</strong>
+                              <span>{role}</span>
+                            </span>
+                            <button
+                              type="button"
+                              className="pct-nv-chip-remove"
+                              onClick={() => removeMember(m.employeeId)}
+                              title="Xoá khỏi danh sách"
+                            >
+                              <BsTrash />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </Modal.Body>
 
               <Modal.Footer>

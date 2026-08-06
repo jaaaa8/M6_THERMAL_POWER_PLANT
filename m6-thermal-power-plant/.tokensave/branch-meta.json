@@ -1,0 +1,10 @@
+{
+  "default_branch": "trideptrai",
+  "branches": {
+    "trideptrai": {
+      "db_file": "tokensave.db",
+      "created_at": "1786029217",
+      "last_synced_at": "1786029217"
+    }
+  }
+}

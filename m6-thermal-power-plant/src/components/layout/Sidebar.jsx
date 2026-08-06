@@ -97,7 +97,6 @@ const menuSections = [
         children: [
           { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
           { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
-          { path: '/lubrication/orders', icon: <BsClipboardCheck />, label: 'Phiếu bôi trơn' },
           // Ẩn "Lịch sử" (/lubrication/history) khỏi menu — route ở App.jsx mới
           // chỉ là PlaceholderPage, chưa có gì để xem.
         ],

@@ -150,3 +150,39 @@
     grid-template-columns: 1fr;
   }
 }
+/* --- Ph�n lo?i phi?u theo type (REPAIR th? c�ng / LUBRICATION) --- */
+.wo-row-lubrication {
+  background-color: #fff9d6;
+}
+
+.wo-row-repair-manual {
+  background-color: #fce7f3;
+}
+
+.wo-row-lubrication:hover,
+.wo-row-lubrication:hover > td,
+.wo-row-repair-manual:hover,
+.wo-row-repair-manual:hover > td {
+  background-color: unset !important;
+}
+
+.wo-type-note {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 0 6px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.wo-type-note-lubrication {
+  background: #fde68a;
+  color: #78350f;
+}
+
+.wo-type-note-repair {
+  background: #fbcfe8;
+  color: #9d174d;
+}
