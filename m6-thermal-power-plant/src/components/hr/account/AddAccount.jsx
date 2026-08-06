@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { Form, Button, Row, Col, Spinner } from 'react-bootstrap';
-import { BsArrowLeft, BsSave, BsShieldLock, BsArrowClockwise } from 'react-icons/bs';
+import { BsArrowLeft, BsSave, BsShieldLock, BsArrowClockwise, BsFilter, BsCheckCircleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { accountService } from '../../../services/hr/accountService';
 import { employeeService } from '../../../services/hr/employeeService';
@@ -43,6 +43,24 @@ export default function AddAccount({ onCancel }) {
   const [roles, setRoles] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [resetting, setResetting] = useState(false);
+
+  // Bộ lọc tìm kiếm nhân viên chưa có tài khoản
+  const [empSearchCode, setEmpSearchCode] = useState('');
+  const [empSearchName, setEmpSearchName] = useState('');
+  const [appliedEmpFilters, setAppliedEmpFilters] = useState({ code: '', name: '' });
+
+  const handleApplyEmpFilter = () => {
+    setAppliedEmpFilters({
+      code: empSearchCode.trim(),
+      name: empSearchName.trim()
+    });
+  };
+
+  const handleClearEmpFilter = () => {
+    setEmpSearchCode('');
+    setEmpSearchName('');
+    setAppliedEmpFilters({ code: '', name: '' });
+  };
 
   const handleResetPassword = async () => {
     if (!idParam) return;
@@ -107,6 +125,20 @@ export default function AddAccount({ onCancel }) {
       }
     }
   }, [idParam, isEditMode, location.state]);
+
+  // Lọc chỉ hiển thị nhân viên CHƯA CÓ tài khoản
+  const availableEmployees = useMemo(() => {
+    if (!Array.isArray(employees)) return [];
+    return employees.filter(emp => {
+      const hasAccount = Boolean(emp.account);
+      const isCurrentSelected = isEditMode && initialValues.employeeId && String(emp.id) === String(initialValues.employeeId);
+      if (hasAccount && !isCurrentSelected) return false;
+
+      const codeMatch = !appliedEmpFilters.code || (emp.employeeCode || '').toLowerCase().includes(appliedEmpFilters.code.toLowerCase());
+      const nameMatch = !appliedEmpFilters.name || (emp.fullName || '').toLowerCase().includes(appliedEmpFilters.name.toLowerCase());
+      return codeMatch && nameMatch;
+    });
+  }, [employees, appliedEmpFilters, isEditMode, initialValues.employeeId]);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
@@ -194,6 +226,7 @@ export default function AddAccount({ onCancel }) {
             handleChange,
             handleBlur,
             handleSubmit,
+            setFieldValue,
             isSubmitting,
           }) => (
             <FormikForm onSubmit={handleSubmit} className="account-form">
@@ -251,31 +284,162 @@ export default function AddAccount({ onCancel }) {
                   </Form.Group>
                 </Col>
 
-                {values.accountType === 'INTERNAL' && (
-                    <Col md={6}>
-                    <Form.Group>
-                        <Form.Label htmlFor="employeeId" className="required">
-                        Nhân viên
-                        </Form.Label>
-                        <Form.Select
-                        id="employeeId"
-                        name="employeeId"
-                        value={values.employeeId}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        isInvalid={touched.employeeId && errors.employeeId}
-                        disabled={isEditMode}
-                        >
-                        <option value="">— Chọn nhân viên —</option>
-                        {employees.map(emp => (
-                            <option key={emp.id} value={emp.id}>{emp.fullName}</option>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label htmlFor="roleIds" className="required">
+                      Vai trò
+                    </Form.Label>
+                    <Form.Select
+                      id="roleIds"
+                      name="roleIds"
+                      value={values.roleIds}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      isInvalid={touched.roleIds && errors.roleIds}
+                    >
+                        <option value="">— Chọn vai trò —</option>
+                        {roles.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
                         ))}
-                        </Form.Select>
-                        <Form.Control.Feedback type="invalid">
-                        {errors.employeeId}
-                        </Form.Control.Feedback>
-                    </Form.Group>
-                    </Col>
+                    </Form.Select>
+                    <Form.Control.Feedback type="invalid">
+                      {errors.roleIds}
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                </Col>
+
+                {values.accountType === 'INTERNAL' && (
+                  <Col md={12}>
+                    <div className="border rounded p-3 bg-light">
+                      <Form.Label className="required fw-bold mb-2">
+                        Nhân viên <span className="text-muted fw-normal fs-7">(chỉ hiển thị nhân viên chưa có tài khoản)</span>
+                      </Form.Label>
+
+                      {/* Tìm kiếm nhân viên */}
+                      <Row className="g-2 mb-3 align-items-end">
+                        <Col md={4} sm={6}>
+                          <Form.Group>
+                            <Form.Label className="fs-7 text-secondary mb-1">Mã nhân viên</Form.Label>
+                            <Form.Control
+                              type="text"
+                              size="sm"
+                              placeholder="Nhập mã nhân viên..."
+                              value={empSearchCode}
+                              onChange={(e) => setEmpSearchCode(e.target.value)}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={4} sm={6}>
+                          <Form.Group>
+                            <Form.Label className="fs-7 text-secondary mb-1">Tên nhân viên</Form.Label>
+                            <Form.Control
+                              type="text"
+                              size="sm"
+                              placeholder="Nhập tên nhân viên..."
+                              value={empSearchName}
+                              onChange={(e) => setEmpSearchName(e.target.value)}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={4} sm={12} className="d-flex gap-2 align-items-end">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            type="button"
+                            className="d-inline-flex align-items-center gap-1 px-3"
+                            onClick={handleApplyEmpFilter}
+                          >
+                            <BsFilter /> Lọc
+                          </Button>
+                          <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            type="button"
+                            className="d-inline-flex align-items-center gap-1 px-3"
+                            onClick={handleClearEmpFilter}
+                          >
+                            <BsArrowClockwise /> Bỏ lọc
+                          </Button>
+                        </Col>
+                      </Row>
+
+                      {/* Hiển thị nhân viên đang chọn */}
+                      {values.employeeId && (
+                        <div className="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between fs-7">
+                          <div>
+                            <BsCheckCircleFill className="me-2 text-success" />
+                            <strong>Đã chọn nhân viên:</strong>{' '}
+                            {employees.find(e => String(e.id) === String(values.employeeId))?.fullName} (
+                            {employees.find(e => String(e.id) === String(values.employeeId))?.employeeCode})
+                          </div>
+                          {!isEditMode && (
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 text-decoration-none text-danger ms-2"
+                              onClick={() => setFieldValue('employeeId', '')}
+                            >
+                              Bỏ chọn
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Bảng chọn nhân viên 3 cột */}
+                      <div className="table-responsive bg-white rounded border" style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                        <table className="table table-hover align-middle mb-0 text-center fs-7">
+                          <thead className="table-light sticky-top">
+                            <tr>
+                              <th style={{ width: '30%' }}>MÃ NHÂN VIÊN</th>
+                              <th style={{ width: '45%' }}>TÊN NHÂN VIÊN</th>
+                              <th style={{ width: '25%' }}>CHỌN</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {availableEmployees.length > 0 ? (
+                              availableEmployees.map((emp) => {
+                                const isSelected = String(values.employeeId) === String(emp.id);
+                                return (
+                                  <tr key={emp.id} className={isSelected ? 'table-primary fw-medium' : ''}>
+                                    <td>{emp.employeeCode}</td>
+                                    <td className="text-start">{emp.fullName}</td>
+                                    <td>
+                                      <Button
+                                        variant={isSelected ? 'success' : 'outline-primary'}
+                                        size="sm"
+                                        type="button"
+                                        disabled={isEditMode}
+                                        className="px-3 d-inline-flex align-items-center gap-1"
+                                        onClick={() => setFieldValue('employeeId', String(emp.id))}
+                                      >
+                                        {isSelected ? (
+                                          <>
+                                            <BsCheckCircleFill /> Đã chọn
+                                          </>
+                                        ) : (
+                                          'Chọn'
+                                        )}
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            ) : (
+                              <tr>
+                                <td colSpan="3" className="text-muted py-3">
+                                  Không tìm thấy nhân viên chưa có tài khoản nào.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {touched.employeeId && errors.employeeId && (
+                        <div className="text-danger fs-7 mt-2">{errors.employeeId}</div>
+                      )}
+                    </div>
+                  </Col>
                 )}
 
                 {values.accountType === 'EXTERNAL' && (
@@ -300,30 +464,6 @@ export default function AddAccount({ onCancel }) {
                     </Form.Group>
                     </Col>
                 )}
-
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="roleIds" className="required">
-                      Vai trò
-                    </Form.Label>
-                    <Form.Select
-                      id="roleIds"
-                      name="roleIds"
-                      value={values.roleIds}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      isInvalid={touched.roleIds && errors.roleIds}
-                    >
-                        <option value="">— Chọn vai trò —</option>
-                        {roles.map(r => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.roleIds}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
               </Row>
 
               <hr className="my-5 opacity-25" />
