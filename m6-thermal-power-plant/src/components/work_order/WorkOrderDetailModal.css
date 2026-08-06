@@ -417,3 +417,11 @@
   border-radius: 6px;
   background: var(--color-surface-alt, #f8f9fa);
 }
+
+.wo-detail-equipment-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}

@@ -39,6 +39,14 @@ const STATUS_MAP = {
 const MANAGE_MEMBER_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 const EXTEND_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
 
+const EQUIPMENT_STATUS_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
+
+const EQUIPMENT_STATUS_MAP = {
+  IN_PROGRESS: { status: 'warning', label: 'Đang thực hiện' },
+  COMPLETED: { status: 'normal', label: 'Đã xong' },
+  CANCELED: { status: 'inactive', label: 'Đã huỷ' },
+};
+
 /**
  * Lấy nguyên văn message lỗi backend trả về (GlobalExceptionHandler trả về
  * cả dạng JSON có `message` lẫn dạng CHUỖI THUẦN tuỳ exception).
@@ -269,6 +277,20 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     }
   };
 
+  const handleUpdateEquipmentStatus = async (equipmentId, status) => {
+    setActionLoading(true);
+    try {
+      await workOrderService.updateEquipmentStatus(workOrderId, equipmentId, status);
+      toast.success(status === 'COMPLETED' ? 'Đã đánh dấu thiết bị hoàn thành' : 'Đã mở lại thiết bị');
+      await loadDetail(true);
+      onChanged?.();
+    } catch (err) {
+      toast.error(`Không thể cập nhật trạng thái thiết bị: ${extractErrorMessage(err)}`, { autoClose: 8000 });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (!show) return null;
 
   // Cho thao tác thành viên / chỉnh sửa với MỌI phiếu còn sống — chỉ phiếu đã
@@ -279,6 +301,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const userRoles = authService.getCurrentUser()?.roles || [];
   const canManageMembers = userRoles.some((r) => MANAGE_MEMBER_ROLES.includes(r));
   const canExtend = userRoles.some((r) => EXTEND_ROLES.includes(r));
+  const canUpdateEquipmentStatus = userRoles.some((r) => EQUIPMENT_STATUS_ROLES.includes(r));
 
   const statusInfo = detail?.status ? STATUS_MAP[detail.status] || { label: detail.status, status: 'info' } : null;
 
@@ -351,6 +374,25 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                               {e.kksCode}
                               {e.systemName ? ` · ${e.systemName}` : ''}
+                            </div>
+                            <div className="wo-detail-equipment-status">
+                              <StatusBadge
+                                status={EQUIPMENT_STATUS_MAP[e.status]?.status || 'inactive'}
+                                label={EQUIPMENT_STATUS_MAP[e.status]?.label || e.status}
+                              />
+                              {canUpdateEquipmentStatus && canManage && detail.repairRequestId == null && (
+                                <button
+                                  type="button"
+                                  className={`btn btn-sm ${e.status === 'IN_PROGRESS' ? 'btn-outline-success' : 'btn-outline-secondary'}`}
+                                  disabled={actionLoading}
+                                  onClick={() => handleUpdateEquipmentStatus(
+                                    e.id,
+                                    e.status === 'IN_PROGRESS' ? 'COMPLETED' : 'IN_PROGRESS',
+                                  )}
+                                >
+                                  {e.status === 'IN_PROGRESS' ? 'Hoàn thành' : 'Mở lại'}
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}

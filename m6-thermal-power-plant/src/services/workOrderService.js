@@ -228,6 +228,19 @@ export const workOrderService = {
   approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
 
   /**
+   * Cập nhật trạng thái làm việc của MỘT thiết bị trong PCT thủ công nhiều
+   * thiết bị (IN_PROGRESS ↔ COMPLETED). Chỉ áp dụng cho WO thủ công còn sống;
+   * 409 nếu phiếu từ yêu cầu / đã kết thúc / status = CANCELED; 404 nếu thiết
+   * bị không thuộc phiếu.
+   * → PATCH /api/v1/work-orders/{id}/equipment/{equipmentId}/status
+   * @param {number} workOrderId
+   * @param {number} equipmentId
+   * @param {string} status - 'IN_PROGRESS' | 'COMPLETED'
+   */
+  updateEquipmentStatus: (workOrderId, equipmentId, status) =>
+    apiClient.patch(`${BASE}/${workOrderId}/equipment/${equipmentId}/status`, { status }),
+
+  /**
    * Mở (lại) phiếu để làm việc: OPEN → IN_PROGRESS (bắt đầu lần đầu) hoặc
    * APPROVED → IN_PROGRESS (bật lại nút đã tắt hôm trước, sau khi duyệt).
    * → PATCH /api/v1/work-orders/{id}/reopen
