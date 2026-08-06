@@ -1,418 +1,519 @@
-import { useState, useEffect } from "react";
-import { Row, Col, Button, Table } from "react-bootstrap";
-import {
-  BsGearFill,
-  BsDropletFill,
-  BsSearch,
-  BsFileEarmarkCheck,
-} from "react-icons/bs";
+  import { useState, useEffect } from "react";
+  import {
+    Row,
+    Col,
+    Button,
+    Table,
+    Form,
+    Pagination
+  } from "react-bootstrap";
+  import {
+    BsGearFill,
+    BsDropletFill,
+    BsSearch,
+    BsFileEarmarkCheck,
+  } from "react-icons/bs";
+  import { toast } from "react-toastify";
 
-import "../LubricationPlan/LubricationPlanForm.css";
+  import "../LubricationPlan/LubricationPlanForm.css";
+  import * as systemService from "../../services/equipment/systemService";
+  import lubricationPlanService from "../../services/lubricationPlanService";
+  import { pdf } from "@react-pdf/renderer";
+  import LubricationChecklistPDF from "../../pdf/LubricationChecklistPDF";
 
-export default function LubricationPlanForm() {
-  const [systemFilter, setSystemFilter] = useState("");
+  export default function LubricationPlanForm() {
 
-  const [equipmentList, setEquipmentList] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+    const [selectedEquipments, setSelectedEquipments] =
+      useState([]);
 
-  const [selectedEquipments, setSelectedEquipments] =
-    useState([]);
+    const [systems, setSystems] = useState([]);
 
-  const [consumableList, setConsumableList] =
-    useState([]);
+    const [plans, setPlans] = useState([]);
 
-  const systems = [
-    {
-      id: 1,
-      code: "SYS-001",
-      name: "Hệ thống làm mát",
-    },
-    {
-      id: 2,
-      code: "SYS-002",
-      name: "Hệ thống turbine",
-    },
-    {
-      id: 3,
-      code: "SYS-003",
-      name: "Hệ thống nghiền than",
-    },
-  ];
+    const [systemId, setSystemId] = useState("");
 
-    const units = [
-        "Lít",
-        "Kg",
-        "Cái",
-        "Tuýp",
-        "Thùng",
-        "Can",
-    ];
+    const [status, setStatus] = useState("");
 
-  useEffect(() => {
-    setEquipmentList([
-      {
-        id: 1,
-        systemId: 1,
-        systemName: "Hệ thống làm mát",
-        equipmentCode: "TB-001",
-        equipmentName: "Bơm nước làm mát",
-        cycleMonths: 3,
-        nextDueDate: "2026-08-01",
-      },
-      {
-        id: 2,
-        systemId: 2,
-        systemName: "Hệ thống turbine",
-        equipmentCode: "TB-002",
-        equipmentName: "Turbine số 1",
-        cycleMonths: 6,
-        nextDueDate: "2026-09-15",
-      },
-      {
-        id: 3,
-        systemId: 3,
-        systemName: "Hệ thống nghiền than",
-        equipmentCode: "TB-003",
-        equipmentName: "Máy nghiền than",
-        cycleMonths: 4,
-        nextDueDate: "2026-07-20",
-      },
-    ]);
+    const [page, setPage] = useState(0);
 
-    setConsumableList([
-      {
-        id: 1,
-        name: "Dầu Shell Omala S2",
-      },
-      {
-        id: 2,
-        name: "Mỡ SKF LGMT 2",
-      },
-      {
-        id: 3,
-        name: "Dầu Mobil DTE 25",
-      },
-    ]);
-  }, []);
+    const [size] = useState(10);
 
-  const handleSearch = () => {
-    const filtered = equipmentList.filter(
-      (item) =>
-        !systemFilter ||
-        item.systemId.toString() === systemFilter
-    );
+    const [totalPages, setTotalPages] = useState(0);
 
-    setSearchResults(filtered);
-  };
+    const [totalElements, setTotalElements] = useState(0);
 
-  const handleSelectEquipment = (
-    equipment,
-    checked
-  ) => {
-    if (checked) {
-      const existed = selectedEquipments.find(
-        (item) => item.id === equipment.id
-      );
+    const loadSystems = async () => {
+      try {
 
-      if (!existed) {
-          setSelectedEquipments((prev) => [
-              ...prev,
-              {
-                  ...equipment,
-                  consumableId: "",
-                  quantity: 1,
-                  unit: "Lít",
-              },
-        ]);
+        const res = await systemService.getAllSystems(
+            "",
+            "ACTIVE",
+            0,
+            100
+        );
+
+        setSystems(
+            res.data.content || []
+        );
+
+      } catch (e) {
+
+        toast.error("Không tải được hệ thống");
+
       }
-    } else {
-      setSelectedEquipments((prev) =>
-        prev.filter(
-          (item) => item.id !== equipment.id
-        )
-      );
-    }
-  };
+    };
 
-  const handleUpdateSelected = (
-    index,
-    field,
-    value
-  ) => {
-    const clone = [...selectedEquipments];
+    const loadChecklist = async (
+        currentPage = 0
+    ) => {
 
-    clone[index][field] = value;
+      if (!systemId) {
+        setPlans([]);
+        return;
+      }
 
-    setSelectedEquipments(clone);
-  };
+      try {
 
-  const handleExportChecklist = () => {
-    console.log(selectedEquipments);
+        const res =
+            await lubricationPlanService.checklist(
+                Number(systemId),
+                status,
+                currentPage,
+                size
+            );
 
-    alert(
-      `Xuất checklist cho ${selectedEquipments.length} thiết bị`
-    );
-  };
+        setPlans(res.content || []);
+        setTotalPages(res.totalPages || 0);
+        setTotalElements(res.totalElements || 0);
+        setPage(currentPage);
 
-  return (
-    <div className="nhansu-form-card">
-      {/* HEADER */}
-      <div className="nhansu-form-header">
-        <div className="nhansu-form-header-icon">
-          <BsDropletFill />
+      } catch (e) {
+
+        console.error(e);
+        toast.error("Không tải được danh sách bảo dưỡng");
+
+      }
+
+    };
+
+
+    useEffect(() => {
+
+      loadSystems();
+
+    }, []);
+
+
+    const handleSearch = () => {
+
+      if (!systemId) {
+        toast.warning("Vui lòng chọn hệ thống");
+        return;
+      }
+
+      loadChecklist(0);
+
+    };
+
+    const handleSelectEquipment = (
+        plan,
+        checked
+    ) => {
+
+      if (checked) {
+
+        const existed =
+            selectedEquipments.some(
+                item => item.id === plan.id
+            );
+
+        if (!existed) {
+
+          setSelectedEquipments(prev => [
+            ...prev,
+            plan
+          ]);
+
+        }
+
+      } else {
+
+        setSelectedEquipments(prev =>
+            prev.filter(
+                item => item.id !== plan.id
+            )
+        );
+
+      }
+
+    };
+
+    const handleExportChecklist = async () => {
+
+      try {
+
+        const blob = await pdf(
+            <LubricationChecklistPDF
+                equipments={selectedEquipments}
+            />
+        ).toBlob();
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download =
+            `Checklist_Bao_Duong_${
+                new Date()
+                    .toISOString()
+                    .split("T")[0]
+            }.pdf`;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+
+        toast.success(
+            "Xuất checklist thành công"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        toast.error(
+            "Không thể xuất file PDF"
+        );
+
+      }
+    };
+
+    return (
+      <div className="nhansu-form-card">
+        {/* HEADER */}
+        <div className="nhansu-form-header">
+          <div className="nhansu-form-header-icon">
+            <BsDropletFill />
+          </div>
+
+          <div className="nhansu-form-header-text">
+            <h2>
+              Lập Checklist Bảo Dưỡng Dầu Mỡ
+            </h2>
+
+            <p>
+              Chọn nhiều thiết bị để lập checklist
+              bảo dưỡng dầu mỡ.
+            </p>
+          </div>
         </div>
 
-        <div className="nhansu-form-header-text">
-          <h2>
-            Lập Checklist Bảo Dưỡng Dầu Mỡ
-          </h2>
+        <div className="nhansu-form-body">
+          {/* TÌM KIẾM */}
+          <div className="form-section-title">
+            <BsSearch />
+            Tìm kiếm thiết bị
+          </div>
 
-          <p>
-            Chọn nhiều thiết bị để lập checklist
-            bảo dưỡng dầu mỡ.
-          </p>
-        </div>
-      </div>
+          <Row className="mb-4">
+            <Col md={4}>
+              <label className="form-label">
+                Hệ thống
+              </label>
 
-      <div className="nhansu-form-body">
-        {/* TÌM KIẾM */}
-        <div className="form-section-title">
-          <BsSearch />
-          Tìm kiếm thiết bị
-        </div>
-
-        <Row className="mb-4">
-          <Col md={4}>
-            <label className="form-label">
-              Hệ thống
-            </label>
-
-            <select
-              className="form-select"
-              value={systemFilter}
-              onChange={(e) =>
-                setSystemFilter(e.target.value)
-              }
-            >
-              <option value="">
-                Tất cả hệ thống
-              </option>
-
-              {systems.map((item) => (
-                <option
-                  key={item.id}
-                  value={item.id}
-                >
-                  {item.code} - {item.name}
+              <Form.Select
+                  value={systemId}
+                  onChange={(e) => {
+                    setSystemId(e.target.value);
+                  }}
+              >
+                <option value="">
+                  -- Chọn hệ thống --
                 </option>
-              ))}
-            </select>
-          </Col>
 
-          <Col
-            md={2}
-            className="d-flex align-items-end"
-          >
-            <Button
-              variant="primary"
-              onClick={handleSearch}
+                {systems.map(item => (
+                    <option
+                        key={item.id}
+                        value={item.id}
+                    >
+                      {item.systemCode} - {item.name}
+                    </option>
+                ))}
+              </Form.Select>
+            </Col>
+
+            <Col
+              md={2}
+              className="d-flex align-items-end"
             >
-              <BsSearch className="me-1" />
-              Tìm kiếm
-            </Button>
-          </Col>
-        </Row>
+              <Button
+                variant="primary"
+                onClick={handleSearch}
+              >
+                <BsSearch className="me-1" />
+                Tìm kiếm
+              </Button>
+            </Col>
+          </Row>
 
-        {/* TABLE KẾT QUẢ */}
-        <div className="form-section-title">
-          <BsGearFill />
-          Kết quả tìm kiếm thiết bị
-        </div>
+          {/* TABLE KẾT QUẢ */}
+          <div className="form-section-title">
+            <BsGearFill />
+            Kết quả tìm kiếm thiết bị
+          </div>
 
-        <div className="table-responsive mb-4">
-          <Table bordered hover>
-            <thead>
+          {
+            !systemId ? (
+
+                <div className="alert alert-info">
+                  Vui lòng chọn hệ thống để xem danh sách thiết bị cần bảo dưỡng.
+                </div>
+
+            ) : (
+
+                <div className="table-responsive mb-4">
+                  <Table bordered hover>
+                    <thead>
+                    <tr>
+                      <th width="60">Chọn</th>
+                      <th>Mã KHBD</th>
+                      <th>Mã thiết bị</th>
+                      <th>Tên thiết bị</th>
+                      <th>Mã hệ thống</th>
+                      <th>Tên hệ thống</th>
+                      <th>Chu kỳ</th>
+                      <th>Ngày bảo dưỡng</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    {
+                      plans.length === 0 ? (
+                          <tr>
+                            <td colSpan="9" className="text-center">
+                              Không có dữ liệu
+                            </td>
+                          </tr>
+                      ) : (
+                          plans.map(item => {
+
+                            const checked =
+                                selectedEquipments.some(
+                                    e => e.id === item.id
+                                );
+
+                            return (
+                                <tr key={item.id}>
+
+                                  <td className="text-center">
+                                    <Form.Check
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(e) =>
+                                            handleSelectEquipment(
+                                                item,
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+                                  </td>
+
+                                  <td>{item.lubricationCode}</td>
+
+                                  <td>
+                                    {item.equipment?.equipmentCode}
+                                  </td>
+
+                                  <td>
+                                    {item.equipment?.name}
+                                  </td>
+
+                                  <td>
+                                    {item.equipment?.system?.systemCode}
+                                  </td>
+
+                                  <td>
+                                    {item.equipment?.system?.name}
+                                  </td>
+
+                                  <td>
+                                    {item.cycleDays} ngày
+                                  </td>
+
+                                  <td>
+                                    {item.nextDueDate}
+                                  </td>
+
+                                  <td>
+                                    {item.status}
+                                  </td>
+
+                                </tr>
+                            );
+                          })
+                      )
+                    }
+                    </tbody>
+                  </Table>
+                  <Pagination className="justify-content-center">
+
+                    <Pagination.First
+                        disabled={!systemId || page === 0}
+                        onClick={() => loadChecklist(0)}
+                    />
+
+                    <Pagination.Prev
+                        disabled={page === 0}
+                        onClick={() => loadChecklist(page - 1)}
+                    />
+
+                    {Array.from(
+                        { length: totalPages },
+                        (_, index) => (
+                            <Pagination.Item
+                                key={index}
+                                active={page === index}
+                                onClick={() =>
+                                    loadChecklist(index)
+                                }
+                            >
+                              {index + 1}
+                            </Pagination.Item>
+                        )
+                    )}
+
+                    <Pagination.Next
+                        disabled={page >= totalPages - 1}
+                        onClick={() =>
+                            loadChecklist(page + 1)
+                        }
+                    />
+
+                    <Pagination.Last
+                        disabled={page >= totalPages - 1}
+                        onClick={() =>
+                            loadChecklist(totalPages - 1)
+                        }
+                    />
+
+                  </Pagination>
+                </div>
+
+            )
+          }
+
+          {/* TABLE THIẾT BỊ ĐƯỢC CHỌN */}
+          <div className="form-section-title">
+            <BsDropletFill />
+            Thiết bị được chọn
+          </div>
+          <div className="d-flex justify-content-between mb-2">
+            <strong>
+              Đã chọn:
+              {selectedEquipments.length} thiết bị
+            </strong>
+          </div>
+
+          <div className="table-responsive">
+            <Table bordered hover>
+
+              <thead>
               <tr>
-                <th width="70">Chọn</th>
+                <th>Mã KHBD</th>
                 <th>Mã thiết bị</th>
                 <th>Tên thiết bị</th>
                 <th>Hệ thống</th>
-                <th>Chu kỳ</th>
+                <th>Vật tư</th>
+                <th>Số lượng</th>
                 <th>Ngày bảo dưỡng</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {searchResults.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center"
-                  >
-                    Chưa có dữ liệu
-                  </td>
-                </tr>
-              ) : (
-                searchResults.map((item) => (
-                  <tr key={item.id}>
-                    <td className="text-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedEquipments.some(
-                          (eq) =>
-                            eq.id === item.id
-                        )}
-                        onChange={(e) =>
-                          handleSelectEquipment(
-                            item,
-                            e.target.checked
-                          )
-                        }
-                      />
-                    </td>
-
-                    <td>{item.equipmentCode}</td>
-                    <td>{item.equipmentName}</td>
-                    <td>{item.systemName}</td>
-                    <td>
-                      {item.cycleMonths} tháng
-                    </td>
-                    <td>{item.nextDueDate}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </Table>
-        </div>
-
-        {/* TABLE THIẾT BỊ ĐƯỢC CHỌN */}
-        <div className="form-section-title">
-          <BsDropletFill />
-          Thiết bị được chọn
-        </div>
-
-        <div className="table-responsive">
-          <Table bordered hover>
-              <thead>
-              <tr>
-                  <th>Mã thiết bị</th>
-                  <th>Tên thiết bị</th>
-                  <th>Vật tư dầu mỡ</th>
-                  <th width="120">Số lượng</th>
-                  <th width="150">Đơn vị</th>
               </tr>
               </thead>
 
-            <tbody>
-              {selectedEquipments.length ===
-              0 ? (
-                <tr>
+              <tbody>
+
+              {selectedEquipments.length === 0 ? (
+
+                  <tr>
                     <td
-                        colSpan={5}
+                        colSpan={7}
                         className="text-center"
                     >
-                        Chưa chọn thiết bị
+                      Chưa chọn thiết bị
                     </td>
-                </tr>
+                  </tr>
+
               ) : (
-                selectedEquipments.map(
-                  (item, index) => (
+
+                  selectedEquipments.map(item => (
+
                       <tr key={item.id}>
-                          <td>{item.equipmentCode}</td>
 
-                          <td>{item.equipmentName}</td>
+                        <td>
+                          {item.lubricationCode}
+                        </td>
 
-                          <td>
-                              <select
-                                  className="form-select"
-                                  value={item.consumableId}
-                                  onChange={(e) =>
-                                      handleUpdateSelected(
-                                          index,
-                                          "consumableId",
-                                          e.target.value
-                                      )
-                                  }
-                              >
-                                  <option value="">
-                                      Chọn vật tư
-                                  </option>
+                        <td>
+                          {item.equipment?.equipmentCode}
+                        </td>
 
-                                  {consumableList.map((c) => (
-                                      <option
-                                          key={c.id}
-                                          value={c.id}
-                                      >
-                                          {c.name}
-                                      </option>
-                                  ))}
-                              </select>
-                          </td>
+                        <td>
+                          {item.equipment?.name}
+                        </td>
 
-                          <td>
-                              <input
-                                  type="number"
-                                  min="1"
-                                  className="form-control"
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                      handleUpdateSelected(
-                                          index,
-                                          "quantity",
-                                          e.target.value
-                                      )
-                                  }
-                              />
-                          </td>
+                        <td>
+                          {item.equipment?.system?.name}
+                        </td>
 
-                          <td>
-                              <select
-                                  className="form-select"
-                                  value={item.unit}
-                                  onChange={(e) =>
-                                      handleUpdateSelected(
-                                          index,
-                                          "unit",
-                                          e.target.value
-                                      )
-                                  }
-                              >
-                                  {units.map((unit) => (
-                                      <option
-                                          key={unit}
-                                          value={unit}
-                                      >
-                                          {unit}
-                                      </option>
-                                  ))}
-                              </select>
-                          </td>
+                        <td>
+                          {item.consumable?.name}
+                        </td>
+
+                        <td>
+                          {item.quantity}
+                        </td>
+
+                        <td>
+                          {item.nextDueDate}
+                        </td>
+
                       </tr>
-                  )
-                )
+
+                  ))
+
               )}
-            </tbody>
-          </Table>
+
+              </tbody>
+
+            </Table>
+          </div>
+
+          {/* XUẤT CHECKLIST */}
+          <div className="mt-3 d-flex justify-content-end">
+            <Button
+              variant="outline-success"
+              onClick={
+                handleExportChecklist
+              }
+              disabled={
+                selectedEquipments.length === 0
+              }
+            >
+              <BsFileEarmarkCheck className="me-1" />
+              Xuất Checklist
+            </Button>
+          </div>
         </div>
 
-        {/* XUẤT CHECKLIST */}
-        <div className="mt-3 d-flex justify-content-end">
-          <Button
-            variant="outline-success"
-            onClick={
-              handleExportChecklist
-            }
-            disabled={
-              selectedEquipments.length === 0
-            }
-          >
-            <BsFileEarmarkCheck className="me-1" />
-            Xuất Checklist
-          </Button>
-        </div>
+
       </div>
-
-
-    </div>
-  );
-}
+    );
+  }

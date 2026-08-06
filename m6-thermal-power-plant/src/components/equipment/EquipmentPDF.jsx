@@ -95,10 +95,15 @@ const styles = StyleSheet.create({
 
 
     smallImage: {
-        width: 80,
-        height: 70,
-        marginRight: 10
-    }
+        width: "48%",
+        height: 250,
+        objectFit: "contain",
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#bdbdbd",
+        borderRadius: 4,
+        padding: 6
+    },
 
 
 });
@@ -129,20 +134,18 @@ export default function EquipmentPdf({
                     </Text>
                     <View
                         style={{
-                            flexDirection: "row"
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                            justifyContent: "space-between"
                         }}
                     >
-                        {
-                            equipment.imageUrls?.map(
-                                (img, index) => (
-
-                                    <Image
-                                        key={index}
-                                        src={img}
-                                        style={styles.smallImage}
-                                    />
-                                ))
-                        }
+                        {equipment.imageUrls?.map((img, index) => (
+                            <Image
+                                key={index}
+                                src={img}
+                                style={styles.smallImage}
+                            />
+                        ))}
                     </View>
                 </View>
                 {/* GENERAL */}

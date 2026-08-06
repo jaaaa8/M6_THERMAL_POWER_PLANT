@@ -78,6 +78,9 @@ export default function EmployeeBorrowForm() {
         if (!selectedTool) { toast.warning('Vui lòng chọn CCDC'); return; }
         if (!borrowDate) { toast.warning('Vui lòng chọn ngày mượn'); return; }
         if (quantity < 1) { toast.warning('Số lượng phải lớn hơn 0'); return; }
+        if (quantity > selectedTool.quantityAvailable) {
+            toast.warning(`Chỉ còn ${selectedTool.quantityAvailable} trong kho`); return;
+        }
         if (!currentUser?.accountId) { toast.error('Không xác định được tài khoản'); return; }
 
         setSubmitting(true);
@@ -197,7 +200,7 @@ export default function EmployeeBorrowForm() {
                                             className={`borrow-dropdown-item ${t.quantityAvailable <= 0 ? 'borrow-dropdown-disabled' : ''}`}
                                             onMouseDown={() => {
                                                 if (t.quantityAvailable <= 0) { toast.warning('CCDC này đã hết hàng khả dụng'); return; }
-                                                setSelectedTool(t); setShowToolDrop(false);
+                                                setSelectedTool(t); setQuantity(1); setShowToolDrop(false);
                                             }}>
                                             <BsTools className="text-muted me-2" />
                                             <span className="fw-semibold">{t.name}</span>
@@ -220,9 +223,17 @@ export default function EmployeeBorrowForm() {
                     {/* SỐ LƯỢNG + NGÀY + HẠN TRẢ */}
                     <Row className="g-3 mb-4">
                         <Col md={3}>
-                            <label className="form-label fw-semibold">Số lượng <span className="required-asterisk">*</span></label>
-                            <input type="number" min={1} value={quantity} className="form-control"
-                                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} />
+                            <label className="form-label fw-semibold">
+                                Số lượng <span className="required-asterisk">*</span>
+                                {selectedTool && <span className="text-muted small fw-normal ms-1">(kho: {selectedTool.quantityAvailable})</span>}
+                            </label>
+                            <input type="number" min={1} max={selectedTool?.quantityAvailable || undefined}
+                                value={quantity} className="form-control"
+                                disabled={!selectedTool}
+                                onChange={(e) => {
+                                    const max = selectedTool?.quantityAvailable ?? Infinity;
+                                    setQuantity(Math.min(max, Math.max(1, parseInt(e.target.value) || 1)));
+                                }} />
                         </Col>
                         <Col md={4}>
                             <label className="form-label fw-semibold">Ngày mượn <span className="required-asterisk">*</span></label>

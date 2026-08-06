@@ -31,6 +31,7 @@ export default function DataTable({
   onDelete,
   renderActions,
   actionColumnWidth = 200,
+  newestFirst = true,
   loading = false,
 }) {
   const [search, setSearch] = useState('');
@@ -52,14 +53,26 @@ export default function DataTable({
 
   // Sort
   const sorted = useMemo(() => {
-    if (!sortKey) return filtered;
+    // Khi người dùng chưa bấm sort cột nào: mặc định đưa bản ghi MỚI NHẤT lên đầu
+    // (ưu tiên updatedAt → createdAt → id, giảm dần) — dùng chung cho mọi bảng.
+    if (!sortKey) {
+      if (!newestFirst) return filtered;
+      const key = ['updatedAt', 'createdAt', 'id'].find((k) => filtered.some((r) => r?.[k] != null));
+      if (!key) return filtered;
+      return [...filtered].sort((a, b) => {
+        const av = a?.[key];
+        const bv = b?.[key];
+        if (key === 'id') return (Number(bv) || 0) - (Number(av) || 0); // id: số, giảm dần
+        return String(bv ?? '').localeCompare(String(av ?? ''), undefined, { numeric: true }); // ISO date: giảm dần
+      });
+    }
     return [...filtered].sort((a, b) => {
       const aVal = a[sortKey] ?? '';
       const bVal = b[sortKey] ?? '';
       const cmp = String(aVal).localeCompare(String(bVal), 'vi', { numeric: true });
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, newestFirst]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));

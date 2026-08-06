@@ -42,13 +42,13 @@ export default function LubricationHistoryTab({
     return (
         <>
             <h5 className="fw-bold mb-4">
-                Lịch sử bảo dưỡng
+                Lịch sử bảo dưỡng dầu mỡ
             </h5>
 
             {histories.length === 0 ? (
 
                 <div className="text-center py-5 text-muted border rounded bg-light">
-                    Thiết bị chưa có lịch sử bảo dưỡng.
+                    Thiết bị chưa có lịch sử bảo dưỡng dầu mỡ.
                 </div>
 
             ) : (
