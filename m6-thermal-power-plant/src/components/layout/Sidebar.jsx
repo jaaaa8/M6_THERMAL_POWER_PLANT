@@ -6,7 +6,7 @@ import {
   BsWrenchAdjustable, BsExclamationTriangle, BsFileEarmarkText, BsClipboard2Check,
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,
-  BsDropletHalf, BsCalendar3, BsClockHistory,
+  BsDropletHalf, BsCalendar3,
   BsChevronRight, BsShieldLock, BsCheck, BsLightningChargeFill
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
@@ -60,7 +60,8 @@ const menuSections = [
           { path: '/repair/phieu-cong-tac', icon: <BsFileEarmarkText />, label: 'Phiếu Công tác', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'SHIFT_LEADER', 'CREW_LEADER'] },
           { path: '/repair/technical-assessment', icon: <BsClipboard2Check />, label: 'Đánh giá Kỹ thuật', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
           { path: '/repair/spare-parts-issue', icon: <BsBoxSeam />, label: 'Yêu cầu xuất vật tư', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
-          { path: '/repair/history', icon: <BsClockHistory />, label: 'Lịch sử sửa chữa', roles: ['MAINTENANCE_FOREMAN', 'TEAM_LEADER'] },
+          // Ẩn "Lịch sử sửa chữa" (/repair/history) khỏi menu — route ở App.jsx
+          // vẫn giữ, và lịch sử vẫn xem được theo từng thiết bị ở trang chi tiết.
         ],
       },
     ],
@@ -95,7 +96,8 @@ const menuSections = [
         children: [
           { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
           { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
-          { path: '/lubrication/history', icon: <BsClockHistory />, label: 'Lịch sử' },
+          // Ẩn "Lịch sử" (/lubrication/history) khỏi menu — route ở App.jsx mới
+          // chỉ là PlaceholderPage, chưa có gì để xem.
         ],
       },
     ],

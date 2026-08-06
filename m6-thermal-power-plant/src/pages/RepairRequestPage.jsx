@@ -334,9 +334,10 @@ export default function RepairRequestPage() {
             <Table hover className="data-table rr-table">
               <thead>
                 <tr>
+                  <th style={{ width: '5%' }}>STT</th>
                   <th style={{ width: '10%' }}>Mã YC</th>
-                  <th style={{ width: '15%' }}>Mã KKS</th>
-                  <th style={{ width: '25%' }}>Thiết bị</th>
+                  <th style={{ width: '13%' }}>Mã KKS</th>
+                  <th style={{ width: '22%' }}>Thiết bị</th>
                   <th style={{ width: '12%' }}>Ưu tiên</th>
                   <th style={{ width: '12%' }}>Trạng thái</th>
                   <th style={{ width: '15%' }}>Ngày tạo</th>
@@ -344,8 +345,11 @@ export default function RepairRequestPage() {
                 </tr>
               </thead>
               <tbody>
-                {requests.map((req) => (
+                {requests.map((req, idx) => (
                   <tr key={req.id}>
+                    {/* Phân trang là SERVER-SIDE nên phải cộng offset của trang,
+                        không dùng idx trần — page là 0-based khớp Spring Page. */}
+                    <td className="text-muted">{page * size + idx + 1}</td>
                     <td>
                       <code className="code-tag">{req.requestCode}</code>
                     </td>

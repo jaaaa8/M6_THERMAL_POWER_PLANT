@@ -48,7 +48,10 @@ export default function UpdateEquipment() {
       } catch (e) {
         console.error(e);
         toast.error('Không tìm thấy thiết bị cần chỉnh sửa');
-        navigate('/equipment/equipments/system/' + res.data.systemId);
+        // Không dùng res.systemId ở đây: res chỉ tồn tại khi getById THÀNH CÔNG,
+        // vào được catch nghĩa là nó chưa gán → tham chiếu sẽ ném lỗi thứ hai và
+        // nuốt mất lỗi gốc. Về danh sách chung là đủ.
+        navigate('/equipment/equipments');
       } finally {
         setLoading(false);
       }

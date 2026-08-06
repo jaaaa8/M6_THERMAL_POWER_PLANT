@@ -1,5 +1,137 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-08-07] — Xác nhận OTP qua email khi đổi mật khẩu
+
+Đổi mật khẩu vốn **đã chạy hoàn chỉnh** (modal FE + `POST /auth/change-password`). Thay đổi này
+chèn thêm **lớp xác nhận thứ hai**: mã OTP 6 số gửi qua email. Mật khẩu cũ **vẫn bắt buộc** —
+OTP không thay thế nó.
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **Mới `db/migration/V28__password_otp.sql`**: bảng `password_otps`. Chỉ THÊM bảng mới, không
+  sửa bảng nào sẵn có → không cần backup.
+- **Mới `entity/PasswordOtp.java`**: entity **thuần**, cố ý KHÔNG kế thừa `BaseSoftDeleteEntity`
+  như các entity khác — xoá mềm một mã OTP sống 5 phút là vô nghĩa.
+- **Mới `repository/PasswordOtpRepository.java`**: một truy vấn
+  `findFirstByAccount_IdAndConsumedAtIsNullOrderByCreatedAtDesc` phục vụ cả xác thực lẫn chống spam.
+- **Mới `service/auth/PasswordOtpService.java`**: mã 6 số sinh bằng **`SecureRandom`**, lưu
+  **BCrypt hash** chứ không lưu mã thô, hiệu lực 5 phút, dùng một lần, **tối đa 5 lần nhập sai**,
+  giãn cách 60 giây giữa 2 lần xin mã. Tái dùng `JavaMailSender` + SMTP đã cấu hình sẵn.
+- **`AuthService.changePassword`**: gọi `verifyAndConsume` **ngay đầu**, trước cả kiểm mật khẩu cũ.
+- **`AuthController`**: thêm `POST /auth/change-password/request-otp`. `accountId` lấy từ token,
+  **không** nhận từ body — nhận từ body là cho phép bắn mã vào hòm thư người khác.
+- **`ChangePasswordRequestDTO`**: thêm `otp`, bắt buộc, đúng 6 ký tự.
+
+Hai chi tiết đáng ghi lại:
+- **Trần số lần sai phải xét TRƯỚC khi so mã.** So trước rồi mới xét thì kẻ dò đủ 5 lần vẫn còn
+  cơ hội thứ 6, trần thành vô nghĩa. Có test riêng cho nhánh này.
+- **Bộ đếm `attempts` phải lưu xuống DB NGAY trong nhánh sai**, không đợi cuối method — nhánh đó
+  ném exception, không lưu thì trần không tồn tại trên thực tế.
+- Địa chỉ nhận mail: `account.email` → `employee.gmail` → **ném lỗi rõ ràng**. Khác
+  `ToolBorrowOverdueNotifier` vốn lặng lẽ `continue`: bỏ một mail nhắc nhở thì không sao, còn ở
+  đây người dùng sẽ ngồi đợi mã không bao giờ tới.
+
+### Frontend (`m6-thermal-power-plant`)
+- **`services/authService.js`**: thêm `requestChangePasswordOtp()`; `changePassword` nhận thêm `otp`.
+- **`components/profile/ChangePasswordModal.jsx`**: thêm ô mã 6 số + nút "Gửi mã" với đếm ngược
+  60 giây. Ô chỉ nhận chữ số (dán từ email kèm khoảng trắng vẫn sạch). `clearInterval` khi đóng
+  modal và khi unmount.
+
+### Test
+`PasswordOtpServiceTest` mới — 9 case phủ đủ vòng đời mã. `AuthServiceTest` được bổ sung
+`@Mock PasswordOtpService` (thiếu nó thì 4 test cũ NPE). Full suite: **133 tests, 20 failed** —
+đúng 20 lỗi có sẵn ở 3 lớp `*SearchServiceDbTest` (lỗi H2), không liên quan.
+
+**File ảnh hưởng**: `db/migration/V28__password_otp.sql`, `entity/PasswordOtp.java`,
+`repository/PasswordOtpRepository.java`, `service/auth/PasswordOtpService.java`,
+`service/AuthService.java`, `controller/auth/AuthController.java`, `dto/ChangePasswordRequestDTO.java`,
+`services/authService.js`, `components/profile/ChangePasswordModal.jsx`.
+
+---
+
+## [2026-08-07] — Ẩn 2 mục "Lịch sử" khỏi sidebar
+
+- **`components/layout/Sidebar.jsx`**: bỏ mục **"Lịch sử sửa chữa"** (`/repair/history`) khỏi
+  nhóm *Sửa chữa* và mục **"Lịch sử"** (`/lubrication/history`) khỏi *Bảo dưỡng Dầu mỡ*. Gỡ luôn
+  import `BsClockHistory` — icon này chỉ được dùng ở đúng hai dòng đó.
+
+**Giữ nguyên route** ở `App.jsx`: gõ thẳng URL vẫn vào được, bookmark cũ không chết, bật lại sau
+này chỉ là thêm lại một dòng. Riêng `/lubrication/history` vốn mới chỉ là `PlaceholderPage`.
+
+**KHÔNG xoá component.** `RepairHistoryList.jsx` còn export `RepairHistoryTab`, và
+`LubricationHistoryTab.jsx` — cả hai đang được `DetailEquipment.jsx` dùng làm tab trong trang chi
+tiết thiết bị. Xoá file là trang chi tiết thiết bị trắng màn hình, trong khi sidebar vẫn trông
+đúng nên rất dễ bỏ sót. Lịch sử vì vậy vẫn xem được theo từng thiết bị, chỉ là không còn cửa vào
+từ menu.
+
+**File ảnh hưởng**: `components/layout/Sidebar.jsx`. Backend không đổi.
+
+---
+
+## [2026-08-06] — Thêm cột STT cho trang Yêu cầu sửa chữa
+
+`RepairRequestPage.jsx` dựng bảng bằng `<Table>` thuần của react-bootstrap chứ không dùng
+`DataTable`, nên không thừa hưởng cột `#` mà `DataTable.jsx:141` vốn có sẵn — phải thêm tay.
+
+- **`pages/RepairRequestPage.jsx`**: thêm cột `STT` ở đầu bảng, đánh số **liên tục qua các
+  trang** bằng `page * size + idx + 1` (`page` 0-based, khớp Spring Page). Dùng `idx` trần sẽ
+  sai vì trang này phân trang **server-side** — mỗi trang chỉ nhận đúng `size` bản ghi nên
+  `idx` luôn chạy từ 0. Chia lại độ rộng cột cho đủ 100%: Mã KKS 15%→13%, Thiết bị 25%→22%.
+
+Không thay bằng `DataTable`: component đó tự phân trang trong bộ nhớ, còn trang này phân trang
+server-side với `PaginationPanel` riêng — đổi sang sẽ vỡ luồng phân trang hiện có.
+
+**File ảnh hưởng**: `pages/RepairRequestPage.jsx`. Backend không đổi.
+
+---
+
+## [2026-08-06] — Sửa 4 file crash do merge "keep both sides"
+
+Commit `b354399 merge: resolve conflicts with origin/main (keep both sides)` giữ code của **cả
+hai nhánh** thay vì chọn một, để lại 15 tham chiếu tới biến không tồn tại. `npm run build` vẫn
+xanh vì Vite không kiểm tên chưa khai báo — lỗi chỉ lộ ra lúc chạy.
+
+### Nguyên nhân "Xem chi tiết phiếu công tác" chết
+`WorkOrderDetailModal.jsx` bị ghép từ **ba** phiên bản: bản chỉ-đọc, bản từ `main` (PCT thủ công
+nhiều thiết bị), và bản cũ có form "gửi duyệt gia hạn". Handler của cả ba còn nguyên nhưng khai
+báo state chỉ còn của một. Dòng gây chết nằm trong **thân component** nên nổ mỗi lần render:
+
+```js
+const canExtend = userRoles.some((r) => EXTEND_ROLES.includes(r));  // EXTEND_ROLES không tồn tại
+```
+
+### Frontend (`m6-thermal-power-plant`)
+- **`WorkOrderDetailModal.jsx`**: xoá form gia hạn đã hồi sinh (`openStopForm`, `submitStop` —
+  gọi `workOrderService.stop` và `nextExtensionDate`, cả hai đã bị xoá từ đợt bỏ 2 vòng duyệt) và
+  xoá `canExtend`/`EXTEND_ROLES`. **Khôi phục** phần state mà tính năng của `main` cần: thêm
+  `actionLoading` (dùng ở JSX nút đổi trạng thái thiết bị — cũng crash lúc render) và nhận lại
+  prop `onChanged` (`WorkOrderList.jsx:387` vẫn truyền nhưng chữ ký đã bỏ nhận).
+- **`workOrderService.js`**: xoá `approveExtension` và `reopen` — hai endpoint tương ứng đã bị
+  xoá/đổi tên ở backend, gọi vào chỉ nhận 404.
+- **`DetailEquipment.jsx`**: thêm `PDFViewer` vào import từ `@react-pdf/renderer` (dùng ở `:309`
+  nhưng không import) — crash khi mở xem trước PDF thiết bị.
+- **`ListEquipment.jsx`**: xoá 5 handler mồ côi của modal thông số kỹ thuật (`handleOpenTechParamModal`,
+  `handleAddParamRow`, `handleEditParamRowField`, `handleDeleteParamRow`, `handleSaveTechParams`)
+  cùng 2 state chỉ chúng dùng. Phần JSX modal đã biến mất và không nơi nào gọi 5 handler này;
+  tính năng sửa thông số hiện sống ở `TechnicalParameterTab.jsx`.
+- **`UpdateEquipment.jsx`**: `catch` dùng `res.data.systemId` trong khi `res` khai báo trong `try`
+  → khi getById lỗi thì catch ném tiếp `ReferenceError`, nuốt mất lỗi gốc. Đổi sang điều hướng
+  không phụ thuộc `res`.
+
+### Cách phát hiện — dùng lại được cho lần sau
+`npm run build` **không** bắt được loại lỗi này. Câu lệnh bắt được:
+```bash
+npx eslint src --rule '{"no-undef":"error"}'
+```
+Trước: 4 file hỏng. Sau: **0 lỗi trên toàn `src`**. Nên chạy nó sau mỗi lần merge có conflict.
+
+Backend không đổi: `compileJava` sạch, migration Flyway không trùng version (V1–V26).
+
+**File ảnh hưởng**: `components/work_order/WorkOrderDetailModal.jsx`, `services/workOrderService.js`,
+`components/equipment/DetailEquipment.jsx`, `components/equipment/ListEquipment.jsx`,
+`components/equipment/UpdateEquipment.jsx`.
+
+---
+
 ## [2026-08-06] — Khoá phiếu hoàn thành: trả thiết bị từ "Sự cố" về "Hoạt động"
 
 Vòng đời trạng thái thiết bị trước đây **chỉ có chiều đi, không có chiều về**: `RepairService`
