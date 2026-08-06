@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Formik, Form as FormikForm } from 'formik';
 import * as Yup from 'yup';
 import { Form, Button, Row, Col, Spinner } from 'react-bootstrap';
-import { BsArrowLeft, BsSave, BsShieldLock, BsArrowClockwise, BsFilter, BsCheckCircleFill } from 'react-icons/bs';
+import { BsArrowLeft, BsSave, BsShieldLock, BsArrowClockwise, BsFilter, BsCheckCircleFill, BsExclamationTriangleFill, BsExclamationCircleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { accountService } from '../../../services/hr/accountService';
 import { employeeService } from '../../../services/hr/employeeService';
@@ -24,7 +24,7 @@ const AccountSchema = Yup.object().shape({
   accountType: Yup.string(),
   employeeId: Yup.string().when('accountType', {
     is: 'INTERNAL',
-    then: () => Yup.string().required('Vui lòng chọn nhân viên')
+    then: () => Yup.string().required('Vui lòng chọn nhân viên chưa có tài khoản')
   }),
   email: Yup.string().when('accountType', {
     is: 'EXTERNAL',
@@ -140,7 +140,7 @@ export default function AddAccount({ onCancel }) {
     });
   }, [employees, appliedEmpFilters, isEditMode, initialValues.employeeId]);
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setFieldError }) => {
     try {
       const payload = {
         username: values.username,
@@ -167,7 +167,28 @@ export default function AddAccount({ onCancel }) {
         navigate('/hr/accounts');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+      let rawMsg = error.response?.data?.message || error.response?.data?.errors || error.response?.data || error.message || 'Có lỗi xảy ra, vui lòng thử lại';
+      if (Array.isArray(rawMsg)) {
+        rawMsg = rawMsg.join('; ');
+      } else if (typeof rawMsg === 'object' && rawMsg !== null) {
+        rawMsg = rawMsg.message || JSON.stringify(rawMsg);
+      }
+
+      let message = String(rawMsg);
+      const cleanMessage = message.replace(/^([a-zA-Z_]+:\s*)+/, '');
+      const lower = message.toLowerCase();
+
+      if (lower.includes('tên đăng nhập') || lower.includes('username')) {
+        setFieldError('username', cleanMessage);
+      } else if (lower.includes('email') || lower.includes('gmail')) {
+        setFieldError('email', cleanMessage);
+      } else if (lower.includes('nhân viên') || lower.includes('employee')) {
+        setFieldError('employeeId', cleanMessage);
+      } else if (lower.includes('vai trò') || lower.includes('role')) {
+        setFieldError('roleIds', cleanMessage);
+      }
+
+      toast.error(cleanMessage);
     } finally {
       setSubmitting(false);
     }
@@ -228,8 +249,18 @@ export default function AddAccount({ onCancel }) {
             handleSubmit,
             setFieldValue,
             isSubmitting,
+            submitCount,
+            isValid
           }) => (
-            <FormikForm onSubmit={handleSubmit} className="account-form">
+            <FormikForm onSubmit={handleSubmit} className="account-form" noValidate>
+              {!isValid && submitCount > 0 && (
+                <div className="alert alert-danger d-flex align-items-center gap-2 mb-4 fs-7 py-2.5 px-3 rounded-3 shadow-sm border-danger">
+                  <BsExclamationTriangleFill className="fs-5 flex-shrink-0 text-danger" />
+                  <div>
+                    <strong>Vui lòng kiểm tra lại dữ liệu:</strong> Một số trường thông tin tài khoản chưa hợp lệ hoặc bị thiếu.
+                  </div>
+                </div>
+              )}
               <Row className="mb-4">
                 <Col md={12}>
                     <Form.Group>
@@ -274,7 +305,7 @@ export default function AddAccount({ onCancel }) {
                       value={values.username}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      isInvalid={touched.username && errors.username}
+                      isInvalid={(touched.username || submitCount > 0) && !!errors.username}
                       disabled={isEditMode}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -295,7 +326,7 @@ export default function AddAccount({ onCancel }) {
                       value={values.roleIds}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      isInvalid={touched.roleIds && errors.roleIds}
+                      isInvalid={(touched.roleIds || submitCount > 0) && !!errors.roleIds}
                     >
                         <option value="">— Chọn vai trò —</option>
                         {roles.map(r => (
@@ -435,8 +466,10 @@ export default function AddAccount({ onCancel }) {
                         </table>
                       </div>
 
-                      {touched.employeeId && errors.employeeId && (
-                        <div className="text-danger fs-7 mt-2">{errors.employeeId}</div>
+                      {(touched.employeeId || submitCount > 0) && errors.employeeId && (
+                        <div className="text-danger fw-semibold fs-7 mt-2 d-flex align-items-center gap-1">
+                          <BsExclamationCircleFill /> {errors.employeeId}
+                        </div>
                       )}
                     </div>
                   </Col>
@@ -456,7 +489,7 @@ export default function AddAccount({ onCancel }) {
                         value={values.email}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        isInvalid={touched.email && errors.email}
+                        isInvalid={(touched.email || submitCount > 0) && !!errors.email}
                         />
                         <Form.Control.Feedback type="invalid">
                         {errors.email}
