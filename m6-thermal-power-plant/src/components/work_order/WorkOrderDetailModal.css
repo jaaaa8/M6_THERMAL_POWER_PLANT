@@ -403,3 +403,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Danh sách thiết bị của PCT thủ công (nhiều thiết bị, không có repairRequest) --- */
+.wo-detail-equipments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+.wo-detail-equipment-item {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 6px;
+  background: var(--color-surface-alt, #f8f9fa);
+}
+
+.wo-detail-equipment-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}

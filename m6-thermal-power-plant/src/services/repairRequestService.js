@@ -1,26 +1,21 @@
 import apiClient from './apiClient';
 
 /**
- * Trạng thái yêu cầu sửa chữa — khớp Backend enum RepairRequestStatus
+ * Trạng thái yêu cầu sửa chữa — khớp Backend enum RepairRequestStatus.
+ * PYC chỉ để tạo Phiếu công tác, nên chỉ có 2 chặng: chờ xử lý → đã đóng.
  */
 export const REQUEST_STATUS = {
   PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  IN_PROGRESS: 'IN_PROGRESS',
   COMPLETED: 'COMPLETED',
 };
 
 export const REQUEST_STATUS_LABEL = {
   PENDING: 'Chờ xử lý',
-  APPROVED: 'Đã duyệt',
-  IN_PROGRESS: 'Đang xử lý',
-  COMPLETED: 'Hoàn thành',
+  COMPLETED: 'Đã đóng',   // đã có PCT — KHÔNG mang nghĩa "đã sửa xong"
 };
 
 export const REQUEST_STATUS_VARIANT = {
   PENDING: 'warning',    // vàng
-  APPROVED: 'accent',    // cobalt
-  IN_PROGRESS: 'info',   // xanh dương
   COMPLETED: 'normal',   // xanh lá
 };
 
@@ -62,7 +57,15 @@ export const repairRequestService = {
         search: search?.trim() || undefined,
         page,
         size,
-        sort: 'createdAt,desc',
+        // Spring hiểu "a,b,dir" = sort cả 2 cột theo dir. status lưu dạng chuỗi
+        // nên 'PENDING' > 'COMPLETED' => Chờ xử lý lên đầu, trong mỗi nhóm thì
+        // mới nhất trước.
+        // ponytail: mẹo này chỉ đúng khi enum còn ĐÚNG 2 giá trị và P > C theo
+        // alphabet. Thêm trạng thái thứ 3 thì phải đổi sang ORDER BY CASE trong
+        // @Query của RepairRequestRepository.search.
+        // KHÔNG truyền mảng sort: [...] — apiClient không set paramsSerializer,
+        // axios sẽ phát ra "sort[]=" mà Spring không bind được.
+        sort: 'status,createdAt,desc',
       },
     });
   },

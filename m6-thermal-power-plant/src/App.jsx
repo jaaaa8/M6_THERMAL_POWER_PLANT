@@ -28,7 +28,7 @@ import TechnicalAssessmentForm from "./components/technical_assessment/AddCompon
 import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueList.jsx";
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
-import {LubricationPlanForm} from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import { LubricationPlanForm } from "./components/LubricationPlan/LubricationPlanForm.jsx";
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
@@ -109,11 +109,11 @@ function App() {
 
             {/* --- Sửa chữa: Đánh giá KT / Xuất vật tư / Lịch sử (MAINTENANCE_FOREMAN, TEAM_LEADER) --- */}
             <Route element={<ProtectedRoute allowedRoles={['MAINTENANCE_FOREMAN', 'TEAM_LEADER']}><Outlet /></ProtectedRoute>}>
-              <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList/>} />
-              <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm/>} />
-              <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList/>} />
-              <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm/>} />
-              <Route path="/repair/history" element={<RepairHistoryList/>} />
+              <Route path="/repair/technical-assessment" element={<TechnicalAssessmentList />} />
+              <Route path="/repair/technical-assessment/add" element={<TechnicalAssessmentForm />} />
+              <Route path="/repair/spare-parts-issue" element={<SparePartsIssueList />} />
+              <Route path="/repair/spare-parts-issue/add" element={<SparePartsIssueForm />} />
+              <Route path="/repair/history" element={<RepairHistoryList />} />
             </Route>
 
             {/* --- Vật tư (MATERIALS_STOREKEEPER) --- */}
@@ -135,7 +135,7 @@ function App() {
 
             {/* --- Bảo dưỡng (TEAM_LEADER) --- */}
             <Route element={<ProtectedRoute allowedRoles={['TEAM_LEADER']}><Outlet /></ProtectedRoute>}>
-              <Route path="/lubrication/plant" element={<MaintenancePlanList/>} />
+              <Route path="/lubrication/plant" element={<MaintenancePlanList />} />
               <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
               <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
               <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
@@ -160,7 +160,7 @@ function App() {
         <ToastContainer
           position="top-right"
           autoClose={3000}
-          hideProgressBar={false}
+          hideProgressBar={true}
           newestOnTop
           closeOnClick
           pauseOnFocusLoss

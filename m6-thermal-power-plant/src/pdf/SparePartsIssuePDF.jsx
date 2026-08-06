@@ -29,361 +29,265 @@ const styles = StyleSheet.create({
         padding: 30,
         fontFamily: "Roboto",
         fontSize: 11,
-        color: "#222",
+        color: "#000",
         lineHeight: 1.5,
     },
-
     header: {
-        textAlign: "center",
-        marginBottom: 20,
-        borderBottom: "2 solid #0d6efd",
-        paddingBottom: 10,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: 10,
     },
-
-    title: {
-        fontSize: 18,
+    headerLeft: {
+        width: "45%",
+        textAlign: "center",
         fontWeight: "bold",
-        color: "#0d6efd",
+    },
+    hr: {
+        borderTop: "1 solid black",
+        width: "60%",
+        alignSelf: "center",
+        marginTop: 4,
+        marginBottom: 4,
+    },
+    headerRight: {
+        width: "45%",
+        textAlign: "center",
+    },
+    titleSection: {
+        textAlign: "center",
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    title: {
+        fontSize: 14,
+        fontWeight: "bold",
+        textTransform: "uppercase",
+    },
+    headerDetails: {
+        textAlign: "right",
+        marginBottom: 10,
+        paddingRight: 20,
+    },
+    sendTo: {
+        textAlign: "center",
+        fontWeight: "bold",
+        marginBottom: 10,
+    },
+    infoRow: {
+        flexDirection: "row",
         marginBottom: 5,
     },
-
-    subTitle: {
-        fontSize: 10,
-        color: "#666",
-    },
-
-    section: {
-        marginBottom: 15,
-        border: "1 solid #d9d9d9",
-        borderRadius: 4,
-        padding: 10,
-    },
-
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: "bold",
-        marginBottom: 8,
-        color: "#0d6efd",
-    },
-
-    row: {
-        flexDirection: "row",
-        marginBottom: 6,
-    },
-
-    label: {
-        width: "35%",
-        fontWeight: "bold",
-    },
-
-    value: {
-        width: "65%",
-    },
-
-    contentBox: {
-        marginTop: 5,
-        padding: 10,
-        backgroundColor: "#f8f9fa",
-        border: "1 solid #e5e5e5",
-    },
-
     table: {
-        border: "1 solid #d9d9d9",
+        borderTop: "1 solid #000",
+        borderLeft: "1 solid #000",
+        borderRight: "1 solid #000",
         marginTop: 10,
+        marginBottom: 20,
     },
-
     tableHeader: {
         flexDirection: "row",
-        backgroundColor: "#e9f2ff",
-        borderBottom: "1 solid #d9d9d9",
+        borderBottom: "1 solid #000",
+        fontWeight: "bold",
+        alignItems: "stretch",
     },
-
     tableRow: {
         flexDirection: "row",
-        borderBottom: "1 solid #e5e5e5",
+        borderBottom: "1 solid #000",
     },
-
-    cellNo: {
-        width: "10%",
-        padding: 6,
-        borderRight: "1 solid #d9d9d9",
+    col1: { width: "5%", borderRight: "1 solid #000", padding: 5, justifyContent: "center", alignItems: "center" },
+    col2: { width: "15%", borderRight: "1 solid #000", padding: 5, justifyContent: "center", alignItems: "center" },
+    col3: { width: "30%", borderRight: "1 solid #000", padding: 5, justifyContent: "center", alignItems: "center" },
+    col4: { width: "10%", borderRight: "1 solid #000", padding: 5, justifyContent: "center", alignItems: "center" },
+    colGroup: { width: "20%", borderRight: "1 solid #000", flexDirection: "column" },
+    colGroupTitle: { borderBottom: "1 solid #000", padding: 5, textAlign: "center" },
+    colGroupSub: { flexDirection: "row", flex: 1 },
+    col5: { width: "50%", borderRight: "1 solid #000", padding: 5, justifyContent: "center", alignItems: "center" },
+    col6: { width: "50%", padding: 5, justifyContent: "center", alignItems: "center" },
+    col7: { width: "20%", padding: 5, justifyContent: "center", alignItems: "center" },
+    
+    cell1: { width: "5%", borderRight: "1 solid #000", padding: 5, textAlign: "center" },
+    cell2: { width: "15%", borderRight: "1 solid #000", padding: 5, textAlign: "center" },
+    cell3: { width: "30%", borderRight: "1 solid #000", padding: 5 },
+    cell4: { width: "10%", borderRight: "1 solid #000", padding: 5, textAlign: "center" },
+    cell5: { width: "10%", borderRight: "1 solid #000", padding: 5, textAlign: "center" },
+    cell6: { width: "10%", borderRight: "1 solid #000", padding: 5, textAlign: "center" },
+    cell7: { width: "20%", padding: 5, textAlign: "center" },
+    
+    signatures: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 10,
     },
-
-    cellName: {
-        width: "50%",
-        padding: 6,
-        borderRight: "1 solid #d9d9d9",
-    },
-
-    cellQty: {
-        width: "20%",
-        padding: 6,
-        borderRight: "1 solid #d9d9d9",
+    signBox: {
+        width: "33%",
         textAlign: "center",
     },
-
-    cellUnit: {
-        width: "20%",
-        padding: 6,
-        textAlign: "center",
+    signRole: {
+        fontWeight: "bold",
     },
-
-    footer: {
-        position: "absolute",
-        bottom: 20,
-        left: 30,
-        right: 30,
-        textAlign: "center",
-        fontSize: 9,
-        color: "#666",
-    },
+    dots: {
+        marginTop: 50,
+    }
 });
 
 export default function SparePartsIssuePDF({
-                                               data,
-                                               workOrders,
-                                               spareParts,
-                                           }) {
-
-
-    const formatDateVN = (date) => {
-        if (!date) return "";
-
+    data,
+    workOrders,
+    spareParts,
+}) {
+    const getDayMonthYear = (date) => {
+        if (!date) return { day: "...", month: "...", year: "......" };
         const d = new Date(date);
-
-        if (isNaN(d.getTime())) {
-            return date;
-        }
-
-        return d.toLocaleString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        if (isNaN(d.getTime())) return { day: "...", month: "...", year: "......" };
+        return {
+            day: String(d.getDate()).padStart(2, '0'),
+            month: String(d.getMonth() + 1).padStart(2, '0'),
+            year: d.getFullYear()
+        };
     };
 
-    const workOrder =
-        workOrders.find(
-            w => Number(w.id) === Number(data.workOrderId)
-        )?.orderCode || "";
-    console.log("PDF DATA", data);
-    console.log("PDF WORK ORDERS", workOrders);
+    const dmy = getDayMonthYear(data?.issuedAt);
+
+    const workOrderObj = workOrders?.find(
+        w => Number(w.id) === Number(data?.workOrderId)
+    );
+    const workOrder = workOrderObj?.workOrderCode || workOrderObj?.orderCode || data?.workOrderCode || "";
+
+    const requesterName = data?.issuedBy?.employee?.fullName || data?.issuedBy?.employee?.employeeName || data?.issuedBy?.username || "[Họ và tên người đề nghị]";
 
     return (
         <Document>
-
-            {/* PAGE 1 */}
-            <Page size="A4" style={styles.page}>
-
+            <Page size="A4" orientation="landscape" style={styles.page}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>
-                        PHIẾU XUẤT VẬT TƯ
-                    </Text>
-
-                    <Text style={styles.subTitle}>
-                        Cấp phát vật tư phục vụ bảo trì thiết bị
-                    </Text>
-                </View>
-
-                {/* THÔNG TIN CHUNG */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                        I. Thông tin phiếu xuất vật tư
-                    </Text>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Mã phiếu:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {data.sparePartCode}
-                        </Text>
+                    <View style={styles.headerLeft}>
+                        <Text>CÔNG TY CỔ PHẦN DỊCH VỤ KỸ THUẬT</Text>
+                        <Text>ĐIỆN LỰC DẦU KHÍ VIỆT NAM</Text>
+                        <Text>CHI NHÁNH HÀ TĨNH</Text>
+                        <View style={styles.hr} />
                     </View>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Lệnh công việc:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {workOrder}
-                        </Text>
-                    </View>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Người yêu cầu:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {
-                                data.issuedBy?.employee?.employeeName ||
-                                ""
-                            }
-
-                            {
-                                data.issuedBy?.username
-                                    ? ` (${data.issuedBy.username})`
-                                    : ""
-                            }
-                        </Text>
-                    </View>
-
-                    <View style={styles.row}>
-                        <Text style={styles.label}>
-                            Thời gian yêu cầu:
-                        </Text>
-
-                        <Text style={styles.value}>
-                            {formatDateVN(data.issuedAt)}
-                        </Text>
+                    <View style={styles.headerRight}>
+                        <Text>Biểu số 03-TT</Text>
+                        <Text>(Ban hành theo quyết định số 15/2006/QĐ-BTC ngày</Text>
+                        <Text>20/03/2006 của Bộ Tài Chính)</Text>
                     </View>
                 </View>
 
-                {/* DANH SÁCH VẬT TƯ */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                        II. Danh sách vật tư cấp phát
-                    </Text>
+                <View style={styles.titleSection}>
+                    <Text style={styles.title}>GIẤY ĐỀ NGHỊ XUẤT KHO VẬT TƯ</Text>
+                    <Text>Ngày {dmy.day} tháng {dmy.month} năm {dmy.year}</Text>
+                </View>
 
-                    <View style={styles.table}>
-
-                        <View style={styles.tableHeader}>
-                            <Text style={styles.cellNo}>STT</Text>
-                            <Text style={styles.cellName}>
-                                Tên vật tư
-                            </Text>
-                            <Text style={styles.cellQty}>
-                                Số lượng
-                            </Text>
-                            <Text style={styles.cellUnit}>
-                                ĐVT
-                            </Text>
+                <View style={styles.headerDetails}>
+                    <View style={{ width: 250, marginLeft: "auto", textAlign: "left" }}>
+                        <View style={{ flexDirection: "row" }}>
+                            <Text style={{ width: 85 }}>Xuất tại kho:</Text>
+                            <Text>............................................</Text>
                         </View>
-
-                        {data.items?.map((item, index) => {
-
-                            const sparePart =
-                                spareParts.find(
-                                    sp =>
-                                        sp.id?.toString() ===
-                                        item.sparePartId?.toString()
-                                );
-
-                            return (
-                                <View
-                                    key={index}
-                                    style={styles.tableRow}
-                                >
-                                    <Text style={styles.cellNo}>
-                                        {index + 1}
-                                    </Text>
-
-                                    <Text style={styles.cellName}>
-                                        {sparePart?.name || ""}
-                                    </Text>
-
-                                    <Text style={styles.cellQty}>
-                                        {item.quantity}
-                                    </Text>
-
-                                    <Text style={styles.cellUnit}>
-                                        {sparePart?.unitName || "-"}
-                                    </Text>
-                                </View>
-                            );
-                        })}
+                        <View style={{ flexDirection: "row", marginVertical: 3 }}>
+                            <Text style={{ width: 85 }}>Số phiếu xuất:</Text>
+                            <Text>{data?.sparePartCode || data?.issueCode || "............................................"}</Text>
+                        </View>
+                        <View style={{ flexDirection: "row" }}>
+                            <Text style={{ width: 85 }}>Ngày:</Text>
+                            <Text>............................................</Text>
+                        </View>
                     </View>
                 </View>
 
-                <Text fixed style={styles.footer}>
-                    Hệ thống quản lý bảo trì nhà máy nhiệt điện
-                </Text>
+                <View style={styles.sendTo}>
+                    <Text>Kính gửi: Ông Giám đốc Công ty Điện lực Dầu khí Hà Tĩnh</Text>
+                </View>
+
+                <View style={{ marginBottom: 5 }}>
+                    <View style={styles.infoRow}>
+                        <Text style={{ width: "15%" }}>1. Người đề nghị:</Text>
+                        <Text style={{ width: "85%" }}>{requesterName}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={{ width: "15%" }}>2. Lý do sử dụng:</Text>
+                        <Text style={{ width: "40%" }}>{data?.reason || data?.description || "[Lý do sử dụng]"}</Text>
+                        <Text style={{ width: "20%" }}>WO:   {workOrder || "[Mã công tác]"}</Text>
+                        <Text style={{ width: "25%" }}>KKS:   {data?.kks || "[KKS]"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text>3. Đề nghị lĩnh số vật tư dưới đây:</Text>
+                    </View>
+                </View>
+
+                <View style={styles.table}>
+                    <View style={styles.tableHeader}>
+                        <View style={styles.col1}><Text>STT</Text></View>
+                        <View style={styles.col2}><Text>Mã vật tư</Text></View>
+                        <View style={styles.col3}><Text>Tên vật tư và quy cách</Text></View>
+                        <View style={styles.col4}><Text>ĐVT</Text></View>
+                        <View style={styles.colGroup}>
+                            <View style={styles.colGroupTitle}><Text>Số lượng</Text></View>
+                            <View style={styles.colGroupSub}>
+                                <View style={styles.col5}><Text>Cần</Text></View>
+                                <View style={styles.col6}><Text>Cấp</Text></View>
+                            </View>
+                        </View>
+                        <View style={styles.col7}><Text>Ghi chú</Text></View>
+                    </View>
+
+                    {data?.items?.map((item, index) => {
+                        const sp = spareParts?.find(
+                            s => s.id?.toString() === item.sparePartId?.toString()
+                        );
+                        const code = sp?.sparePartCode || sp?.partCode || sp?.code || item.sparePartCode || "";
+                        const name = sp?.name || item.sparePartName || "";
+                        const unit = sp?.unitName || item.unit || "";
+                        return (
+                            <View key={index} style={styles.tableRow}>
+                                <Text style={styles.cell1}>{index + 1}</Text>
+                                <Text style={styles.cell2}>{code}</Text>
+                                <Text style={styles.cell3}>{name}</Text>
+                                <Text style={styles.cell4}>{unit}</Text>
+                                <Text style={styles.cell5}>{item.quantity}</Text>
+                                <Text style={styles.cell6}></Text>
+                                <Text style={styles.cell7}></Text>
+                            </View>
+                        );
+                    })}
+                </View>
+
+                <View style={styles.signatures}>
+                    <View style={styles.signBox}>
+                        <Text style={styles.signRole}>Người nhận</Text>
+                        <Text>(Ký, ghi rõ họ tên)</Text>
+                        <Text style={styles.dots}>...................................................</Text>
+                    </View>
+                    <View style={styles.signBox}>
+                        <Text style={styles.signRole}>Tổ trưởng sản xuất</Text>
+                        <Text>(Ký, ghi rõ họ tên)</Text>
+                        <Text style={styles.dots}>...................................................</Text>
+                    </View>
+                    <View style={styles.signBox}>
+                        <Text style={styles.signRole}>CHI NHÁNH PVPSHT</Text>
+                        <Text>(Ký, ghi rõ họ tên)</Text>
+                        <Text style={styles.dots}>...................................................</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.signatures, { marginTop: 20 }]}>
+                    <View style={styles.signBox}>
+                        <Text style={styles.signRole}>Phòng Kỹ thuật PVPHT</Text>
+                        <Text>(Ký, ghi rõ họ tên)</Text>
+                        <Text style={styles.dots}>...................................................</Text>
+                    </View>
+                    <View style={styles.signBox}>
+                        <Text style={styles.signRole}>Phòng Vật Tư - Vận Tải</Text>
+                        <Text>(Ký, ghi rõ họ tên)</Text>
+                        <Text style={styles.dots}>...................................................</Text>
+                    </View>
+                    <View style={styles.signBox}>
+                        <Text style={styles.signRole}>GIÁM ĐỐC PVPHT</Text>
+                        <Text style={{ textDecoration: 'underline' }}>Phê duyệt</Text>
+                        <Text style={styles.dots}>...................................................</Text>
+                    </View>
+                </View>
 
             </Page>
-
-            {/* PAGE 2 */}
-            <Page size="A4" style={styles.page} wrap={false}>
-
-                <View
-                    style={{
-                        marginTop: 120,
-                        alignItems: "center",
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 18,
-                            fontWeight: "bold",
-                        }}
-                    >
-                        XÁC NHẬN CẤP PHÁT VẬT TƯ
-                    </Text>
-                </View>
-
-                <View
-                    style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        marginTop: 120,
-                    }}
-                >
-                    <View
-                        style={{
-                            width: "40%",
-                            alignItems: "center",
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontWeight: "bold",
-                            }}
-                        >
-                            Người nhận vật tư
-                        </Text>
-
-                        <Text
-                            style={{
-                                marginTop: 80,
-                            }}
-                        >
-                            __________________
-                        </Text>
-                    </View>
-
-                    <View
-                        style={{
-                            width: "40%",
-                            alignItems: "center",
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontWeight: "bold",
-                            }}
-                        >
-                            Người cấp phát
-                        </Text>
-
-                        <Text
-                            style={{
-                                marginTop: 80,
-                            }}
-                        >
-                            __________________
-                        </Text>
-                    </View>
-                </View>
-
-                <Text fixed style={styles.footer}>
-                    Hệ thống quản lý bảo trì nhà máy nhiệt điện
-                </Text>
-
-            </Page>
-
         </Document>
     );
 }
