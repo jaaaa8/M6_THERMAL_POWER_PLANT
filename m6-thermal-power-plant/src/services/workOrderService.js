@@ -219,13 +219,13 @@ export const workOrderService = {
    */
   updateStatus: (id, data) => apiClient.patch(`${BASE}/${id}/status`, data),
 
-  /**
-   * Ghi nhận online việc Trưởng ca ĐÃ ký duyệt bản giấy (người bấm chịu trách
-   * nhiệm nhập đúng theo bản giấy — tài khoản của họ được lưu vào approvedBy).
-   * status → APPROVED.
-   * → PATCH /api/v1/work-orders/{id}/approve-extension
-   */
-  approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
+  // /**
+  //  * Ghi nhận online việc Trưởng ca ĐÃ ký duyệt bản giấy (người bấm chịu trách
+  //  * nhiệm nhập đúng theo bản giấy — tài khoản của họ được lưu vào approvedBy).
+  //  * status → APPROVED.
+  //  * → PATCH /api/v1/work-orders/{id}/approve-extension
+  //  */
+  // approveExtension: (id) => apiClient.patch(`${BASE}/${id}/approve-extension`),
 
   /**
    * Cập nhật trạng thái làm việc của MỘT thiết bị trong PCT thủ công nhiều
