@@ -12,7 +12,8 @@ import {
 import {
     BsEye,
     BsPlusCircle,
-    BsArrowClockwise
+    BsArrowClockwise,
+    BsFileEarmarkPdf
 } from "react-icons/bs";
 import { Link } from "react-router-dom";
 
@@ -22,6 +23,7 @@ import sparePartIssueService from "../../services/sparePartIssueService";
 import { workOrderService } from "../../services/workOrderService";
 import { authService } from "../../services/authService";
 import { hasAnyRole } from "../../services/roleService";
+import { downloadSparePartsIssuePdf } from "../../utils/sparePartsIssuePdfUtil";
 
 export default function SparePartsIssueList() {
     const [data, setData] = useState([]);
@@ -29,6 +31,7 @@ export default function SparePartsIssueList() {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedIssue, setSelectedIssue] = useState(null);
     const [workOrderMap, setWorkOrderMap] = useState({});
+    const [workOrdersList, setWorkOrdersList] = useState([]);
     const [filters, setFilters] = useState({
         keyword: "",
         status: ""
@@ -47,6 +50,19 @@ export default function SparePartsIssueList() {
     useEffect(() => {
         loadData();
     }, [pagination.page, searchTrigger]);
+
+    const handleExportPdf = async (issueRecord) => {
+        if (!issueRecord) return;
+        let issueToExport = issueRecord;
+        if (issueRecord.id && (!issueRecord.details || issueRecord.details.length === 0)) {
+            try {
+                issueToExport = await sparePartIssueService.getDetail(issueRecord.id);
+            } catch (e) {
+                console.error("Lỗi lấy chi tiết phiếu xuất:", e);
+            }
+        }
+        await downloadSparePartsIssuePdf(issueToExport, workOrdersList);
+    };
 
     const loadData = async () => {
         try {
@@ -88,6 +104,7 @@ export default function SparePartsIssueList() {
                 : Array.isArray(workOrderData?.content)
                     ? workOrderData.content
                     : [];
+            setWorkOrdersList(workOrders);
 
             const woMap = {};
 
@@ -386,13 +403,22 @@ export default function SparePartsIssueList() {
                 searchable={false}
                 columns={columns}
                 renderActions={(row) => (
-                    <div className="data-table-actions">
+                    <div className="data-table-actions d-flex gap-1">
                         <Button
                             size="sm"
                             variant="outline-primary"
+                            title="Xem chi tiết"
                             onClick={() => handleView(row)}
                         >
                             <BsEye />
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline-success"
+                            title="Tải file PDF phiếu xuất mẫu"
+                            onClick={() => handleExportPdf(row.rawData)}
+                        >
+                            <BsFileEarmarkPdf />
                         </Button>
                     </div>
                 )}
@@ -633,9 +659,21 @@ export default function SparePartsIssueList() {
 
                 </Modal.Body>
 
-                <Modal.Footer className="bg-light">
+                <Modal.Footer className="bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        {selectedIssue && (
+                            <Button
+                                variant="outline-success"
+                                size="sm"
+                                onClick={() => handleExportPdf(selectedIssue)}
+                            >
+                                <BsFileEarmarkPdf className="me-1" /> In/Tải PDF mẫu
+                            </Button>
+                        )}
+                    </div>
                     <Button
                         variant="secondary"
+                        size="sm"
                         onClick={() => setShowDetailModal(false)}
                     >
                         Đóng
