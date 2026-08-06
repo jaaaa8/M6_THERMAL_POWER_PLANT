@@ -7,7 +7,8 @@ import {
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,
   BsDropletHalf, BsCalendar3,
-  BsChevronRight, BsShieldLock, BsCheck, BsLightningChargeFill
+  BsChevronRight, BsShieldLock, BsCheck, BsLightningChargeFill,
+  BsClipboardCheck
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
 import { hasAnyRole, SYSTEM_ROLES } from '../../services/roleService';
@@ -96,6 +97,7 @@ const menuSections = [
         children: [
           { path: '/lubrication/plant', icon: <BsCalendar3 />, label: 'Kế hoạch' },
           { path: '/lubrication/checklist', icon: <BsCheck />, label: 'Checklist' },
+          { path: '/lubrication/orders', icon: <BsClipboardCheck />, label: 'Phiếu bôi trơn' },
           // Ẩn "Lịch sử" (/lubrication/history) khỏi menu — route ở App.jsx mới
           // chỉ là PlaceholderPage, chưa có gì để xem.
         ],

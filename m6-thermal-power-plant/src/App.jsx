@@ -29,6 +29,7 @@ import SparePartsIssueList from "./components/spare_parts_issue/SparePartsIssueL
 import SparePartsIssueForm from "./components/spare_parts_issue/SparePartsIssueForm.jsx";
 import LubricationChecklistPage from "./components/LubricationChecklistPage/LubricationChecklistPage.jsx";
 import { LubricationPlanForm } from "./components/LubricationPlan/LubricationPlanForm.jsx";
+import LubricationWorkOrderList from "./components/lubrication_work_order/LubricationWorkOrderList.jsx";
 import ListSystem from './components/equipment/ListSystem';
 import AddSystem from './components/equipment/AddSystem';
 import EditSystem from './components/equipment/EditSystem';
@@ -138,6 +139,7 @@ function App() {
               <Route path="/lubrication/plant" element={<MaintenancePlanList />} />
               <Route path="/lubrication/plant/add" element={<LubricationPlanForm />} />
               <Route path="/lubrication/checklist" element={<LubricationChecklistPage />} />
+              <Route path="/lubrication/orders" element={<LubricationWorkOrderList />} />
               <Route path="/lubrication/history" element={<PlaceholderPage title="Lịch sử Bảo dưỡng" />} />
             </Route>
           </Route>
