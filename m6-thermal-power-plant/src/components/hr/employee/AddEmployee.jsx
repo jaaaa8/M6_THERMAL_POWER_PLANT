@@ -249,54 +249,115 @@ const AddDepartmentModal = ({ show, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (!code.trim()) {
+      errs.code = 'Vui lòng nhập mã phòng ban';
+    } else if (code.trim().length < 2 || code.trim().length > 20) {
+      errs.code = 'Mã phòng ban phải từ 2 đến 20 ký tự';
+    } else if (!/^[A-Za-z0-9_-]+$/.test(code.trim())) {
+      errs.code = 'Mã phòng ban chỉ gồm chữ cái, chữ số, gạch ngang hoặc gạch dưới';
+    }
+
+    if (!name.trim()) {
+      errs.name = 'Vui lòng nhập tên phòng ban';
+    } else if (name.trim().length < 2 || name.trim().length > 100) {
+      errs.name = 'Tên phòng ban phải từ 2 đến 100 ký tự';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleClose = () => {
+    setCode('');
+    setName('');
+    setDescription('');
+    setErrors({});
+    onClose();
+  };
 
   const handleSave = async () => {
-    if (!code.trim() || !name.trim()) {
-      toast.error('Mã và tên phòng ban không được để trống');
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
     try {
       const res = await departmentService.create({
-        maPhongBan: code,
-        tenPhongBan: name,
-        moTa: description
+        maPhongBan: code.trim(),
+        tenPhongBan: name.trim(),
+        moTa: description.trim()
       });
       const newDept = res.data?.data || res.data;
       toast.success('Thêm phòng ban thành công');
       onSave(newDept);
-      onClose();
-      setCode('');
-      setName('');
-      setDescription('');
+      handleClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi thêm phòng ban');
+      const msg = err.response?.data?.message || err.response?.data || err.message || 'Lỗi thêm phòng ban';
+      if (typeof msg === 'string' && msg.includes('Mã phòng ban')) {
+        setErrors(prev => ({ ...prev, code: msg }));
+      } else if (typeof msg === 'string' && msg.includes('Tên phòng ban')) {
+        setErrors(prev => ({ ...prev, name: msg }));
+      } else {
+        toast.error(typeof msg === 'string' ? msg : 'Lỗi thêm phòng ban');
+      }
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered backdrop="static">
+    <Modal show={show} onHide={handleClose} centered backdrop="static">
       <Modal.Header closeButton>
         <Modal.Title className="fs-5 fw-bold text-primary">Thêm phòng ban mới</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Mã phòng ban <span className="text-danger">*</span></BsForm.Label>
-          <BsForm.Control value={code} onChange={e => setCode(e.target.value)} placeholder="VD: OPERATIONS" />
+          <BsForm.Control 
+            value={code} 
+            onChange={e => {
+              setCode(e.target.value);
+              if (errors.code) setErrors(prev => ({ ...prev, code: null }));
+            }} 
+            isInvalid={!!errors.code}
+            disabled={saving}
+            placeholder="VD: OPERATIONS" 
+          />
+          <BsForm.Control.Feedback type="invalid">
+            {errors.code}
+          </BsForm.Control.Feedback>
         </BsForm.Group>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Tên phòng ban <span className="text-danger">*</span></BsForm.Label>
-          <BsForm.Control value={name} onChange={e => setName(e.target.value)} placeholder="VD: Phòng vận hành" />
+          <BsForm.Control 
+            value={name} 
+            onChange={e => {
+              setName(e.target.value);
+              if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+            }} 
+            isInvalid={!!errors.name}
+            disabled={saving}
+            placeholder="VD: Phòng vận hành" 
+          />
+          <BsForm.Control.Feedback type="invalid">
+            {errors.name}
+          </BsForm.Control.Feedback>
         </BsForm.Group>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Mô tả</BsForm.Label>
-          <BsForm.Control as="textarea" rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Nhập mô tả..." />
+          <BsForm.Control 
+            as="textarea" 
+            rows={3} 
+            value={description} 
+            onChange={e => setDescription(e.target.value)} 
+            disabled={saving}
+            placeholder="Nhập mô tả..." 
+          />
         </BsForm.Group>
       </Modal.Body>
       <Modal.Footer className="border-0">
-        <Button variant="outline-secondary" onClick={onClose} disabled={saving} className="px-4">Hủy</Button>
+        <Button variant="outline-secondary" onClick={handleClose} disabled={saving} className="px-4">Hủy</Button>
         <Button variant="primary" onClick={handleSave} disabled={saving} className="px-4">{saving ? 'Đang lưu...' : 'Lưu'}</Button>
       </Modal.Footer>
     </Modal>
@@ -307,48 +368,102 @@ const AddExpertiseModal = ({ show, onClose, onSave }) => {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (!code.trim()) {
+      errs.code = 'Vui lòng nhập mã chuyên môn';
+    } else if (code.trim().length < 2 || code.trim().length > 20) {
+      errs.code = 'Mã chuyên môn phải từ 2 đến 20 ký tự';
+    } else if (!/^[A-Za-z0-9_-]+$/.test(code.trim())) {
+      errs.code = 'Mã chuyên môn chỉ gồm chữ cái, chữ số, gạch ngang hoặc gạch dưới';
+    }
+
+    if (!name.trim()) {
+      errs.name = 'Vui lòng nhập tên chuyên môn';
+    } else if (name.trim().length < 2 || name.trim().length > 100) {
+      errs.name = 'Tên chuyên môn phải từ 2 đến 100 ký tự';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleClose = () => {
+    setCode('');
+    setName('');
+    setErrors({});
+    onClose();
+  };
 
   const handleSave = async () => {
-    if (!code.trim() || !name.trim()) {
-      toast.error('Mã và tên chuyên môn không được để trống');
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
     try {
       const res = await employeeService.createExpertise({
-        expertiseCode: code,
-        name: name
+        expertiseCode: code.trim(),
+        name: name.trim()
       });
       const newExp = res.data?.data || res.data;
       toast.success('Thêm chuyên môn thành công');
       onSave(newExp);
-      onClose();
-      setCode('');
-      setName('');
+      handleClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi thêm chuyên môn');
+      const msg = err.response?.data?.message || err.response?.data || err.message || 'Lỗi thêm chuyên môn';
+      if (typeof msg === 'string' && msg.includes('Mã chuyên môn')) {
+        setErrors(prev => ({ ...prev, code: msg }));
+      } else if (typeof msg === 'string' && msg.includes('Tên chuyên môn')) {
+        setErrors(prev => ({ ...prev, name: msg }));
+      } else {
+        toast.error(typeof msg === 'string' ? msg : 'Lỗi thêm chuyên môn');
+      }
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered backdrop="static">
+    <Modal show={show} onHide={handleClose} centered backdrop="static">
       <Modal.Header closeButton>
         <Modal.Title className="fs-5 fw-bold text-primary">Thêm chuyên môn mới</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Mã chuyên môn <span className="text-danger">*</span></BsForm.Label>
-          <BsForm.Control value={code} onChange={e => setCode(e.target.value)} placeholder="VD: BOILER_OP" />
+          <BsForm.Control 
+            value={code} 
+            onChange={e => {
+              setCode(e.target.value);
+              if (errors.code) setErrors(prev => ({ ...prev, code: null }));
+            }} 
+            isInvalid={!!errors.code}
+            disabled={saving}
+            placeholder="VD: BOILER_OP" 
+          />
+          <BsForm.Control.Feedback type="invalid">
+            {errors.code}
+          </BsForm.Control.Feedback>
         </BsForm.Group>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Tên chuyên môn <span className="text-danger">*</span></BsForm.Label>
-          <BsForm.Control value={name} onChange={e => setName(e.target.value)} placeholder="VD: Vận hành lò hơi" />
+          <BsForm.Control 
+            value={name} 
+            onChange={e => {
+              setName(e.target.value);
+              if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+            }} 
+            isInvalid={!!errors.name}
+            disabled={saving}
+            placeholder="VD: Vận hành lò hơi" 
+          />
+          <BsForm.Control.Feedback type="invalid">
+            {errors.name}
+          </BsForm.Control.Feedback>
         </BsForm.Group>
       </Modal.Body>
       <Modal.Footer className="border-0">
-        <Button variant="outline-secondary" onClick={onClose} disabled={saving} className="px-4">Hủy</Button>
+        <Button variant="outline-secondary" onClick={handleClose} disabled={saving} className="px-4">Hủy</Button>
         <Button variant="primary" onClick={handleSave} disabled={saving} className="px-4">{saving ? 'Đang lưu...' : 'Lưu'}</Button>
       </Modal.Footer>
     </Modal>
@@ -359,48 +474,102 @@ const AddPositionModal = ({ show, onClose, onSave }) => {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (!code.trim()) {
+      errs.code = 'Vui lòng nhập mã chức vụ';
+    } else if (code.trim().length < 2 || code.trim().length > 20) {
+      errs.code = 'Mã chức vụ phải từ 2 đến 20 ký tự';
+    } else if (!/^[A-Za-z0-9_-]+$/.test(code.trim())) {
+      errs.code = 'Mã chức vụ chỉ gồm chữ cái, chữ số, gạch ngang hoặc gạch dưới';
+    }
+
+    if (!name.trim()) {
+      errs.name = 'Vui lòng nhập tên chức vụ';
+    } else if (name.trim().length < 2 || name.trim().length > 100) {
+      errs.name = 'Tên chức vụ phải từ 2 đến 100 ký tự';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleClose = () => {
+    setCode('');
+    setName('');
+    setErrors({});
+    onClose();
+  };
 
   const handleSave = async () => {
-    if (!code.trim() || !name.trim()) {
-      toast.error('Mã và tên chức vụ không được để trống');
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
     try {
       const res = await employeeService.createPosition({
-        positionCode: code,
-        name: name
+        positionCode: code.trim(),
+        name: name.trim()
       });
       const newPos = res.data?.data || res.data;
       toast.success('Thêm chức vụ thành công');
       onSave(newPos);
-      onClose();
-      setCode('');
-      setName('');
+      handleClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi thêm chức vụ');
+      const msg = err.response?.data?.message || err.response?.data || err.message || 'Lỗi thêm chức vụ';
+      if (typeof msg === 'string' && msg.includes('Mã chức vụ')) {
+        setErrors(prev => ({ ...prev, code: msg }));
+      } else if (typeof msg === 'string' && msg.includes('Tên chức vụ')) {
+        setErrors(prev => ({ ...prev, name: msg }));
+      } else {
+        toast.error(typeof msg === 'string' ? msg : 'Lỗi thêm chức vụ');
+      }
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered backdrop="static">
+    <Modal show={show} onHide={handleClose} centered backdrop="static">
       <Modal.Header closeButton>
         <Modal.Title className="fs-5 fw-bold text-primary">Thêm chức vụ mới</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Mã chức vụ <span className="text-danger">*</span></BsForm.Label>
-          <BsForm.Control value={code} onChange={e => setCode(e.target.value)} placeholder="VD: WORKER" />
+          <BsForm.Control 
+            value={code} 
+            onChange={e => {
+              setCode(e.target.value);
+              if (errors.code) setErrors(prev => ({ ...prev, code: null }));
+            }} 
+            isInvalid={!!errors.code}
+            disabled={saving}
+            placeholder="VD: WORKER" 
+          />
+          <BsForm.Control.Feedback type="invalid">
+            {errors.code}
+          </BsForm.Control.Feedback>
         </BsForm.Group>
         <BsForm.Group className="mb-3">
           <BsForm.Label className="fs-7 fw-semibold text-secondary">Tên chức vụ <span className="text-danger">*</span></BsForm.Label>
-          <BsForm.Control value={name} onChange={e => setName(e.target.value)} placeholder="VD: Công nhân" />
+          <BsForm.Control 
+            value={name} 
+            onChange={e => {
+              setName(e.target.value);
+              if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+            }} 
+            isInvalid={!!errors.name}
+            disabled={saving}
+            placeholder="VD: Công nhân" 
+          />
+          <BsForm.Control.Feedback type="invalid">
+            {errors.name}
+          </BsForm.Control.Feedback>
         </BsForm.Group>
       </Modal.Body>
       <Modal.Footer className="border-0">
-        <Button variant="outline-secondary" onClick={onClose} disabled={saving} className="px-4">Hủy</Button>
+        <Button variant="outline-secondary" onClick={handleClose} disabled={saving} className="px-4">Hủy</Button>
         <Button variant="primary" onClick={handleSave} disabled={saving} className="px-4">{saving ? 'Đang lưu...' : 'Lưu'}</Button>
       </Modal.Footer>
     </Modal>
