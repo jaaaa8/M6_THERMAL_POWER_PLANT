@@ -8,7 +8,7 @@ import {
   BsSave, BsXCircle, BsCpu, BsFileEarmarkPlus, BsSearch,
 } from 'react-icons/bs';
 import { workOrderService } from '../../services/workOrderService';
-import { equipmentService } from '../../services/equipment/equipmentService';
+import { getAll as getAllEquipment } from '../../services/equipment/equipmentService';
 import { employeeService } from '../../services/hr/employeeService';
 import LoadingSpinner from '../common/LoadingSpinner';
 import './CreateManualWorkOrderModal.css';
@@ -71,7 +71,7 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
     (async () => {
       try {
         const [eqRes, empRes, busyRes] = await Promise.all([
-          equipmentService.getAll({ page: 0, size: 1000 }),
+          getAllEquipment({ page: 0, size: 1000 }),
           employeeService.getAllWithAccounts(),
           workOrderService.getBusyEmployees(undefined, ['IN_PROGRESS']),
         ]);
