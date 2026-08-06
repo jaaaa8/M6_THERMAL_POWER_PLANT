@@ -64,7 +64,16 @@ export default function ListDepartment() {
   const columns = [
     { key: 'departmentCode', label: 'Mã phòng ban', sortable: true },
     { key: 'name', label: 'Tên phòng ban', sortable: true },
-    { key: 'description', label: 'Mô tả', sortable: false }
+    { 
+      key: 'description', 
+      label: 'Mô tả', 
+      sortable: false,
+      render: (val) => {
+        if (!val) return '';
+        const truncated = val.length > 40 ? val.substring(0, 40) + '...' : val;
+        return <span title={val}>{truncated}</span>;
+      }
+    }
   ];
 
   return (

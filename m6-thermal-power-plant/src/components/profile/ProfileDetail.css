@@ -1,7 +1,24 @@
+.profile-detail-modal .modal-dialog {
+  max-width: 900px;
+}
+
 .profile-detail-modal .modal-content {
   border-radius: var(--radius-lg);
   border: none;
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.username-text {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.info-value {
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .account-avatar {
