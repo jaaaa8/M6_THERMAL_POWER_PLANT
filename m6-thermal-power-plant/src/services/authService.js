@@ -79,7 +79,18 @@ export const authService = {
     return res.data;
   },
 
-  changePassword: async (oldPassword, newPassword) => {
-    return apiClient.post(`${AUTH_URL}/change-password`, { oldPassword, newPassword });
+  /**
+   * Gửi mã OTP xác nhận vào email của CHÍNH tài khoản đang đăng nhập — backend
+   * lấy accountId từ token nên không cần truyền gì.
+   * Trả về địa chỉ email đã che (vd "ng***@gmail.com") để hiển thị cho người dùng.
+   */
+  requestChangePasswordOtp: async () => {
+    const res = await apiClient.post(`${AUTH_URL}/change-password/request-otp`);
+    return res.data?.data;
+  },
+
+  /** Đổi mật khẩu — cần ĐỦ CẢ mật khẩu cũ lẫn mã OTP còn hiệu lực. */
+  changePassword: async (oldPassword, newPassword, otp) => {
+    return apiClient.post(`${AUTH_URL}/change-password`, { oldPassword, newPassword, otp });
   },
 };

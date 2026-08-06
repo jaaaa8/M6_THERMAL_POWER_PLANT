@@ -1,5 +1,53 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-08-07] — Xác nhận OTP qua email khi đổi mật khẩu
+
+Đổi mật khẩu vốn **đã chạy hoàn chỉnh** (modal FE + `POST /auth/change-password`). Thay đổi này
+chèn thêm **lớp xác nhận thứ hai**: mã OTP 6 số gửi qua email. Mật khẩu cũ **vẫn bắt buộc** —
+OTP không thay thế nó.
+
+### Backend (`M6_THERMAL_POWER_PLANT_API`)
+- **Mới `db/migration/V28__password_otp.sql`**: bảng `password_otps`. Chỉ THÊM bảng mới, không
+  sửa bảng nào sẵn có → không cần backup.
+- **Mới `entity/PasswordOtp.java`**: entity **thuần**, cố ý KHÔNG kế thừa `BaseSoftDeleteEntity`
+  như các entity khác — xoá mềm một mã OTP sống 5 phút là vô nghĩa.
+- **Mới `repository/PasswordOtpRepository.java`**: một truy vấn
+  `findFirstByAccount_IdAndConsumedAtIsNullOrderByCreatedAtDesc` phục vụ cả xác thực lẫn chống spam.
+- **Mới `service/auth/PasswordOtpService.java`**: mã 6 số sinh bằng **`SecureRandom`**, lưu
+  **BCrypt hash** chứ không lưu mã thô, hiệu lực 5 phút, dùng một lần, **tối đa 5 lần nhập sai**,
+  giãn cách 60 giây giữa 2 lần xin mã. Tái dùng `JavaMailSender` + SMTP đã cấu hình sẵn.
+- **`AuthService.changePassword`**: gọi `verifyAndConsume` **ngay đầu**, trước cả kiểm mật khẩu cũ.
+- **`AuthController`**: thêm `POST /auth/change-password/request-otp`. `accountId` lấy từ token,
+  **không** nhận từ body — nhận từ body là cho phép bắn mã vào hòm thư người khác.
+- **`ChangePasswordRequestDTO`**: thêm `otp`, bắt buộc, đúng 6 ký tự.
+
+Hai chi tiết đáng ghi lại:
+- **Trần số lần sai phải xét TRƯỚC khi so mã.** So trước rồi mới xét thì kẻ dò đủ 5 lần vẫn còn
+  cơ hội thứ 6, trần thành vô nghĩa. Có test riêng cho nhánh này.
+- **Bộ đếm `attempts` phải lưu xuống DB NGAY trong nhánh sai**, không đợi cuối method — nhánh đó
+  ném exception, không lưu thì trần không tồn tại trên thực tế.
+- Địa chỉ nhận mail: `account.email` → `employee.gmail` → **ném lỗi rõ ràng**. Khác
+  `ToolBorrowOverdueNotifier` vốn lặng lẽ `continue`: bỏ một mail nhắc nhở thì không sao, còn ở
+  đây người dùng sẽ ngồi đợi mã không bao giờ tới.
+
+### Frontend (`m6-thermal-power-plant`)
+- **`services/authService.js`**: thêm `requestChangePasswordOtp()`; `changePassword` nhận thêm `otp`.
+- **`components/profile/ChangePasswordModal.jsx`**: thêm ô mã 6 số + nút "Gửi mã" với đếm ngược
+  60 giây. Ô chỉ nhận chữ số (dán từ email kèm khoảng trắng vẫn sạch). `clearInterval` khi đóng
+  modal và khi unmount.
+
+### Test
+`PasswordOtpServiceTest` mới — 9 case phủ đủ vòng đời mã. `AuthServiceTest` được bổ sung
+`@Mock PasswordOtpService` (thiếu nó thì 4 test cũ NPE). Full suite: **133 tests, 20 failed** —
+đúng 20 lỗi có sẵn ở 3 lớp `*SearchServiceDbTest` (lỗi H2), không liên quan.
+
+**File ảnh hưởng**: `db/migration/V28__password_otp.sql`, `entity/PasswordOtp.java`,
+`repository/PasswordOtpRepository.java`, `service/auth/PasswordOtpService.java`,
+`service/AuthService.java`, `controller/auth/AuthController.java`, `dto/ChangePasswordRequestDTO.java`,
+`services/authService.js`, `components/profile/ChangePasswordModal.jsx`.
+
+---
+
 ## [2026-08-07] — Ẩn 2 mục "Lịch sử" khỏi sidebar
 
 - **`components/layout/Sidebar.jsx`**: bỏ mục **"Lịch sử sửa chữa"** (`/repair/history`) khỏi
