@@ -11,8 +11,7 @@ import {
 import {
     BsEye,
     BsArrowClockwise,
-    BsUpload,
-    BsFileEarmarkPdf
+    BsUpload
 } from "react-icons/bs";
 import { toast } from "react-toastify";
 import { authService } from "../../services/authService";
@@ -22,7 +21,6 @@ import sparePartIssueService from "../../services/sparePartIssueService";
 import { workOrderService } from "../../services/workOrderService";
 import SparePartImportModal from "../spare_part/SparePartImportModal";
 import * as sparePartInventoryService from "../../services/sparePartInventoryService";
-import { downloadSparePartsIssuePdf } from "../../utils/sparePartsIssuePdfUtil";
 
 export default function StorekeeperSparePartsIssueList() {
     const [data, setData] = useState([]);
@@ -111,19 +109,6 @@ export default function StorekeeperSparePartsIssueList() {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleExportPdf = async (issueRecord) => {
-        if (!issueRecord) return;
-        let issueToExport = issueRecord;
-        if (issueRecord.id && (!issueRecord.details || issueRecord.details.length === 0)) {
-            try {
-                issueToExport = await sparePartIssueService.getDetail(issueRecord.id);
-            } catch (e) {
-                console.error("Lỗi lấy chi tiết phiếu xuất:", e);
-            }
-        }
-        await downloadSparePartsIssuePdf(issueToExport, workOrdersList);
     };
 
     const handlePdfUpload = async (event, targetIssueId = selectedIssue?.id) => {
@@ -370,14 +355,6 @@ export default function StorekeeperSparePartsIssueList() {
                         >
                             <BsEye className="me-1" /> Chi tiết
                         </Button>
-                        <Button
-                            size="sm"
-                            variant="outline-success"
-                            title="Tải file PDF phiếu xuất mẫu"
-                            onClick={() => handleExportPdf(row)}
-                        >
-                            <BsFileEarmarkPdf className="me-1" /> Xuất PDF
-                        </Button>
                         {isStorekeeper && (
                             <Button
                                 size="sm"
@@ -537,15 +514,6 @@ export default function StorekeeperSparePartsIssueList() {
 
                 <Modal.Footer className="bg-light d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
-                        {selectedIssue && (
-                            <Button
-                                variant="outline-success"
-                                size="sm"
-                                onClick={() => handleExportPdf(selectedIssue)}
-                            >
-                                <BsFileEarmarkPdf className="me-1" /> In/Tải PDF mẫu
-                            </Button>
-                        )}
                         {selectedIssue && isStorekeeper && (
                             <>
                                 <Button
