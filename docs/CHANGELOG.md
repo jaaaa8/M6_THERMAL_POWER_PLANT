@@ -1,5 +1,24 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-08-07] — Ẩn 2 mục "Lịch sử" khỏi sidebar
+
+- **`components/layout/Sidebar.jsx`**: bỏ mục **"Lịch sử sửa chữa"** (`/repair/history`) khỏi
+  nhóm *Sửa chữa* và mục **"Lịch sử"** (`/lubrication/history`) khỏi *Bảo dưỡng Dầu mỡ*. Gỡ luôn
+  import `BsClockHistory` — icon này chỉ được dùng ở đúng hai dòng đó.
+
+**Giữ nguyên route** ở `App.jsx`: gõ thẳng URL vẫn vào được, bookmark cũ không chết, bật lại sau
+này chỉ là thêm lại một dòng. Riêng `/lubrication/history` vốn mới chỉ là `PlaceholderPage`.
+
+**KHÔNG xoá component.** `RepairHistoryList.jsx` còn export `RepairHistoryTab`, và
+`LubricationHistoryTab.jsx` — cả hai đang được `DetailEquipment.jsx` dùng làm tab trong trang chi
+tiết thiết bị. Xoá file là trang chi tiết thiết bị trắng màn hình, trong khi sidebar vẫn trông
+đúng nên rất dễ bỏ sót. Lịch sử vì vậy vẫn xem được theo từng thiết bị, chỉ là không còn cửa vào
+từ menu.
+
+**File ảnh hưởng**: `components/layout/Sidebar.jsx`. Backend không đổi.
+
+---
+
 ## [2026-08-06] — Thêm cột STT cho trang Yêu cầu sửa chữa
 
 `RepairRequestPage.jsx` dựng bảng bằng `<Table>` thuần của react-bootstrap chứ không dùng
