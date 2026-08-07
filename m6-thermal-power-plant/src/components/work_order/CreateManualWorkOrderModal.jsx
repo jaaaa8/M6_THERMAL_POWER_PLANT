@@ -86,7 +86,7 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
         const [eqRes, empRes, busyRes] = await Promise.all([
           getAllEquipment({ page: 0, size: 1000 }),
           employeeService.getAllWithAccounts(),
-          workOrderService.getBusyEmployees(undefined, ['IN_PROGRESS']),
+          workOrderService.getBusyEmployees(undefined),
         ]);
         if (cancelled) return;
         const eqArr = eqRes.data?.content || eqRes.data || [];
@@ -220,15 +220,16 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
           const busy = new Set(busyIds);
 
           // Quy tắc lọc từng ô (giữ nguyên pattern CreateWorkOrderModal):
+          // - CẢ 3 vai trò phụ trách chỉ hiện nhân viên RẢNH (không ở phiếu
+          //   STOPPED/IN_PROGRESS nào — busyIds).
           // - LĐ / Chỉ huy trực tiếp ĐƯỢC là CÙNG một người, chỉ không trùng
           //   GSAT/thành viên đã chọn.
-          // - GSAT KHÔNG được trùng: loại người đang ở phiếu IN_PROGRESS
-          //   (busyIds), người đã chọn ở ô khác/thành viên, và CHỈ hiện người
-          //   có role SAFETY_SUPERVISOR (khi đã tải được role).
+          // - GSAT thêm điều kiện: khác LĐ/chỉ huy + CHỈ hiện người có role
+          //   SAFETY_SUPERVISOR (khi đã tải được role).
           const optionsFor = (field) => employeeList.filter((e) => {
             if (memberIds.includes(e.id)) return false;
+            if (busy.has(e.id)) return false; // 3 vai trò phụ trách: chỉ hiện người THỰC SỰ RẢNH
             if (field === 'safetySupervisorId') {
-              if (busy.has(e.id)) return false;
               if (roleFieldIds.leaderId === e.id || roleFieldIds.directSupervisorId === e.id) return false;
               if (roleInfoLoaded && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
             } else if (roleFieldIds.safetySupervisorId === e.id) {
