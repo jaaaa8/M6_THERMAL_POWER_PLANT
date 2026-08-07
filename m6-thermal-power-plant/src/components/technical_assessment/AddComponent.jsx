@@ -59,10 +59,6 @@ export default function TechnicalAssessmentForm() {
     const [filteredEquipments, setFilteredEquipments] = useState([]);
     const [assessors, setAssessors] = useState([]);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
     const loadData = async () => {
         try {
             const [
@@ -152,6 +148,10 @@ export default function TechnicalAssessmentForm() {
             toast.error("Không thể tải dữ liệu");
         }
     };
+
+    useEffect(() => {
+        loadData();
+    }, []);
 
     const handleSystemChange = async (e) => {
         try {

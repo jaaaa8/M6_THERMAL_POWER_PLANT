@@ -46,10 +46,6 @@ export default function StorekeeperConsumableIssueList() {
     const currentUser = authService.getCurrentUser();
     const isStorekeeper = currentUser?.role === "MATERIALS_STOREKEEPER" || currentUser?.role === "ADMIN";
 
-    useEffect(() => {
-        loadData();
-    }, [pagination.page, searchTrigger]);
-
     const loadData = async () => {
         setLoading(true);
         try {
@@ -108,6 +104,10 @@ export default function StorekeeperConsumableIssueList() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadData();
+    }, [pagination.page, searchTrigger]);
 
     const handlePdfUpload = async (event, targetIssueId = selectedIssue?.id) => {
         const file = event.target.files[0];

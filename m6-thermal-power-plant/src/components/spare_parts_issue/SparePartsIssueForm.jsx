@@ -3,7 +3,7 @@ import { Formik, Form, Field, ErrorMessage  } from "formik";
 import * as Yup from "yup";
 import {Row, Col, Button, Modal, Pagination} from "react-bootstrap";
 import { pdf } from "@react-pdf/renderer";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import SparePartsIssuePDF from "../../pdf/SparePartsIssuePDF";
@@ -62,8 +62,9 @@ export default function SparePartsIssueForm({
         status: "ACTIVE"
     });
     const navigate = useNavigate();
-    const location = useLocation();
-    const workOrderCodeParam = new URLSearchParams(location.search).get("workOrderCode");
+    // "Lệnh công việc" được chọn sẵn khi mở từ nút "Cấp VT Thay thế" ở danh sách
+    // PCT (?workOrderId=... — id chứ không phải mã, khỏi phải dò trong danh sách).
+    const [searchParams] = useSearchParams();
 
     const [workOrders, setWorkOrders] = useState([]);
     const [spareParts, setSpareParts] = useState([]);
@@ -78,13 +79,6 @@ export default function SparePartsIssueForm({
     });
 
     const [searchKey, setSearchKey] = useState(0);
-    // "Lệnh công việc" được chọn sẵn khi mở từ nút "Cấp VT Thay thế"
-    // (?workOrderCode=... ở danh sách PCT) — chỉ set sau khi danh sách WO tải về.
-    const [prefillWorkOrderId, setPrefillWorkOrderId] = useState("");
-
-    useEffect(() => {
-        loadData();
-    }, [pagination.page, searchKey]);
 
     const handleSearch = () => {
         setPagination(prev => ({
@@ -174,16 +168,6 @@ export default function SparePartsIssueForm({
                     : []
             );
 
-            // Prefill "Lệnh công việc" từ ?workOrderCode=... (bấm nút Cấp VT Thay
-            // thế ở danh sách PCT): chọn sẵn WO khớp mã. Chỉ prefill lần đầu (khi
-            // chưa có giá trị) để không ghi đè lựa chọn thủ công khi search lại.
-            if (workOrderCodeParam && !prefillWorkOrderId) {
-                const matched = (Array.isArray(workOrderData) ? workOrderData : [])
-                    .find((wo) =>
-                        (wo.orderCode || wo.workOrderCode || "") === workOrderCodeParam);
-                if (matched) setPrefillWorkOrderId(String(matched.id));
-            }
-
             setAccounts(
                 Array.isArray(accountData)
                     ? accountData
@@ -196,6 +180,10 @@ export default function SparePartsIssueForm({
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadData();
+    }, [pagination.page, searchKey]);
 
 
 
@@ -323,8 +311,7 @@ export default function SparePartsIssueForm({
         </div>
 
         <Formik
-            initialValues={{ ...INITIAL_VALUES, workOrderId: prefillWorkOrderId }}
-            enableReinitialize
+            initialValues={{ ...INITIAL_VALUES, workOrderId: searchParams.get("workOrderId") || "" }}
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
         >

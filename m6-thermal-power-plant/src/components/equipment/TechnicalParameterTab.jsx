@@ -23,17 +23,17 @@ export default function TechnicalParameterTab({
 
     const [catalogs, setCatalogs] = useState([]);
     const [errors, setErrors] = useState({});
-    useEffect(() => {
-
-        loadCatalog();
-
-    }, []);
-
     const loadCatalog = async () => {
         const res = await catalogService.getAll(0, 1000);
 
         setCatalogs(res.data.content);
     };
+
+    useEffect(() => {
+
+        loadCatalog();
+
+    }, []);
 
     const [showCatalogModal, setShowCatalogModal] = useState(false);
     const openCreate = () => {
