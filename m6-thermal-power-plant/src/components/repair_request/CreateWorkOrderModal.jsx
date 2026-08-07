@@ -1,19 +1,39 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Button, Row, Col } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import {
-  BsPeopleFill, BsPersonPlus, BsTrash,
+  BsPeopleFill, BsTrash,
   BsSave, BsXCircle, BsCpu, BsFileEarmarkPlus,
 } from 'react-icons/bs';
 import { workOrderService } from '../../services/workOrderService';
 import { employeeService } from '../../services/hr/employeeService';
 import StatusBadge from '../common/StatusBadge';
+import SearchSelectField from '../common/SearchSelectField';
 import './CreateWorkOrderModal.css';
 
 /** Mã role (roles.name trong DB) được phép làm Người giám sát an toàn. */
 const SAFETY_SUPERVISOR_ROLE = 'SAFETY_SUPERVISOR';
+
+const EMP_KEY = (e) => e.id;
+const EMP_LABEL = (e) => `${e.fullName || e.name || 'Unknown'}${e.employeeCode ? ` (${e.employeeCode})` : ''}`;
+const EMP_RENDER = (e) => (
+  <div>
+    <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)' }}>
+      {e.fullName || e.name || 'Unknown'}
+      <span className="font-mono text-muted ms-2 small">{e.employeeCode}</span>
+    </div>
+    <div className="text-muted small">
+      {[e.position?.name, e.department?.name].filter(Boolean).join(' · ') || '—'}
+    </div>
+  </div>
+);
+const searchEmployees = (p) => employeeService.search({
+  keyword: p.query || undefined,
+  page: p.page,
+  size: p.size,
+});
 
 /* ============================================================
    Map mức độ → StatusBadge
@@ -75,23 +95,16 @@ function extractErrorMessage(err) {
  * @param {boolean}  props.show
  * @param {Function} props.onClose
  * @param {object}   props.request - Request nguồn (dạng RepairRequestDTO từ API)
- * @param {Array}    props.employees - Danh sách nhân viên [{id, fullName, position: {name}}]
  * @param {Function} props.onCreated - (request, createdWorkOrder) => void
  */
 export default function ModalCreateWorkOrder({
   show,
   onClose,
   request,
-  employees = [],
   onCreated,
 }) {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-
-  // Danh sách nhân viên KÈM ROLE tài khoản (để lọc Người giám sát an toàn) +
-  // danh sách id đang BẬN ở mọi phiếu sống (STOPPED/IN_PROGRESS) — 3 vai trò
+  // Danh sách id đang BẬN ở mọi phiếu sống (STOPPED/IN_PROGRESS) — 3 vai trò
   // phụ trách chỉ hiện người THỰC SỰ RẢNH.
-  // Prop `employees` (không có role) chỉ là fallback trong lúc chờ tải.
-  const [accountEmployees, setAccountEmployees] = useState(null); // null = chưa tải
   const [busyIds, setBusyIds] = useState([]);
 
   useEffect(() => {
@@ -99,46 +112,14 @@ export default function ModalCreateWorkOrder({
     let cancelled = false;
     (async () => {
       try {
-        const [empRes, busyRes] = await Promise.all([
-          employeeService.getAllWithAccounts(),
-          workOrderService.getBusyEmployees(undefined),
-        ]);
-        if (cancelled) return;
-        const empArr = empRes.data?.data || empRes.data || [];
-        setAccountEmployees(Array.isArray(empArr) ? empArr : []);
-        setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
-      } catch (err) {
-        if (!cancelled) {
-          toast.error(`Không thể tải danh sách nhân viên khả dụng: ${extractErrorMessage(err)}`);
-        }
+        const busyRes = await workOrderService.getBusyEmployees(undefined);
+        if (!cancelled) setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
+      } catch {
+        if (!cancelled) setBusyIds([]);
       }
     })();
     return () => { cancelled = true; };
   }, [show]);
-
-  // Đã có dữ liệu role chưa? (fallback prop không có role → không lọc GSAT được)
-  const roleInfoLoaded = accountEmployees !== null;
-
-  // Chuẩn bị danh sách employee để hiển thị trong select — chỉ LOẠI người đã
-  // nghỉ (isActive = false). Người bận ở phiếu sống khác bị loại khỏi cả 3 ô
-  // vai trò (optionsFor) nhưng VẪN hiện ở dropdown "Nhiều thành viên".
-  const employeeList = useMemo(() => {
-    const source = accountEmployees ?? (Array.isArray(employees) ? employees : []);
-    return source
-      .filter((emp) => emp.isActive !== false)
-      .map((emp) => ({
-        id: emp.id,
-        label: `${emp.fullName || emp.name || 'Unknown'} · ${emp.positionName || emp.position?.name || emp.chucVu || ''}`,
-        fullName: emp.fullName || emp.name || 'Unknown',
-        position: emp.positionName || emp.position?.name || emp.chucVu || '',
-        roles: (emp.roles || []).map((r) => r?.name || r),
-      }));
-  }, [accountEmployees, employees]);
-
-  // Lấy danh sách member hiện tại để filter option
-  function getAvailableEmployees(excludeIds) {
-    return employeeList.filter((e) => !excludeIds.includes(e.id));
-  }
 
   if (!request) return null;
 
@@ -151,6 +132,9 @@ export default function ModalCreateWorkOrder({
     leaderId: '',
     directSupervisorId: '',
     safetySupervisorId: '',
+    leaderLabel: '',
+    directSupervisorLabel: '',
+    safetySupervisorLabel: '',
     startTime: '',
     members: [], // [{ employeeId, roleInTask }]
   };
@@ -178,7 +162,6 @@ export default function ModalCreateWorkOrder({
             const res = await workOrderService.create(payload);
             toast.success(`Đã tạo phiếu công tác ${res.data.orderCode}`);
             onCreated?.(request, res.data);
-            setSelectedEmployeeId('');
             onClose?.();
           } catch (err) {
             const errorMsg = extractErrorMessage(err);
@@ -206,19 +189,6 @@ export default function ModalCreateWorkOrder({
         }}
       >
         {({ values, touched, errors, isSubmitting, setFieldValue }) => {
-          const addMember = () => {
-            if (!selectedEmployeeId) return;
-            const id = Number(selectedEmployeeId);
-            if (values.members.some((m) => m.employeeId === id)) {
-              toast.info('Nhân viên đã có trong danh sách');
-              return;
-            }
-            const emp = employeeList.find((e) => e.id === id);
-            const roleInTask = emp?.position || '';
-            setFieldValue('members', [...values.members, { employeeId: id, roleInTask }]);
-            setSelectedEmployeeId('');
-          };
-
           const removeMember = (employeeId) => {
             setFieldValue('members', values.members.filter((m) => m.employeeId !== employeeId));
           };
@@ -235,23 +205,20 @@ export default function ModalCreateWorkOrder({
           // - CẢ 3 vai trò phụ trách chỉ hiện nhân viên RẢNH (không ở phiếu
           //   STOPPED/IN_PROGRESS nào — busyIds).
           // - Người LĐ / Chỉ huy trực tiếp ĐƯỢC là CÙNG một người trong 1 phiếu
-          //   (không loại chéo lẫn nhau), chỉ không trùng GSAT/thành viên đã chọn.
+          //   (không loại chéo lẫn nhau), chỉ không trùng GSAT.
           // - GSAT thêm điều kiện: khác LĐ/chỉ huy + CHỈ hiện người có role
-          //   SAFETY_SUPERVISOR (khi đã tải được role — fallback prop thì bỏ lọc).
-          const optionsFor = (field) => employeeList.filter((e) => {
-            if (memberIds.includes(e.id)) return false;
-            if (busy.has(e.id)) return false; // 3 vai trò phụ trách: chỉ hiện người THỰC SỰ RẢNH
+          //   SAFETY_SUPERVISOR (roles lấy từ kết quả search — account.roles).
+          const roleFilter = (field) => (list) => list.filter((e) => {
+            if (busy.has(e.id)) return false;
             if (field === 'safetySupervisorId') {
               if (roleFieldIds.leaderId === e.id || roleFieldIds.directSupervisorId === e.id) return false;
-              if (roleInfoLoaded && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
+              const roles = (e.account?.roles || []).map((r) => r?.name || r);
+              if (!roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
             } else if (roleFieldIds.safetySupervisorId === e.id) {
               return false;
             }
             return true;
           });
-
-          const excludeIds = [...memberIds, ...Object.values(roleFieldIds).filter(Boolean)];
-          const available = getAvailableEmployees(excludeIds);
 
           return (
             <Form noValidate>
@@ -354,105 +321,95 @@ export default function ModalCreateWorkOrder({
 
                 <Row className="mb-3">
                   <Col md={4}>
-                    <label htmlFor="pct-leaderId" className="form-label">
-                      Người lãnh đạo công việc <span className="required-asterisk">*</span>
-                    </label>
-                    <Field
-                      as="select"
-                      id="pct-leaderId"
-                      name="leaderId"
-                      className={`form-select ${
-                        touched.leaderId && errors.leaderId ? 'is-invalid' : ''
-                      }`}
-                    >
-                      <option value="">— Chọn —</option>
-                      {optionsFor('leaderId').map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.label}
-                        </option>
-                      ))}
-                    </Field>
-                    <ErrorMessage name="leaderId" component="div" className="invalid-feedback" />
+                    <SearchSelectField
+                      label="Người lãnh đạo công việc"
+                      required
+                      mode="single"
+                      searchFn={searchEmployees}
+                      getKey={EMP_KEY}
+                      renderItem={EMP_RENDER}
+                      placeholder="Tìm theo tên, mã NV, phòng ban..."
+                      value={values.leaderId || null}
+                      onChange={(item) => {
+                        setFieldValue('leaderId', item ? item.id : '');
+                        setFieldValue('leaderLabel', item ? EMP_LABEL(item) : '');
+                      }}
+                      selectedLabel={values.leaderLabel}
+                      excludedIds={memberIds.concat(values.safetySupervisorId ? [Number(values.safetySupervisorId)] : [])}
+                      filterClient={roleFilter('leaderId')}
+                      error={touched.leaderId && errors.leaderId}
+                    />
                   </Col>
                   <Col md={4}>
-                    <label htmlFor="pct-directSupervisorId" className="form-label">
-                      Chỉ huy trực tiếp <span className="required-asterisk">*</span>
-                    </label>
-                    <Field
-                      as="select"
-                      id="pct-directSupervisorId"
-                      name="directSupervisorId"
-                      className={`form-select ${
-                        touched.directSupervisorId && errors.directSupervisorId ? 'is-invalid' : ''
-                      }`}
-                    >
-                      <option value="">— Chọn —</option>
-                      {optionsFor('directSupervisorId').map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.label}
-                        </option>
-                      ))}
-                    </Field>
-                    <ErrorMessage name="directSupervisorId" component="div" className="invalid-feedback" />
+                    <SearchSelectField
+                      label="Chỉ huy trực tiếp"
+                      required
+                      mode="single"
+                      searchFn={searchEmployees}
+                      getKey={EMP_KEY}
+                      renderItem={EMP_RENDER}
+                      placeholder="Tìm theo tên, mã NV, phòng ban..."
+                      value={values.directSupervisorId || null}
+                      onChange={(item) => {
+                        setFieldValue('directSupervisorId', item ? item.id : '');
+                        setFieldValue('directSupervisorLabel', item ? EMP_LABEL(item) : '');
+                      }}
+                      selectedLabel={values.directSupervisorLabel}
+                      excludedIds={memberIds.concat(values.safetySupervisorId ? [Number(values.safetySupervisorId)] : [])}
+                      filterClient={roleFilter('directSupervisorId')}
+                      error={touched.directSupervisorId && errors.directSupervisorId}
+                    />
                   </Col>
                   <Col md={4}>
-                    <label htmlFor="pct-safetySupervisorId" className="form-label">
-                      Người giám sát an toàn <span className="required-asterisk">*</span>
-                    </label>
-                    <Field
-                      as="select"
-                      id="pct-safetySupervisorId"
-                      name="safetySupervisorId"
-                      className={`form-select ${
-                        touched.safetySupervisorId && errors.safetySupervisorId ? 'is-invalid' : ''
-                      }`}
-                    >
-                      <option value="">— Chọn —</option>
-                      {optionsFor('safetySupervisorId').map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.label}
-                        </option>
-                      ))}
-                    </Field>
-                    <ErrorMessage name="safetySupervisorId" component="div" className="invalid-feedback" />
+                    <SearchSelectField
+                      label="Người giám sát an toàn"
+                      required
+                      mode="single"
+                      searchFn={searchEmployees}
+                      getKey={EMP_KEY}
+                      renderItem={EMP_RENDER}
+                      placeholder="Tìm theo tên, mã NV, phòng ban..."
+                      value={values.safetySupervisorId || null}
+                      onChange={(item) => {
+                        setFieldValue('safetySupervisorId', item ? item.id : '');
+                        setFieldValue('safetySupervisorLabel', item ? EMP_LABEL(item) : '');
+                      }}
+                      selectedLabel={values.safetySupervisorLabel}
+                      excludedIds={memberIds.concat([values.leaderId, values.directSupervisorId].map(Number).filter(Boolean))}
+                      filterClient={roleFilter('safetySupervisorId')}
+                      error={touched.safetySupervisorId && errors.safetySupervisorId}
+                    />
                   </Col>
                 </Row>
 
                 {/* --- Nhiều thành viên --- */}
                 <div className="mb-2">
-                  <label className="form-label">
-                    Nhiều thành viên
-                  </label>
-                  <div className="pct-add-nv">
-                    <select
-                      className="form-select"
-                      value={selectedEmployeeId}
-                      onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                      aria-label="Chọn nhân viên làm việc"
-                    >
-                      <option value="">— Chọn nhân viên để thêm —</option>
-                      {available.map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.label}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      type="button"
-                      variant="outline-primary"
-                      onClick={addMember}
-                      disabled={!selectedEmployeeId}
-                    >
-                      <BsPersonPlus /> Thêm
-                    </Button>
-                  </div>
+                  <SearchSelectField
+                    label="Nhiều thành viên"
+                    mode="add"
+                    searchFn={searchEmployees}
+                    getKey={EMP_KEY}
+                    renderItem={EMP_RENDER}
+                    placeholder="Tìm nhân viên để thêm..."
+                    onAdd={(item) => {
+                      const id = Number(item.id);
+                      if (values.members.some((m) => m.employeeId === id)) {
+                        toast.info('Nhân viên đã có trong danh sách');
+                        return;
+                      }
+                      setFieldValue('members', [
+                        ...values.members,
+                        { employeeId: id, roleInTask: item.position?.name || '', _label: EMP_LABEL(item) },
+                      ]);
+                    }}
+                    excludedIds={memberIds.concat(Object.values(roleFieldIds).filter(Boolean))}
+                  />
 
                   {values.members.length > 0 && (
                     <div className="pct-nv-list">
                       {values.members.map((m, idx) => {
-                        const emp = employeeList.find((e) => e.id === m.employeeId);
-                        const name = emp?.fullName || `ID ${m.employeeId}`;
-                        const role = m.roleInTask || emp?.position || '';
+                        const name = m._label || `ID ${m.employeeId}`;
+                        const role = m.roleInTask || '';
                         return (
                           <div key={m.employeeId} className="pct-nv-chip">
                             <span className="pct-nv-chip-index">{idx + 1}</span>

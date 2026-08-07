@@ -11,7 +11,6 @@ import StatusBadge from '../common/StatusBadge.jsx';
 import ModalCreateWorkOrder from './CreateWorkOrderModal.jsx'
 import WorkOrderDetailModal from '../work_order/WorkOrderDetailModal.jsx';
 import { workOrderService } from '../../services/workOrderService.js';
-import { employeeService } from '../../services/hr/employeeService.js';
 import './RepairRequest.css';
 
 
@@ -50,7 +49,6 @@ export default function RepairRequest() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
-  const [employees, setEmployees] = useState([]);
 
   const [filter, setFilter]           = useState('PENDING');
   const [pctRequest, setPctRequest]   = useState(null);
@@ -71,23 +69,9 @@ export default function RepairRequest() {
     }
   }, []);
 
-  /* --- Fetch all employees from backend --- */
-  const fetchEmployees = useCallback(async () => {
-    try {
-      const res = await employeeService.getAll();
-      // API returns { data: [...], message: "...", status: "success" }
-      const employeeArray = res.data?.data || res.data || [];
-      console.log('👥 Fetched employees:', employeeArray.length, 'records');
-      setEmployees(employeeArray);
-    } catch (err) {
-      console.error('Không thể tải danh sách nhân viên:', err.message);
-    }
-  }, []);
-
   useEffect(() => {
     fetchRequests();
-    fetchEmployees();
-  }, [fetchRequests, fetchEmployees]);
+  }, [fetchRequests]);
 
   /* --- Thống kê --- */
   const stats = useMemo(() => {
@@ -231,11 +215,9 @@ export default function RepairRequest() {
       />
 
       {/* ===== MODAL: TẠO PCT ===== */}
-      {/* employees: populated from GET /api/employees via employeeService.getAll() */}
       <ModalCreateWorkOrder
         show={!!pctRequest}
         request={pctRequest}
-        employees={employees}
         onClose={() => setPctRequest(null)}
         onCreated={handlePCTCreated}
       />
