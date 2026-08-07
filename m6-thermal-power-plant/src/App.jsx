@@ -166,7 +166,6 @@ function App() {
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme="colored"
         />
       </BrowserRouter>
     </ErrorBoundary>
