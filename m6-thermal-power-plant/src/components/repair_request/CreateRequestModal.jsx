@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -8,6 +8,7 @@ import { repairRequestService, PRIORITY, PRIORITY_LABEL } from '../../services/r
 import { getApiErrorMessage } from '../../services/apiError';
 import * as equipmentService from '../../services/equipment/equipmentService';
 import * as systemService from '../../services/equipment/systemService';
+import SearchSelectField from '../common/SearchSelectField';
 import './CreateRequestModal.css';
 
 /**
@@ -26,56 +27,35 @@ const createRequestSchema = Yup.object({
     .oneOf(Object.values(PRIORITY), 'Mức độ ưu tiên không hợp lệ'),
 });
 
+/* ============================================================
+   Helpers render kết quả search Hệ thống / Thiết bị.
+   ============================================================ */
+const SYS_KEY = (s) => s.id;
+const SYS_LABEL = (s) => `[${s.code}] ${s.name}`;
+const SYS_RENDER = (s) => (
+  <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)' }}>
+    <span className="font-mono me-1">{s.code}</span>{s.name}
+  </div>
+);
+const EQ_KEY = (e) => e.id;
+const EQ_LABEL = (e) => `[${e.kksCode}] ${e.name}`;
+const EQ_RENDER = (e) => (
+  <div>
+    <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)' }}>
+      <span className="font-mono me-1">{e.kksCode}</span>{e.name}
+    </div>
+    {e.equipmentType && <div className="text-muted small">{e.equipmentType}</div>}
+  </div>
+);
+
 /**
  * CreateRequestModal — Modal tạo mới yêu cầu sửa chữa.
  */
 export default function CreateRequestModal({ show, onClose, onSuccess }) {
-  const [systems, setSystems] = useState([]);
-  const [equipments, setEquipments] = useState([]);
-  const [loadingEquipments, setLoadingEquipments] = useState(false);
-  const [selectedSystemId, setSelectedSystemId] = useState('');
-
-  // Load danh sách hệ thống
-  const loadSystems = async () => {
-    try {
-      const res = await systemService.getAllSystems('', '', 0, 100);
-      setSystems(res.data?.content || res.data || []);
-    } catch (err) {
-      console.error('Không thể tải danh sách hệ thống', err);
-    }
-  };
-
-  // Load thiết bị — nếu chọn hệ thống thì dùng API lọc theo system, nếu không thì lấy tất cả
-  const loadEquipments = async (systemId) => {
-    try {
-      setLoadingEquipments(true);
-      let res;
-      if (systemId) {
-        res = await equipmentService.getBySystem(systemId);
-      } else {
-        res = await equipmentService.getAll();
-      }
-      setEquipments(res.data?.content || res.data || []);
-    } catch {
-      toast.error('Không thể tải danh sách thiết bị');
-    } finally {
-      setLoadingEquipments(false);
-    }
-  };
-
-  useEffect(() => {
-    if (show) {
-      loadSystems();
-      loadEquipments('');
-      setSelectedSystemId('');
-    }
-  }, [show]);
-
-  const handleSystemChange = (systemId, setFieldValue) => {
-    setSelectedSystemId(systemId);
-    setFieldValue('equipmentId', '');
-    loadEquipments(systemId);
-  };
+  // Hệ thống đã chọn — {id, label} hiển thị trong ô "Hệ thống".
+  const [selectedSystem, setSelectedSystem] = useState(null);
+  // Nhãn thiết bị đã chọn (hiển thị trong ô "Thiết bị" sau khi chọn).
+  const [eqLabel, setEqLabel] = useState('');
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
@@ -130,18 +110,20 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
               {/* Lọc theo hệ thống */}
               <Form.Group className="mb-4">
                 <Form.Label className="crm-label">Hệ thống</Form.Label>
-                <Form.Select
-                  value={selectedSystemId}
-                  disabled={loadingEquipments}
-                  onChange={(e) => handleSystemChange(e.target.value, setFieldValue)}
-                >
-                  <option value="">— Tất cả hệ thống —</option>
-                  {systems.map((sys) => (
-                    <option key={sys.id} value={sys.id}>
-                      [{sys.code}] {sys.name}
-                    </option>
-                  ))}
-                </Form.Select>
+                <SearchSelectField
+                  mode="single"
+                  searchFn={(p) => systemService.getAllSystems(p.query, '', p.page, p.size)}
+                  getKey={SYS_KEY}
+                  renderItem={SYS_RENDER}
+                  placeholder="Tìm theo tên hệ thống..."
+                  value={selectedSystem ? selectedSystem.id : null}
+                  onChange={(item) => {
+                    setSelectedSystem(item ? { id: item.id, label: SYS_LABEL(item) } : null);
+                    setFieldValue('equipmentId', '');
+                    setEqLabel('');
+                  }}
+                  selectedLabel={selectedSystem?.label}
+                />
               </Form.Group>
 
               {/* Chọn thiết bị */}
@@ -149,26 +131,25 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
                 <Form.Label className="crm-label">
                   Thiết bị <span className="text-danger">*</span>
                 </Form.Label>
-                <Form.Select
-                  name="equipmentId"
-                  value={values.equipmentId}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  isInvalid={touched.equipmentId && !!errors.equipmentId}
-                  disabled={loadingEquipments}
-                >
-                  <option value="">
-                    {loadingEquipments ? 'Đang tải thiết bị...' : '— Chọn thiết bị —'}
-                  </option>
-                  {equipments.map((eq) => (
-                    <option key={eq.id} value={eq.id}>
-                      [{eq.kksCode}] {eq.name}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Control.Feedback type="invalid">
-                  {errors.equipmentId}
-                </Form.Control.Feedback>
+                <SearchSelectField
+                  mode="single"
+                  searchFn={(p) => equipmentService.getAll({
+                    systemId: selectedSystem?.id,
+                    kw: p.query || undefined,
+                    page: p.page,
+                    size: p.size,
+                  })}
+                  getKey={EQ_KEY}
+                  renderItem={EQ_RENDER}
+                  placeholder="Tìm theo mã KKS, tên thiết bị..."
+                  value={values.equipmentId || null}
+                  onChange={(item) => {
+                    setFieldValue('equipmentId', item ? item.id : '');
+                    setEqLabel(item ? EQ_LABEL(item) : '');
+                  }}
+                  selectedLabel={eqLabel}
+                  error={touched.equipmentId && errors.equipmentId}
+                />
               </Form.Group>
 
               {/* Mô tả sự cố */}
