@@ -20,6 +20,7 @@ import CreateManualWorkOrderModal from './CreateManualWorkOrderModal';
 import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import './WorkOrderList.css';
 
 /* ============================================================
@@ -58,6 +59,7 @@ const STATUS_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
    COMPONENT
    ============================================================ */
 export default function WorkOrderList({ title = "Phiếu Công tác" }) {
+  const navigate = useNavigate();
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [codeSearch, setCodeSearch] = useState('');   // mã PCT / mã NV tổ trưởng / id
@@ -247,15 +249,26 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
             <BsPencilSquare className="me-1" /> Sửa
           </Button>
         )}
+        {canOperate && row.type !== 'LUBRICATION' && (
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Mở phiếu cấp vật tư thay thế, WO code được chọn sẵn'}
+            disabled={finished}
+            onClick={() => navigate(`/repair/spare-parts-issue/add?workOrderCode=${encodeURIComponent(row.orderCode)}`)}
+          >
+            <BsBoxSeam className="me-1" /> Cấp VT Thay thế
+          </Button>
+        )}
         {canOperate && (
         <Button
           variant="outline-success"
           size="sm"
-          title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Cấp vật tư cho PCT'}
+          title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Cấp vật tư tiêu hao cho PCT'}
           disabled={finished}
           onClick={() => setSuppliesIssueTarget(row)}
         >
-          <BsBoxSeam className="me-1" /> Cấp vật tư
+          <BsBoxSeam className="me-1" /> Cấp VT Tiêu hao
         </Button>
         )}
       </div>
@@ -363,7 +376,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} rowClassName={rowClassName} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={530} rowClassName={rowClassName} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">
