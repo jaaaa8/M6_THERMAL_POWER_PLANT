@@ -62,7 +62,7 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
         setBusyIds([]);
       });
     return () => { cancelled = true; };
-  }, [show, workOrder.id]);
+  }, [show, workOrder?.id]);
 
   const setField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
