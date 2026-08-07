@@ -3,7 +3,7 @@ import { Formik, Form, Field, ErrorMessage  } from "formik";
 import * as Yup from "yup";
 import {Row, Col, Button, Modal, Pagination} from "react-bootstrap";
 import { pdf } from "@react-pdf/renderer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import SparePartsIssuePDF from "../../pdf/SparePartsIssuePDF";
@@ -62,6 +62,8 @@ export default function SparePartsIssueForm({
         status: "ACTIVE"
     });
     const navigate = useNavigate();
+    const location = useLocation();
+    const workOrderCodeParam = new URLSearchParams(location.search).get("workOrderCode");
 
     const [workOrders, setWorkOrders] = useState([]);
     const [spareParts, setSpareParts] = useState([]);
@@ -76,6 +78,9 @@ export default function SparePartsIssueForm({
     });
 
     const [searchKey, setSearchKey] = useState(0);
+    // "Lệnh công việc" được chọn sẵn khi mở từ nút "Cấp VT Thay thế"
+    // (?workOrderCode=... ở danh sách PCT) — chỉ set sau khi danh sách WO tải về.
+    const [prefillWorkOrderId, setPrefillWorkOrderId] = useState("");
 
     useEffect(() => {
         loadData();
@@ -115,7 +120,7 @@ export default function SparePartsIssueForm({
                 workOrderRes,
                 sparePartRes
             ] = await Promise.all([
-                workOrderService.getAll(),
+                workOrderService.getAll({}, 0, 1000),
                 sparePartService.search({
                     page: pagination.page,
                     size: pagination.size,
@@ -168,6 +173,16 @@ export default function SparePartsIssueForm({
                     ? workOrderData
                     : []
             );
+
+            // Prefill "Lệnh công việc" từ ?workOrderCode=... (bấm nút Cấp VT Thay
+            // thế ở danh sách PCT): chọn sẵn WO khớp mã. Chỉ prefill lần đầu (khi
+            // chưa có giá trị) để không ghi đè lựa chọn thủ công khi search lại.
+            if (workOrderCodeParam && !prefillWorkOrderId) {
+                const matched = (Array.isArray(workOrderData) ? workOrderData : [])
+                    .find((wo) =>
+                        (wo.orderCode || wo.workOrderCode || "") === workOrderCodeParam);
+                if (matched) setPrefillWorkOrderId(String(matched.id));
+            }
 
             setAccounts(
                 Array.isArray(accountData)
@@ -308,7 +323,8 @@ export default function SparePartsIssueForm({
         </div>
 
         <Formik
-            initialValues={INITIAL_VALUES}
+            initialValues={{ ...INITIAL_VALUES, workOrderId: prefillWorkOrderId }}
+            enableReinitialize
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
         >
@@ -341,7 +357,10 @@ export default function SparePartsIssueForm({
                               <option value={""}>
                                   Chọn Phiếu Công Tác
                               </option>
-                              {workOrders.map((workOrder) => (
+                              {workOrders
+                                  .filter((wo) =>
+                                      wo.status === "IN_PROGRESS" || wo.status === "STOPPED")
+                                  .map((workOrder) => (
                                   <option
                                       key={workOrder.id}
                                       value={workOrder.id}
