@@ -7,7 +7,11 @@ const WS_URL = 'http://localhost:8080/ws';
 export function useWebSocket(accountId, onMessage) {
     const clientRef = useRef(null);
     const onMessageRef = useRef(onMessage);
-    onMessageRef.current = onMessage;
+
+    // Ghi ref trong effect, không trong render (react-hooks/refs).
+    useEffect(() => {
+        onMessageRef.current = onMessage;
+    }, [onMessage]);
 
     const connect = useCallback(() => {
         if (!accountId) return;
