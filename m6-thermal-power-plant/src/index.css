@@ -1146,3 +1146,88 @@ tr:hover .data-table-actions {
   box-shadow: var(--shadow-sm) !important;
   font-size: 12px !important;
 }
+
+/* ============================================================
+   13. CUSTOM TOASTIFY NOTIFICATION STYLES (PILL SHAPE GRADIENT)
+   ============================================================ */
+.Toastify__toast-container {
+  padding: 12px;
+  width: auto;
+  max-width: 420px;
+}
+
+.Toastify__toast {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif !important;
+  border-radius: 50px !important;
+  padding: 10px 18px !important;
+  min-height: 48px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+  align-items: center !important;
+}
+
+/* Toast Lỗi (Màu đỏ gradient) */
+.Toastify__toast--error {
+  background: linear-gradient(to right, #f45c43, #eb3349) !important;
+  box-shadow: 0 0px 14px #de1c3280 !important;
+  color: #ffffff !important;
+}
+
+/* Toast Hợp lệ / Thành công (Màu xanh lá gradient) */
+.Toastify__toast--success {
+  background: linear-gradient(to right, #11998e, #38ef7d) !important;
+  box-shadow: 0 0px 14px rgba(56, 239, 125, 0.5) !important;
+  color: #ffffff !important;
+}
+
+/* Toast Cảnh báo (Màu cam gradient) */
+.Toastify__toast--warning {
+  background: linear-gradient(to right, #f2994a, #f2c94c) !important;
+  box-shadow: 0 0px 14px rgba(242, 153, 74, 0.4) !important;
+  color: #ffffff !important;
+}
+
+/* Toast Thông tin (Màu xanh dương gradient) */
+.Toastify__toast--info {
+  background: linear-gradient(to right, #2f80ed, #56ccf2) !important;
+  box-shadow: 0 0px 14px rgba(47, 128, 237, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.Toastify__toast-body {
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  color: #ffffff !important;
+  padding: 0 !important;
+  margin: 0 10px 0 0 !important;
+}
+
+.Toastify__toast-icon {
+  width: 20px !important;
+  height: 20px !important;
+  margin-right: 10px !important;
+  filter: drop-shadow(2px 1px 2px rgba(0, 0, 0, 0.4)) !important;
+}
+
+.Toastify__toast-icon svg {
+  fill: #ffffff !important;
+}
+
+.Toastify__toast-icon svg path {
+  fill: #ffffff !important;
+}
+
+.Toastify__close-button {
+  align-self: center !important;
+  opacity: 0.9 !important;
+  color: #ffffff !important;
+  filter: drop-shadow(2px 1px 2px rgba(0, 0, 0, 0.4)) !important;
+}
+
+.Toastify__close-button svg {
+  fill: #ffffff !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
