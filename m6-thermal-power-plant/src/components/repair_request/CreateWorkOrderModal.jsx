@@ -88,8 +88,8 @@ export default function ModalCreateWorkOrder({
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
   // Danh sách nhân viên KÈM ROLE tài khoản (để lọc Người giám sát an toàn) +
-  // danh sách id đang ở phiếu IN_PROGRESS (chỉ dùng để loại khỏi ô GSAT —
-  // GSAT không được trùng người đang giám sát phiếu đang thực hiện).
+  // danh sách id đang BẬN ở mọi phiếu sống (STOPPED/IN_PROGRESS) — 3 vai trò
+  // phụ trách chỉ hiện người THỰC SỰ RẢNH.
   // Prop `employees` (không có role) chỉ là fallback trong lúc chờ tải.
   const [accountEmployees, setAccountEmployees] = useState(null); // null = chưa tải
   const [busyIds, setBusyIds] = useState([]);
@@ -101,7 +101,7 @@ export default function ModalCreateWorkOrder({
       try {
         const [empRes, busyRes] = await Promise.all([
           employeeService.getAllWithAccounts(),
-          workOrderService.getBusyEmployees(undefined, ['IN_PROGRESS']),
+          workOrderService.getBusyEmployees(undefined),
         ]);
         if (cancelled) return;
         const empArr = empRes.data?.data || empRes.data || [];
@@ -120,8 +120,8 @@ export default function ModalCreateWorkOrder({
   const roleInfoLoaded = accountEmployees !== null;
 
   // Chuẩn bị danh sách employee để hiển thị trong select — chỉ LOẠI người đã
-  // nghỉ (isActive = false). Người đang bận ở phiếu khác VẪN hiện (permissive);
-  // riêng ô Người giám sát an toàn loại busyIds trong optionsFor.
+  // nghỉ (isActive = false). Người bận ở phiếu sống khác bị loại khỏi cả 3 ô
+  // vai trò (optionsFor) nhưng VẪN hiện ở dropdown "Nhiều thành viên".
   const employeeList = useMemo(() => {
     const source = accountEmployees ?? (Array.isArray(employees) ? employees : []);
     return source
@@ -232,15 +232,16 @@ export default function ModalCreateWorkOrder({
           const busy = new Set(busyIds);
 
           // Quy tắc lọc từng ô (user-specified):
+          // - CẢ 3 vai trò phụ trách chỉ hiện nhân viên RẢNH (không ở phiếu
+          //   STOPPED/IN_PROGRESS nào — busyIds).
           // - Người LĐ / Chỉ huy trực tiếp ĐƯỢC là CÙNG một người trong 1 phiếu
           //   (không loại chéo lẫn nhau), chỉ không trùng GSAT/thành viên đã chọn.
-          // - GSAT KHÔNG được trùng: loại người đang ở phiếu IN_PROGRESS (busyIds),
-          //   người đã chọn ở ô khác/thành viên, và CHỈ hiện người có role
+          // - GSAT thêm điều kiện: khác LĐ/chỉ huy + CHỈ hiện người có role
           //   SAFETY_SUPERVISOR (khi đã tải được role — fallback prop thì bỏ lọc).
           const optionsFor = (field) => employeeList.filter((e) => {
             if (memberIds.includes(e.id)) return false;
+            if (busy.has(e.id)) return false; // 3 vai trò phụ trách: chỉ hiện người THỰC SỰ RẢNH
             if (field === 'safetySupervisorId') {
-              if (busy.has(e.id)) return false;
               if (roleFieldIds.leaderId === e.id || roleFieldIds.directSupervisorId === e.id) return false;
               if (roleInfoLoaded && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
             } else if (roleFieldIds.safetySupervisorId === e.id) {

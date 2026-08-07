@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Tabs, Tab, Button, Form as BootstrapForm, Row, Col } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { BsBoxSeam, BsPlusLg, BsSearch, BsArrowClockwise, BsImage, BsTags, BsCashCoin, BsExclamationTriangle } from 'react-icons/bs';
+import { BsBoxSeam, BsSearch, BsArrowClockwise, BsImage, BsTags, BsExclamationTriangle } from 'react-icons/bs';
 
 import PageHeader from '../components/common/PageHeader';
 import DataTable from '../components/common/DataTable';
@@ -356,8 +356,9 @@ export default function MaterialInventoryPage({ type = 'consumables' }) {
                 </Tab>
             </Tabs>
 
-            {/* Modal Nhập kho */}
-            {materialType === 'consumables' ? (
+            {/* Modal Nhập kho — chỉ mount khi mở, để giờ mặc định trong modal
+                là giờ bấm mở chứ không phải giờ load trang. */}
+            {showImportModal && (materialType === 'consumables' ? (
                 <ConsumableImportModal
                     show={showImportModal}
                     onHide={() => { setShowImportModal(false); setSelectedItem(null); }}
@@ -371,7 +372,7 @@ export default function MaterialInventoryPage({ type = 'consumables' }) {
                     sparePartItem={selectedItem}
                     onSubmit={handleImportSubmit}
                 />
-            )}
+            ))}
         </div>
     );
 }

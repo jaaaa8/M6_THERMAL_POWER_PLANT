@@ -59,10 +59,6 @@ export default function TechnicalAssessmentForm() {
     const [filteredEquipments, setFilteredEquipments] = useState([]);
     const [assessors, setAssessors] = useState([]);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
     const loadData = async () => {
         try {
             const [
@@ -153,6 +149,10 @@ export default function TechnicalAssessmentForm() {
         }
     };
 
+    useEffect(() => {
+        loadData();
+    }, []);
+
     const handleSystemChange = async (e) => {
         try {
             const systemId = e.target.value;
@@ -207,7 +207,7 @@ export default function TechnicalAssessmentForm() {
                 `Đã tải lên ${files.length} ảnh`
             );
 
-        } catch (error) {
+        } catch {
 
             toast.error(
                 "Không thể tải ảnh lên"

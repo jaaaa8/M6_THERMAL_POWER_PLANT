@@ -178,7 +178,6 @@ export default function AddEquipment() {
             touched,
             handleChange,
             handleBlur,
-            handleSubmit,
             isSubmitting,
             setFieldValue
           }) => {
@@ -201,16 +200,6 @@ export default function AddEquipment() {
 
             const triggerFileSelect = () => {
               fileInputRef.current.click();
-            };
-
-            const removeImage = (e) => {
-              e.stopPropagation();
-
-              setFieldValue("images", []);
-
-              if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-              }
             };
             return (
               <>

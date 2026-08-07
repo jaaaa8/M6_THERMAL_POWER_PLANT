@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Button, Row, Col, Table } from 'react-bootstrap';
+import { Modal, Button, Row, Col, Table, Pagination } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
@@ -16,14 +16,16 @@ import './CreateManualWorkOrderModal.css';
 /** Mã role (roles.name trong DB) được phép làm Người giám sát an toàn. */
 const SAFETY_SUPERVISOR_ROLE = 'SAFETY_SUPERVISOR';
 
+/** Số thiết bị mỗi trang trong picker. */
+const EQ_PAGE_SIZE = 10;
+
 /* ============================================================
    VALIDATION — khớp CreateWorkOrderRequest backend (@NotNull:
    leaderId, directSupervisorId, safetySupervisorId, startTime).
    equipmentIds validate bằng Yup array min 1 (backend trả 400
    nếu rỗng — validate sớm ở client cho UX).
    ============================================================ */
-const validationSchema = Yup.object({
-  equipmentIds: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 thiết bị'),
+const baseValidationSchema = Yup.object({
   leaderId: Yup.number()
     .typeError('Vui lòng chọn người lãnh đạo')
     .required('Vui lòng chọn người lãnh đạo công việc'),
@@ -35,6 +37,14 @@ const validationSchema = Yup.object({
     .required('Vui lòng chọn người giám sát an toàn'),
   startTime: Yup.string()
     .required('Vui lòng nhập thời gian bắt đầu'),
+});
+
+const validationSchema = baseValidationSchema.shape({
+  equipmentIds: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 thiết bị'),
+});
+
+const lubricationValidationSchema = baseValidationSchema.shape({
+  equipmentLines: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 thiết bị'),
 });
 
 /**
@@ -54,13 +64,21 @@ function extractErrorMessage(err) {
  * equipmentIds). Nội dung giống modal từ request, thay card thông tin request
  * bằng picker đa chọn thiết bị + ô nhập mô tả công việc.
  *
+ * Khi truyền {@code lubricationPlans} (danh sách plan bôi trơn đã chọn từ
+ * checklist) → chế độ WO bôi trơn: thiết bị cố định (bảng read-only),
+ * payload type=LUBRICATION + equipmentLines.
+ *
  * @param {boolean}  props.show
  * @param {Function} props.onClose
  * @param {Function} props.onCreated - (createdWorkOrder) => void, gọi sau khi tạo thành công
+ * @param {Array}    [props.lubricationPlans] - plan bôi trơn được chọn (chế độ LUBRICATION)
  */
-export default function CreateManualWorkOrderModal({ show, onClose, onCreated }) {
+export default function CreateManualWorkOrderModal({ show, onClose, onCreated, lubricationPlans }) {
+  const isLubrication = Array.isArray(lubricationPlans) && lubricationPlans.length > 0;
   const [equipmentList, setEquipmentList] = useState(null); // null = đang tải
   const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [eqPage, setEqPage] = useState(0);
+  const [eqTotalPages, setEqTotalPages] = useState(1);
   const [accountEmployees, setAccountEmployees] = useState(null);
   const [busyIds, setBusyIds] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
@@ -70,38 +88,51 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
     let cancelled = false;
     (async () => {
       try {
-        const [eqRes, empRes, busyRes] = await Promise.all([
-          getAllEquipment({ page: 0, size: 1000 }),
+        const [empRes, busyRes] = await Promise.all([
           employeeService.getAllWithAccounts(),
-          workOrderService.getBusyEmployees(undefined, ['IN_PROGRESS']),
+          workOrderService.getBusyEmployees(undefined),
         ]);
         if (cancelled) return;
-        const eqArr = eqRes.data?.content || eqRes.data || [];
-        setEquipmentList(Array.isArray(eqArr) ? eqArr : []);
         const empArr = empRes.data?.data || empRes.data || [];
         setAccountEmployees(Array.isArray(empArr) ? empArr : []);
         setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
       } catch (err) {
         if (!cancelled) {
-          toast.error(`Không thể tải danh sách thiết bị/nhân viên: ${extractErrorMessage(err)}`);
+          toast.error(`Không thể tải danh sách nhân viên: ${extractErrorMessage(err)}`);
         }
       }
     })();
     return () => { cancelled = true; };
   }, [show]);
 
+  // Tải 1 trang thiết bị theo mã KKS (server-side). Debounce 300ms để gõ tìm
+  // kiếm không bắn request mỗi phím; cleanup huỷ cả timer lẫn response cũ nên
+  // không có race giữa các lần gõ. KHÔNG set setEquipmentList(null) khi tải
+  // lại: null là cờ "chưa tải lần đầu", nhánh LoadingSpinner sẽ unmount ô
+  // search và cướp focus giữa lúc đang gõ.
+  useEffect(() => {
+    if (!show) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await getAllEquipment({
+          page: eqPage,
+          size: EQ_PAGE_SIZE,
+          kks: equipmentSearch.trim() || undefined,
+        });
+        if (cancelled) return;
+        const arr = res.data?.content || [];
+        setEquipmentList(Array.isArray(arr) ? arr : []);
+        setEqTotalPages(res.data?.totalPages || 1);
+      } catch (err) {
+        if (!cancelled) toast.error(`Không thể tải danh sách thiết bị: ${extractErrorMessage(err)}`);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [show, eqPage, equipmentSearch]);
+
   // Đã có dữ liệu role chưa? (fallback prop không có role → không lọc GSAT được)
   const roleInfoLoaded = accountEmployees !== null;
-
-  // Bộ lọc thiết bị phía client: từ khoá khớp kksCode/name/equipmentType.
-  const filteredEquipment = useMemo(() => {
-    if (!equipmentList) return [];
-    const q = equipmentSearch.trim().toLowerCase();
-    return equipmentList.filter((e) => !q
-      || (e.kksCode || '').toLowerCase().includes(q)
-      || (e.name || '').toLowerCase().includes(q)
-      || (e.equipmentType || '').toLowerCase().includes(q));
-  }, [equipmentList, equipmentSearch]);
 
   const employeeList = useMemo(() => {
     const source = accountEmployees ?? [];
@@ -118,6 +149,9 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
 
   const initialValues = {
     equipmentIds: [], // [number]
+    equipmentLines: isLubrication
+      ? lubricationPlans.map((p) => ({ equipmentId: p.equipment?.id, lubricationPlanId: p.id }))
+      : [],
     leaderId: '',
     directSupervisorId: '',
     safetySupervisorId: '',
@@ -130,12 +164,11 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
     <Modal show={show} onHide={onClose} centered size="lg" scrollable dialogClassName="pct-modal">
       <Formik
         initialValues={initialValues}
-        validationSchema={validationSchema}
+        validationSchema={isLubrication ? lubricationValidationSchema : validationSchema}
         enableReinitialize
         onSubmit={async (values, { setSubmitting }) => {
           try {
-            const payload = {
-              equipmentIds: values.equipmentIds,
+            const common = {
               leaderId: Number(values.leaderId),
               directSupervisorId: values.directSupervisorId ? Number(values.directSupervisorId) : null,
               safetySupervisorId: values.safetySupervisorId ? Number(values.safetySupervisorId) : null,
@@ -146,6 +179,9 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                 roleInTask: m.roleInTask || undefined,
               })),
             };
+            const payload = isLubrication
+              ? { ...common, type: 'LUBRICATION', equipmentLines: values.equipmentLines }
+              : { ...common, equipmentIds: values.equipmentIds };
 
             const res = await workOrderService.create(payload);
             toast.success(`Đã tạo phiếu công tác ${res.data.orderCode}`);
@@ -202,15 +238,16 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
           const busy = new Set(busyIds);
 
           // Quy tắc lọc từng ô (giữ nguyên pattern CreateWorkOrderModal):
+          // - CẢ 3 vai trò phụ trách chỉ hiện nhân viên RẢNH (không ở phiếu
+          //   STOPPED/IN_PROGRESS nào — busyIds).
           // - LĐ / Chỉ huy trực tiếp ĐƯỢC là CÙNG một người, chỉ không trùng
           //   GSAT/thành viên đã chọn.
-          // - GSAT KHÔNG được trùng: loại người đang ở phiếu IN_PROGRESS
-          //   (busyIds), người đã chọn ở ô khác/thành viên, và CHỈ hiện người
-          //   có role SAFETY_SUPERVISOR (khi đã tải được role).
+          // - GSAT thêm điều kiện: khác LĐ/chỉ huy + CHỈ hiện người có role
+          //   SAFETY_SUPERVISOR (khi đã tải được role).
           const optionsFor = (field) => employeeList.filter((e) => {
             if (memberIds.includes(e.id)) return false;
+            if (busy.has(e.id)) return false; // 3 vai trò phụ trách: chỉ hiện người THỰC SỰ RẢNH
             if (field === 'safetySupervisorId') {
-              if (busy.has(e.id)) return false;
               if (roleFieldIds.leaderId === e.id || roleFieldIds.directSupervisorId === e.id) return false;
               if (roleInfoLoaded && !e.roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
             } else if (roleFieldIds.safetySupervisorId === e.id) {
@@ -230,8 +267,12 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                     <BsFileEarmarkPlus />
                   </span>
                   <div>
-                    <span className="pct-modal-title-main">Tạo Phiếu Công tác thủ công</span>
-                    <span className="pct-modal-title-sub">Nhiều thiết bị trong phạm vi công tác</span>
+                    <span className="pct-modal-title-main">
+                      {isLubrication ? 'Tạo Phiếu công tác bảo dưỡng dầu mỡ' : 'Tạo Phiếu Công tác thủ công'}
+                    </span>
+                    <span className="pct-modal-title-sub">
+                      {isLubrication ? 'Theo kế hoạch bôi trơn đã chọn từ checklist' : 'Nhiều thiết bị trong phạm vi công tác'}
+                    </span>
                   </div>
                 </Modal.Title>
               </Modal.Header>
@@ -240,10 +281,33 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                 {/* ===== SECTION: CHỌN THIẾT BỊ (đa chọn) ===== */}
                 <div className="pct-section-title">
                   <BsCpu />
-                  Chọn thiết bị trong phạm vi công tác
+                  {isLubrication ? 'Thiết bị trong phạm vi công tác' : 'Chọn thiết bị trong phạm vi công tác'}
                 </div>
 
-                {equipmentList === null ? (
+                {isLubrication ? (
+                  <div className="pct-equipment-picker">
+                    <Table size="sm" bordered className="mb-0">
+                      <thead>
+                        <tr>
+                          <th>Mã KHBD</th>
+                          <th>Mã thiết bị</th>
+                          <th>Tên thiết bị</th>
+                          <th>Hệ thống</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lubricationPlans.map((p) => (
+                          <tr key={p.id}>
+                            <td>{p.lubricationCode}</td>
+                            <td>{p.equipment?.equipmentCode}</td>
+                            <td>{p.equipment?.name}</td>
+                            <td>{p.equipment?.system?.name}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                ) : equipmentList === null ? (
                   <LoadingSpinner />
                 ) : (
                   <>
@@ -252,9 +316,9 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Tìm theo mã KKS, tên thiết bị, loại..."
+                        placeholder="Tìm theo mã KKS..."
                         value={equipmentSearch}
-                        onChange={(e) => setEquipmentSearch(e.target.value)}
+                        onChange={(e) => { setEquipmentSearch(e.target.value); setEqPage(0); }}
                       />
                     </div>
 
@@ -269,13 +333,13 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredEquipment.length === 0 ? (
+                          {equipmentList.length === 0 ? (
                             <tr>
                               <td colSpan={4} className="text-center text-muted py-3">
                                 Không tìm thấy thiết bị
                               </td>
                             </tr>
-                          ) : filteredEquipment.map((e) => (
+                          ) : equipmentList.map((e) => (
                             <tr
                               key={e.id}
                               onClick={() => toggleEquipment(e.id)}
@@ -300,138 +364,145 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated })
                         </tbody>
                       </Table>
                     </div>
+                    <div className="d-flex justify-content-center mt-2">
+                      <Pagination size="sm" className="mb-0">
+                        <Pagination.Prev disabled={eqPage === 0} onClick={() => setEqPage(eqPage - 1)} />
+                        <Pagination.Item active>{eqPage + 1} / {eqTotalPages}</Pagination.Item>
+                        <Pagination.Next disabled={eqPage >= eqTotalPages - 1} onClick={() => setEqPage(eqPage + 1)} />
+                      </Pagination>
+                    </div>
                     <div className="form-text">
                       Đã chọn: <strong>{values.equipmentIds.length}</strong> thiết bị
                     </div>
                     <ErrorMessage name="equipmentIds" component="div" className="invalid-feedback d-block" />
-
-                    {/* ===== SECTION: MÔ TẢ ===== */}
-                    <div className="pct-section-title mt-4">Mô tả công việc</div>
-                    <Field
-                      as="textarea"
-                      name="repairDescription"
-                      rows={3}
-                      className={`form-control ${touched.repairDescription && errors.repairDescription ? 'is-invalid' : ''}`}
-                      placeholder="Mô tả nội dung công việc (in lên phiếu giấy)"
-                    />
-
-                    {/* ===== SECTION: THỜI GIAN ===== */}
-                    <div className="pct-section-title mt-4">
-                      <BsSave />
-                      Thời gian thực hiện
-                    </div>
-                    <Row className="mb-3">
-                      <Col md={6}>
-                        <label htmlFor="pct-startTime" className="form-label">
-                          Thời gian bắt đầu <span className="required-asterisk">*</span>
-                        </label>
-                        <Field
-                          id="pct-startTime"
-                          name="startTime"
-                          type="datetime-local"
-                          className={`form-control ${touched.startTime && errors.startTime ? 'is-invalid' : ''}`}
-                        />
-                        <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
-                      </Col>
-                      <Col md={6}>
-                        <div className="form-text mt-4">
-                          Giờ kết thúc được hệ thống ghi nhận khi phiếu hoàn thành.
-                        </div>
-                      </Col>
-                    </Row>
-
-                    {/* ===== SECTION: NHÂN SỰ ===== */}
-                    <div className="pct-section-title mt-4">
-                      <BsPeopleFill />
-                      Nhân sự thực hiện
-                    </div>
-
-                    <Row className="mb-3">
-                      {[
-                        { field: 'leaderId', label: 'Người lãnh đạo công việc' },
-                        { field: 'directSupervisorId', label: 'Chỉ huy trực tiếp' },
-                        { field: 'safetySupervisorId', label: 'Người giám sát an toàn' },
-                      ].map(({ field, label }) => (
-                        <Col md={4} key={field}>
-                          <label htmlFor={`pct-${field}`} className="form-label">
-                            {label} <span className="required-asterisk">*</span>
-                          </label>
-                          <Field
-                            as="select"
-                            id={`pct-${field}`}
-                            name={field}
-                            className={`form-select ${touched[field] && errors[field] ? 'is-invalid' : ''}`}
-                          >
-                            <option value="">— Chọn —</option>
-                            {optionsFor(field).map((e) => (
-                              <option key={e.id} value={e.id}>
-                                {e.label}
-                              </option>
-                            ))}
-                          </Field>
-                          <ErrorMessage name={field} component="div" className="invalid-feedback" />
-                        </Col>
-                      ))}
-                    </Row>
-
-                    {/* --- Nhiều thành viên --- */}
-                    <div className="mb-2">
-                      <label className="form-label">
-                        Nhiều thành viên
-                      </label>
-                      <div className="pct-add-nv">
-                        <select
-                          className="form-select"
-                          value={selectedEmployeeId}
-                          onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                          aria-label="Chọn nhân viên làm việc"
-                        >
-                          <option value="">— Chọn nhân viên để thêm —</option>
-                          {available.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          type="button"
-                          variant="outline-primary"
-                          onClick={addMember}
-                          disabled={!selectedEmployeeId}
-                        >
-                          <BsPersonPlus /> Thêm
-                        </Button>
-                      </div>
-
-                      {values.members.length > 0 && (
-                        <div className="pct-nv-list">
-                          {values.members.map((m, idx) => {
-                            const emp = employeeList.find((e) => e.id === m.employeeId);
-                            const name = emp?.fullName || `ID ${m.employeeId}`;
-                            const role = m.roleInTask || emp?.position || '';
-                            return (
-                              <div key={m.employeeId} className="pct-nv-chip">
-                                <span className="pct-nv-chip-index">{idx + 1}</span>
-                                <span className="pct-nv-chip-info">
-                                  <strong>{name}</strong>
-                                  <span>{role}</span>
-                                </span>
-                                <button
-                                  type="button"
-                                  className="pct-nv-chip-remove"
-                                  onClick={() => removeMember(m.employeeId)}
-                                  title="Xoá khỏi danh sách"
-                                >
-                                  <BsTrash />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
                   </>
                 )}
+
+                {/* ===== SECTION: MÔ TẢ — chung cho cả 2 chế độ ===== */}
+                <div className="pct-section-title mt-4">Mô tả công việc</div>
+                <Field
+                  as="textarea"
+                  name="repairDescription"
+                  rows={3}
+                  className={`form-control ${touched.repairDescription && errors.repairDescription ? 'is-invalid' : ''}`}
+                  placeholder="Mô tả nội dung công việc (in lên phiếu giấy)"
+                />
+
+                {/* ===== SECTION: THỜI GIAN — chung cho cả 2 chế độ ===== */}
+                <div className="pct-section-title mt-4">
+                  <BsSave />
+                  Thời gian thực hiện
+                </div>
+                <Row className="mb-3">
+                  <Col md={6}>
+                    <label htmlFor="pct-startTime" className="form-label">
+                      Thời gian bắt đầu <span className="required-asterisk">*</span>
+                    </label>
+                    <Field
+                      id="pct-startTime"
+                      name="startTime"
+                      type="datetime-local"
+                      className={`form-control ${touched.startTime && errors.startTime ? 'is-invalid' : ''}`}
+                    />
+                    <ErrorMessage name="startTime" component="div" className="invalid-feedback" />
+                  </Col>
+                  <Col md={6}>
+                    <div className="form-text mt-4">
+                      Giờ kết thúc được hệ thống ghi nhận khi phiếu hoàn thành.
+                    </div>
+                  </Col>
+                </Row>
+
+                {/* ===== SECTION: NHÂN SỰ — chung cho cả 2 chế độ ===== */}
+                <div className="pct-section-title mt-4">
+                  <BsPeopleFill />
+                  Nhân sự thực hiện
+                </div>
+
+                <Row className="mb-3">
+                  {[
+                    { field: 'leaderId', label: 'Người lãnh đạo công việc' },
+                    { field: 'directSupervisorId', label: 'Chỉ huy trực tiếp' },
+                    { field: 'safetySupervisorId', label: 'Người giám sát an toàn' },
+                  ].map(({ field, label }) => (
+                    <Col md={4} key={field}>
+                      <label htmlFor={`pct-${field}`} className="form-label">
+                        {label} <span className="required-asterisk">*</span>
+                      </label>
+                      <Field
+                        as="select"
+                        id={`pct-${field}`}
+                        name={field}
+                        className={`form-select ${touched[field] && errors[field] ? 'is-invalid' : ''}`}
+                      >
+                        <option value="">— Chọn —</option>
+                        {optionsFor(field).map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.label}
+                          </option>
+                        ))}
+                      </Field>
+                      <ErrorMessage name={field} component="div" className="invalid-feedback" />
+                    </Col>
+                  ))}
+                </Row>
+
+                {/* --- Nhiều thành viên --- */}
+                <div className="mb-2">
+                  <label className="form-label">
+                    Nhiều thành viên
+                  </label>
+                  <div className="pct-add-nv">
+                    <select
+                      className="form-select"
+                      value={selectedEmployeeId}
+                      onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                      aria-label="Chọn nhân viên làm việc"
+                    >
+                      <option value="">— Chọn nhân viên để thêm —</option>
+                      {available.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      onClick={addMember}
+                      disabled={!selectedEmployeeId}
+                    >
+                      <BsPersonPlus /> Thêm
+                    </Button>
+                  </div>
+
+                  {values.members.length > 0 && (
+                    <div className="pct-nv-list">
+                      {values.members.map((m, idx) => {
+                        const emp = employeeList.find((e) => e.id === m.employeeId);
+                        const name = emp?.fullName || `ID ${m.employeeId}`;
+                        const role = m.roleInTask || emp?.position || '';
+                        return (
+                          <div key={m.employeeId} className="pct-nv-chip">
+                            <span className="pct-nv-chip-index">{idx + 1}</span>
+                            <span className="pct-nv-chip-info">
+                              <strong>{name}</strong>
+                              <span>{role}</span>
+                            </span>
+                            <button
+                              type="button"
+                              className="pct-nv-chip-remove"
+                              onClick={() => removeMember(m.employeeId)}
+                              title="Xoá khỏi danh sách"
+                            >
+                              <BsTrash />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </Modal.Body>
 
               <Modal.Footer>

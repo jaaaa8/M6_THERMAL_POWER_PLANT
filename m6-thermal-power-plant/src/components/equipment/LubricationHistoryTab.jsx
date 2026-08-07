@@ -15,12 +15,6 @@ export default function LubricationHistoryTab({
     const [histories, setHistories] = useState([]);
     const [openId, setOpenId] = useState(null);
 
-    useEffect(() => {
-
-        loadHistory();
-
-    }, [equipmentId]);
-
     const loadHistory = async () => {
 
         try {
@@ -39,6 +33,13 @@ export default function LubricationHistoryTab({
         }
 
     };
+
+    useEffect(() => {
+
+        loadHistory();
+
+    }, [equipmentId]);
+
     return (
         <>
             <h5 className="fw-bold mb-4">

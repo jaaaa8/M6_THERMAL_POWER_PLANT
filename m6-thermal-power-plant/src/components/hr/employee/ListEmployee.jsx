@@ -93,7 +93,7 @@ export default function ListEmployee() {
 
       const listPB = resPhongBan.data?.data || resPhongBan.data || [];
       setDepartments(Array.isArray(listPB) ? listPB : []);
-    } catch (error) {
+    } catch {
       toast.error('Không kết nối được API.');
       setData([]);
     } finally {

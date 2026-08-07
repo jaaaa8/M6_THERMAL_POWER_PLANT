@@ -35,25 +35,34 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
   } : null));
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState(null); // null = đang tải
+  // Nhân viên bận ở phiếu sống KHÁC (loại trừ chính phiếu đang sửa để 3 người
+  // đang giữ vai trò vẫn chọn được). null = đang tải.
+  const [busyIds, setBusyIds] = useState(null);
 
-  // Tải danh sách nhân viên khi mở (backend không có endpoint search —
-  // tải hết rồi lọc phía client). setState chỉ trong callback async.
+  // Tải danh sách nhân viên (kèm role để lọc GSAT) + danh sách bận khi mở —
+  // backend không có endpoint search — tải hết rồi lọc phía client.
+  // setState chỉ trong callback async.
   useEffect(() => {
     if (!show) return;
     let cancelled = false;
-    employeeService.getAll()
-      .then((res) => {
+    Promise.all([
+      employeeService.getAllWithAccounts(),
+      workOrderService.getBusyEmployees(workOrder.id),
+    ])
+      .then(([empRes, busyRes]) => {
         if (cancelled) return;
-        const arr = res.data?.data || res.data || [];
+        const arr = empRes.data?.data || empRes.data || [];
         setEmployees(Array.isArray(arr) ? arr : []);
+        setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
       })
       .catch(() => {
         if (cancelled) return;
         toast.error('Không thể tải danh sách nhân viên');
         setEmployees([]);
+        setBusyIds([]);
       });
     return () => { cancelled = true; };
-  }, [show]);
+  }, [show, workOrder?.id]);
 
   const setField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -95,18 +104,25 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
               value={form.leaderId}
               onChange={(v) => setField('leaderId', v)}
               employees={employees}
+              busyIds={busyIds}
+              excludeIds={form.safetySupervisorId ? [Number(form.safetySupervisorId)] : []}
             />
             <EmployeeSelect
               label="Chỉ huy trực tiếp"
               value={form.directSupervisorId}
               onChange={(v) => setField('directSupervisorId', v)}
               employees={employees}
+              busyIds={busyIds}
+              excludeIds={form.safetySupervisorId ? [Number(form.safetySupervisorId)] : []}
             />
             <EmployeeSelect
               label="Người giám sát an toàn"
               value={form.safetySupervisorId}
               onChange={(v) => setField('safetySupervisorId', v)}
               employees={employees}
+              busyIds={busyIds}
+              excludeIds={[form.leaderId, form.directSupervisorId].map(Number).filter(Boolean)}
+              roleRequired="SAFETY_SUPERVISOR"
             />
             {/* Không sửa giờ kết thúc: end_time là mốc THỰC TẾ, hệ thống đóng
                 dấu khi phiếu hoàn thành. */}
@@ -147,8 +163,13 @@ export default function WorkOrderEditModal({ show, workOrder, onClose, onChanged
   );
 }
 
-/** Select nhân viên — option rỗng = giữ nguyên giá trị hiện tại. */
-function EmployeeSelect({ label, value, onChange, employees }) {
+/** Select nhân viên — option rỗng = giữ nguyên giá trị hiện tại. Lọc: busy (nhân
+ *  viên rảnh — trừ chính phiếu này), excludeIds (vai trò khác đã chọn, trừ
+ *  leader == directSupervisor), roleRequired (chỉ người có role đó — GSAT). */
+function EmployeeSelect({ label, value, onChange, employees, busyIds, excludeIds = [], roleRequired }) {
+  const busy = new Set(busyIds || []);
+  const exclude = new Set(excludeIds);
+  const roleInfoLoaded = busyIds !== null && Array.isArray(employees);
   return (
     <Form.Group className="mb-3">
       <Form.Label style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' }}>
@@ -165,6 +186,8 @@ function EmployeeSelect({ label, value, onChange, employees }) {
         </option>
         {(employees || [])
           .filter((e) => e.isActive !== false)
+          .filter((e) => !busy.has(e.id) && !exclude.has(e.id))
+          .filter((e) => !roleRequired || !roleInfoLoaded || (e.roles || []).some((r) => (r?.name || r) === roleRequired))
           .map((e) => (
             <option key={e.id} value={e.id}>
               {e.fullName}{e.employeeCode ? ` (${e.employeeCode})` : ''}

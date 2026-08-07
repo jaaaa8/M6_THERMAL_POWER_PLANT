@@ -92,6 +92,11 @@ const lubricationPlanService = {
         );
 
         return response.data;
+    },
+
+    lockedPlanIds: async () => {
+        const response = await apiClient.get(`${BASE_URL}/locked-plan-ids`);
+        return response.data;
     }
 
 };

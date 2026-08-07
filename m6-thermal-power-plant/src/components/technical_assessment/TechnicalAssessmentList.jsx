@@ -36,7 +36,7 @@ import "./TechnicalAssessmentList.css"
 
 export default function TechnicalAssessmentList() {
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [systems,setSystems] = useState([]);
     const [equipments,setEquipments] = useState([]);
     const [showModal,setShowModal] = useState(false);
@@ -124,6 +124,32 @@ export default function TechnicalAssessmentList() {
 
     };
 
+    const loadSystems = async()=>{
+
+        try{
+
+            const res =
+                await getAllSystems(
+                    "",
+                    "",
+                    0,
+                    100
+                );
+
+            setSystems(
+                res.data.content || res.data
+            );
+
+        }catch{
+
+            toast.error(
+                "Không tải được danh sách hệ thống"
+            );
+
+        }
+
+    };
+
     useEffect(() => {
         loadData();
     }, [pagination.page]);
@@ -133,7 +159,6 @@ export default function TechnicalAssessmentList() {
         loadSystems();
 
     },[]);
-
 
     const handleClearFilters = async () => {
 
@@ -165,32 +190,6 @@ export default function TechnicalAssessmentList() {
         }));
     };
 
-
-    const loadSystems = async()=>{
-
-        try{
-
-            const res =
-                await getAllSystems(
-                    "",
-                    "",
-                    0,
-                    100
-                );
-
-            setSystems(
-                res.data.content || res.data
-            );
-
-        }catch(error){
-
-            toast.error(
-                "Không tải được danh sách hệ thống"
-            );
-
-        }
-
-    };
 
     const handleSystemChange = async(e)=>{
 

@@ -18,6 +18,7 @@ import './DataTable.css';
  * @param {Function} [props.onDelete] - Callback xoá (row) => void
  * @param {Function} [props.renderActions] - Custom render cột actions
  * @param {number} [props.actionColumnWidth=200] - Độ rộng cột actions (px)
+ * @param {Function} [props.rowClassName] - (row) => string: class cho dòng
  * @param {boolean} [props.loading=false]
  */
 export default function DataTable({
@@ -33,6 +34,7 @@ export default function DataTable({
   actionColumnWidth = 200,
   newestFirst = true,
   loading = false,
+  rowClassName,
 }) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState(null);
@@ -158,7 +160,7 @@ export default function DataTable({
             </thead>
             <tbody>
               {paged.map((row, idx) => (
-                <tr key={row.id || idx}>
+                <tr key={row.id || idx} className={rowClassName ? rowClassName(row) : ''}>
                   <td className="text-muted">{(safePage - 1) * pageSize + idx + 1}</td>
                   {columns.map((col) => (
                     <td key={col.key} className={col.mono ? 'font-mono' : ''}>

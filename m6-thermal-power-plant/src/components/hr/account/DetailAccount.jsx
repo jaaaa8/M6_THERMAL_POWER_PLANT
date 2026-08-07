@@ -25,7 +25,7 @@ export default function DetailAccount({ data, onClose }) {
           const empRes = await employeeService.getById(accountData.employee.id);
           setEmployee(empRes.data?.data || empRes.data || null);
         }
-      } catch (err) {
+      } catch {
         toast.error('Không tải được thông tin chi tiết.');
         onClose();
       } finally {

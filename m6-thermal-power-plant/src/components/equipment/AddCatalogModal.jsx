@@ -20,16 +20,6 @@ export default function AddCatalogModal({
 
     const [unitsList, setUnitsList] = useState([]);
 
-    useEffect(() => {
-
-        if (show) {
-
-            loadUnits();
-
-        }
-
-    }, [show]);
-
     const loadUnits = async () => {
 
         try {
@@ -45,6 +35,16 @@ export default function AddCatalogModal({
         }
 
     };
+
+    useEffect(() => {
+
+        if (show) {
+
+            loadUnits();
+
+        }
+
+    }, [show]);
 
     const schema = Yup.object({
 

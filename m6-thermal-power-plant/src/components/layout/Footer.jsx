@@ -1,4 +1,3 @@
-import { BsHeart } from 'react-icons/bs';
 import './Footer.css';
 
 export default function Footer() {

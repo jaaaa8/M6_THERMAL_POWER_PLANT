@@ -12,6 +12,7 @@
     BsDropletFill,
     BsSearch,
     BsFileEarmarkCheck,
+    BsFileEarmarkPlus,
   } from "react-icons/bs";
   import { toast } from "react-toastify";
 
@@ -20,11 +21,18 @@
   import lubricationPlanService from "../../services/lubricationPlanService";
   import { pdf } from "@react-pdf/renderer";
   import LubricationChecklistPDF from "../../pdf/LubricationChecklistPDF";
+  import CreateManualWorkOrderModal from "../work_order/CreateManualWorkOrderModal";
 
   export default function LubricationPlanForm() {
 
     const [selectedEquipments, setSelectedEquipments] =
       useState([]);
+
+    const [showLubWorkOrder, setShowLubWorkOrder] =
+      useState(false);
+
+    const [lockedPlanIds, setLockedPlanIds] =
+      useState(new Set());
 
     const [systems, setSystems] = useState([]);
 
@@ -32,7 +40,7 @@
 
     const [systemId, setSystemId] = useState("");
 
-    const [status, setStatus] = useState("");
+    const [status] = useState("");
 
     const [page, setPage] = useState(0);
 
@@ -40,7 +48,7 @@
 
     const [totalPages, setTotalPages] = useState(0);
 
-    const [totalElements, setTotalElements] = useState(0);
+    const [, setTotalElements] = useState(0);
 
     const loadSystems = async () => {
       try {
@@ -56,7 +64,7 @@
             res.data.content || []
         );
 
-      } catch (e) {
+      } catch {
 
         toast.error("Không tải được hệ thống");
 
@@ -100,6 +108,41 @@
     useEffect(() => {
 
       loadSystems();
+
+    }, []);
+
+    const loadLockedPlanIds = async () => {
+
+      try {
+
+        const data =
+            await lubricationPlanService.lockedPlanIds();
+
+        setLockedPlanIds(
+            new Set(Array.isArray(data) ? data : [])
+        );
+
+      } catch (e) {
+
+        console.error(e);
+
+      }
+
+    };
+
+    useEffect(() => {
+
+      if (showLubWorkOrder) {
+
+        loadLockedPlanIds();
+
+      }
+
+    }, [showLubWorkOrder]);
+
+    useEffect(() => {
+
+      loadLockedPlanIds();
 
     }, []);
 
@@ -318,6 +361,7 @@
                                     <Form.Check
                                         type="checkbox"
                                         checked={checked}
+                                        disabled={lockedPlanIds.has(item.id)}
                                         onChange={(e) =>
                                             handleSelectEquipment(
                                                 item,
@@ -499,6 +543,15 @@
           {/* XUẤT CHECKLIST */}
           <div className="mt-3 d-flex justify-content-end">
             <Button
+              variant="primary"
+              className="me-2"
+              onClick={() => setShowLubWorkOrder(true)}
+              disabled={selectedEquipments.length === 0}
+            >
+              <BsFileEarmarkPlus className="me-1" />
+              Tạo phiếu công tác bôi trơn
+            </Button>
+            <Button
               variant="outline-success"
               onClick={
                 handleExportChecklist
@@ -513,6 +566,19 @@
           </div>
         </div>
 
+        {showLubWorkOrder && (
+          <CreateManualWorkOrderModal
+            show={showLubWorkOrder}
+            lubricationPlans={selectedEquipments}
+            onClose={() => setShowLubWorkOrder(false)}
+            onCreated={() => {
+              setShowLubWorkOrder(false);
+              setSelectedEquipments([]);
+              loadChecklist(page);
+              loadLockedPlanIds();
+            }}
+          />
+        )}
 
       </div>
     );

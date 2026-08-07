@@ -21,7 +21,7 @@ export default function DetailEmployee({ data: initialData, onClose, onRefreshLi
     try {
       const res = await employeeService.getById(initialData.id);
       setEmployee(res.data?.data || res.data);
-    } catch (err) {
+    } catch {
       toast.error('Không thể tải chi tiết nhân viên');
     } finally {
       setLoadingEmployee(false);

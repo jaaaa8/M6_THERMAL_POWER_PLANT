@@ -3,7 +3,7 @@ import { Formik, Form, Field, ErrorMessage  } from "formik";
 import * as Yup from "yup";
 import {Row, Col, Button, Modal, Pagination} from "react-bootstrap";
 import { pdf } from "@react-pdf/renderer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import SparePartsIssuePDF from "../../pdf/SparePartsIssuePDF";
@@ -62,6 +62,9 @@ export default function SparePartsIssueForm({
         status: "ACTIVE"
     });
     const navigate = useNavigate();
+    // "Lệnh công việc" được chọn sẵn khi mở từ nút "Cấp VT Thay thế" ở danh sách
+    // PCT (?workOrderId=... — id chứ không phải mã, khỏi phải dò trong danh sách).
+    const [searchParams] = useSearchParams();
 
     const [workOrders, setWorkOrders] = useState([]);
     const [spareParts, setSpareParts] = useState([]);
@@ -76,10 +79,6 @@ export default function SparePartsIssueForm({
     });
 
     const [searchKey, setSearchKey] = useState(0);
-
-    useEffect(() => {
-        loadData();
-    }, [pagination.page, searchKey]);
 
     const handleSearch = () => {
         setPagination(prev => ({
@@ -115,7 +114,7 @@ export default function SparePartsIssueForm({
                 workOrderRes,
                 sparePartRes
             ] = await Promise.all([
-                workOrderService.getAll(),
+                workOrderService.getAll({}, 0, 1000),
                 sparePartService.search({
                     page: pagination.page,
                     size: pagination.size,
@@ -181,6 +180,10 @@ export default function SparePartsIssueForm({
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadData();
+    }, [pagination.page, searchKey]);
 
 
 
@@ -308,7 +311,7 @@ export default function SparePartsIssueForm({
         </div>
 
         <Formik
-            initialValues={INITIAL_VALUES}
+            initialValues={{ ...INITIAL_VALUES, workOrderId: searchParams.get("workOrderId") || "" }}
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
         >
@@ -341,7 +344,10 @@ export default function SparePartsIssueForm({
                               <option value={""}>
                                   Chọn Phiếu Công Tác
                               </option>
-                              {workOrders.map((workOrder) => (
+                              {workOrders
+                                  .filter((wo) =>
+                                      wo.status === "IN_PROGRESS" || wo.status === "STOPPED")
+                                  .map((workOrder) => (
                                   <option
                                       key={workOrder.id}
                                       value={workOrder.id}

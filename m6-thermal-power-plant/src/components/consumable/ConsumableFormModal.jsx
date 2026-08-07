@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Button, Row, Col } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { BsTags, BsInfoCircle, BsImage } from 'react-icons/bs';
+import { BsTags, BsImage } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import * as unitService from '../../services/unitService'
 import { uploadImage } from '../../services/fileUploadService';

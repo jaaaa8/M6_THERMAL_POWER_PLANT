@@ -25,6 +25,7 @@ export default function ConfirmModal({
   cancelText = 'Huỷ',
   variant = 'danger',
   loading = false,
+  children,
 }) {
   return (
     <Modal show={show} onHide={onClose} centered size="sm">
@@ -41,6 +42,7 @@ export default function ConfirmModal({
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
           {message}
         </p>
+        {children}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="outline-secondary" size="sm" onClick={onClose} disabled={loading}>

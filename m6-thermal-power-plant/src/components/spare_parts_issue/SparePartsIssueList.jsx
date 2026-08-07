@@ -47,23 +47,6 @@ export default function SparePartsIssueList() {
     // Chỉ Tổ trưởng được tạo phiếu xuất vật tư (khớp BE POST /api/v1/spare-parts-issue/add).
     const canManage = hasAnyRole(authService.getCurrentUser(), ['TEAM_LEADER']);
 
-    useEffect(() => {
-        loadData();
-    }, [pagination.page, searchTrigger]);
-
-    const handleExportPdf = async (issueRecord) => {
-        if (!issueRecord) return;
-        let issueToExport = issueRecord;
-        if (issueRecord.id && (!issueRecord.details || issueRecord.details.length === 0)) {
-            try {
-                issueToExport = await sparePartIssueService.getDetail(issueRecord.id);
-            } catch (e) {
-                console.error("Lỗi lấy chi tiết phiếu xuất:", e);
-            }
-        }
-        await downloadSparePartsIssuePdf(issueToExport, workOrdersList);
-    };
-
     const loadData = async () => {
         try {
             const [
@@ -173,6 +156,23 @@ export default function SparePartsIssueList() {
             setLoading(false);
         }
     };
+
+    const handleExportPdf = async (issueRecord) => {
+        if (!issueRecord) return;
+        let issueToExport = issueRecord;
+        if (issueRecord.id && (!issueRecord.details || issueRecord.details.length === 0)) {
+            try {
+                issueToExport = await sparePartIssueService.getDetail(issueRecord.id);
+            } catch (e) {
+                console.error("Lỗi lấy chi tiết phiếu xuất:", e);
+            }
+        }
+        await downloadSparePartsIssuePdf(issueToExport, workOrdersList);
+    };
+
+    useEffect(() => {
+        loadData();
+    }, [pagination.page, searchTrigger]);
 
 
 

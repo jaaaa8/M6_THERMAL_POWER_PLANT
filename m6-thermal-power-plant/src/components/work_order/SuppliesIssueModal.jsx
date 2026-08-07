@@ -54,7 +54,7 @@ export default function SuppliesIssueModal({ show, workOrder, onClose, onCreated
   if (!workOrder) return null;
 
   return (
-    <Modal show={show} onHide={onClose} centered size="lg" scrollable>
+    <Modal show={show} onHide={onClose} centered size="xl" scrollable>
       <Modal.Header closeButton>
         <Modal.Title style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}>
           <BsBoxSeam className="me-2" style={{ color: 'var(--color-primary-500)' }} />

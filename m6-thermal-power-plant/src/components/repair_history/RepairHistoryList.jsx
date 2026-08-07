@@ -22,10 +22,6 @@ export default function RepairHistoryList() {
     const [repairHistories, setRepairHistories] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        fetchRepairHistories();
-    }, []);
-
     const fetchRepairHistories = async () => {
         try {
             setLoading(true);
@@ -41,6 +37,10 @@ export default function RepairHistoryList() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchRepairHistories();
+    }, []);
 
     const handleView = (history) => {
         setSelectedHistory(history);
@@ -286,10 +286,6 @@ export function RepairHistoryTab({ equipmentId }) {
     const [repairHistories, setRepairHistories] = useState([]);
     const [openId, setOpenId] = useState(null);
 
-    useEffect(() => {
-        loadRepairHistory();
-    }, [equipmentId]);
-
     const loadRepairHistory = async () => {
         try {
             const res = await getByEquipment(equipmentId);
@@ -298,6 +294,10 @@ export function RepairHistoryTab({ equipmentId }) {
             console.log(e);
         }
     };
+
+    useEffect(() => {
+        loadRepairHistory();
+    }, [equipmentId]);
 
     return (
         <>

@@ -20,6 +20,7 @@ import CreateManualWorkOrderModal from './CreateManualWorkOrderModal';
 import { workOrderService } from '../../services/workOrderService';
 import { authService } from '../../services/authService';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import './WorkOrderList.css';
 
 /* ============================================================
@@ -58,6 +59,7 @@ const STATUS_ROLES = ['SHIFT_LEADER', 'CREW_LEADER', 'ADMIN'];
    COMPONENT
    ============================================================ */
 export default function WorkOrderList({ title = "Phiếu Công tác" }) {
+  const navigate = useNavigate();
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [codeSearch, setCodeSearch] = useState('');   // mã PCT / mã NV tổ trưởng / id
@@ -94,7 +96,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
       setWorkOrders(content);
       setTotalPages(paged.page?.totalPages ?? 1);
       setTotalElements(paged.page?.totalElements ?? content.length);
-    } catch (err) {
+    } catch {
       toast.error('Không thể tải danh sách phiếu công tác');
       setWorkOrders([]);
     } finally {
@@ -126,8 +128,27 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
   }, [workOrders, filter]);
 
   /* --- Cột bảng --- */
+  const rowClassName = (row) => {
+    if (row.type === 'LUBRICATION') return 'wo-row-lubrication';
+    if (row.type === 'REPAIR' && !row.repairRequestId) return 'wo-row-repair-manual';
+    return '';
+  };
+
   const columns = [
-    { key: 'orderCode', label: 'Mã PCT', mono: true, width: 160 },
+    {
+      key: 'orderCode', label: 'Mã PCT', mono: true, width: 160,
+      render: (v, row) => (
+        <div>
+          <div>{v}</div>
+          {row.type === 'LUBRICATION' && (
+            <span className="wo-type-note wo-type-note-lubrication">Bảo dưỡng</span>
+          )}
+          {row.type === 'REPAIR' && !row.repairRequestId && (
+            <span className="wo-type-note wo-type-note-repair">Sửa chữa hệ thống</span>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'equipmentName', label: 'Thiết bị',
       render: (_, row) => {
@@ -228,15 +249,26 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
             <BsPencilSquare className="me-1" /> Sửa
           </Button>
         )}
+        {canOperate && row.type !== 'LUBRICATION' && (
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Mở phiếu cấp vật tư thay thế, PCT được chọn sẵn'}
+            disabled={finished}
+            onClick={() => navigate(`/repair/spare-parts-issue/add?workOrderId=${row.id}`)}
+          >
+            <BsBoxSeam className="me-1" /> Cấp VT Thay thế
+          </Button>
+        )}
         {canOperate && (
         <Button
           variant="outline-success"
           size="sm"
-          title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Cấp vật tư cho PCT'}
+          title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Cấp vật tư tiêu hao cho PCT'}
           disabled={finished}
           onClick={() => setSuppliesIssueTarget(row)}
         >
-          <BsBoxSeam className="me-1" /> Cấp vật tư
+          <BsBoxSeam className="me-1" /> Cấp VT Tiêu hao
         </Button>
         )}
       </div>
@@ -344,7 +376,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
         />
       ) : (
         <>
-          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={430} />
+          <DataTable columns={columns} data={filtered} renderActions={renderActions} actionColumnWidth={530} rowClassName={rowClassName} />
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="wo-pagination">

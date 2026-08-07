@@ -203,21 +203,6 @@ export default function TechnicalAssessmentPDF({
             (s) => s.id.toString() === data.sparePartId
         )?.name || "";
 
-    const getStatusLabel = () => {
-        switch (data.status) {
-            case "PENDING":
-                return "Chờ xử lý";
-            case "IN_PROGRESS":
-                return "Đang xử lý";
-            case "COMPLETED":
-                return "Hoàn thành";
-            case "REJECTED":
-                return "Từ chối";
-            default:
-                return "";
-        }
-    };
-
 
 
     return (

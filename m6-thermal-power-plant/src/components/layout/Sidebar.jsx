@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge,
-  BsGearWideConnected, BsListUl, BsCpu,
+  BsGearWideConnected, BsListUl,
   BsWrenchAdjustable, BsExclamationTriangle, BsFileEarmarkText, BsClipboard2Check,
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,

@@ -56,7 +56,7 @@ export default function CreateRequestModal({ show, onClose, onSuccess }) {
         res = await equipmentService.getAll();
       }
       setEquipments(res.data?.content || res.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Không thể tải danh sách thiết bị');
     } finally {
       setLoadingEquipments(false);
