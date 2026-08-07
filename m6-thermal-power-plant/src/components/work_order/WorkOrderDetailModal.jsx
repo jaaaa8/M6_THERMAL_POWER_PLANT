@@ -85,6 +85,10 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   // Id nhân viên đang bận ở phiếu công tác sống KHÁC (vai trò phụ trách hoặc
   // thành viên chưa rời) — ẩn khỏi gợi ý thêm. null = chưa tải.
   const [busyIds, setBusyIds] = useState(null);
+  // Giờ VÀO nhập tay khi thêm thành viên (mặc định = hiện tại, sửa được).
+  const [joinTime, setJoinTime] = useState(() => toLocalInput(new Date().toISOString()));
+  // Giờ RỜI nhập tay khi xác nhận thành viên rời (mặc định = hiện tại).
+  const [leaveTime, setLeaveTime] = useState('');
 
   /**
    * Tải chi tiết PCT. silent = true → không bật spinner toàn thân modal
@@ -120,6 +124,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     if (!show || !workOrderId) return;
     setMemberTab('members');
     setEmpSearch('');
+    setJoinTime(toLocalInput(new Date().toISOString()));
     setBusyIds(null); // tải lại mỗi lần mở — trạng thái bận đổi liên tục
     loadDetail();
   }, [show, workOrderId, loadDetail]);
@@ -159,17 +164,20 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   }, [show, memberTab, busyIds, workOrderId]);
 
   // Nhân viên hiển thị trong tab thêm: loại người ĐANG trong khu vực làm việc
-  // (người đã rời vẫn hiện — backend cho phép vào lại) và người ĐANG BẬN ở
-  // phiếu công tác sống khác.
+  // (người đã rời vẫn hiện — backend cho phép vào lại), 3 vai trò phụ trách của
+  // CHÍNH phiếu này và người ĐANG BẬN ở phiếu công tác sống khác.
   const filteredEmployees = useMemo(() => {
     if (!employees) return [];
     const activeIds = new Set(
       (detail?.currentMembers || []).filter((m) => !m.leftAt).map((m) => m.employeeId)
     );
+    const roleIds = new Set(
+      [detail?.leaderId, detail?.directSupervisorId, detail?.safetySupervisorId].filter(Boolean)
+    );
     const busy = new Set(busyIds || []);
     const q = empSearch.trim().toLowerCase();
     return employees
-      .filter((e) => e.isActive !== false && !activeIds.has(e.id) && !busy.has(e.id))
+      .filter((e) => e.isActive !== false && !activeIds.has(e.id) && !roleIds.has(e.id) && !busy.has(e.id))
       .filter((e) => {
         if (!q) return true;
         return (
@@ -186,7 +194,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     if (!leaveTarget) return;
     setLeaveLoading(true);
     try {
-      await workOrderService.leaveMember(workOrderId, leaveTarget.id);
+      const leftAt = leaveTime ? `${leaveTime}:00` : undefined;
+      await workOrderService.leaveMember(workOrderId, leaveTarget.id, leftAt);
       toast.success(`Đã ghi nhận ${leaveTarget.fullName} rời khu vực làm việc`);
       setLeaveTarget(null);
       await loadDetail(true);
@@ -200,7 +209,8 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const handleAddMember = async (emp) => {
     setAddingEmployeeId(emp.id);
     try {
-      await workOrderService.addMember(workOrderId, emp.id);
+      const joinedAt = joinTime ? `${joinTime}:00` : undefined;
+      await workOrderService.addMember(workOrderId, emp.id, joinedAt);
       toast.success(`Đã thêm ${emp.fullName} vào phiếu công tác`);
       await loadDetail(true);
     } catch (err) {
@@ -426,7 +436,12 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                               key={m.id}
                               member={m}
                               isOnline={!m.leftAt}
-                              onLeave={canManage && canManageMembers && !m.leftAt ? () => setLeaveTarget(m) : undefined}
+                              onLeave={canManage && canManageMembers && !m.leftAt
+                                ? () => {
+                                    setLeaveTime(toLocalInput(new Date().toISOString()));
+                                    setLeaveTarget(m);
+                                  }
+                                : undefined}
                             />
                           ))}
                         </div>
@@ -437,6 +452,19 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                         eventKey="add"
                         title={<span><BsPersonPlus className="me-1" />Thêm thành viên</span>}
                       >
+                        <div className="input-group input-group-sm mb-2">
+                          <span className="input-group-text"><BsClockHistory /></span>
+                          <input
+                            type="datetime-local"
+                            className="form-control"
+                            aria-label="Giờ vào khu vực làm việc"
+                            value={joinTime}
+                            onChange={(e) => setJoinTime(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-text mb-2" style={{ fontSize: 'var(--text-xs)' }}>
+                          Giờ vào nhập tay (mặc định = hiện tại) — không lấy realtime.
+                        </div>
                         <div className="input-group input-group-sm mb-2">
                           <span className="input-group-text"><BsSearch /></span>
                           <input
@@ -581,7 +609,21 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
       confirmText="Rời khu vực"
       variant="warning"
       loading={leaveLoading}
-    />
+    >
+      <div className="input-group input-group-sm mt-2">
+        <span className="input-group-text"><BsClockHistory /></span>
+        <input
+          type="datetime-local"
+          className="form-control"
+          aria-label="Giờ rời khu vực làm việc"
+          value={leaveTime}
+          onChange={(e) => setLeaveTime(e.target.value)}
+        />
+      </div>
+      <div className="form-text" style={{ fontSize: 'var(--text-xs)' }}>
+        Giờ rời nhập tay (mặc định = hiện tại) — không lấy realtime.
+      </div>
+    </ConfirmModal>
 
     </>
   );
@@ -712,9 +754,14 @@ function formatDateTime(iso) {
   });
 }
 
+/** "2026-08-07T08:30:00" (ISO) → "2026-08-07T08:30" (giá trị datetime-local). */
+function toLocalInput(iso) {
+  if (!iso) return '';
+  return iso.slice(0, 16);
+}
+
 function formatTime(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('vi-VN', {
+  if (!iso) return '—';  return new Date(iso).toLocaleString('vi-VN', {
     hour: '2-digit',
     minute: '2-digit',
   });

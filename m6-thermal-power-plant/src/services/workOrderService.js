@@ -78,21 +78,27 @@ export const workOrderService = {
   cancel: (id) => apiClient.patch(`${BASE}/${id}/cancel`),
 
   /**
-   * Thêm nhân viên vào phiếu đang chạy (join). Nhân viên từng rời có thể vào
-   * lại — backend tạo dòng member mới nên lịch sử giữ đủ cặp JOINED/LEFT.
+   * Thêm nhân viên vào phiếu đang chạy (join). joinedAt nhập tay (datetime-local
+   * ISO, "2026-08-07T08:30:00"); bỏ trống = backend lấy now. Nhân viên từng rời
+   * có thể vào lại — backend tạo dòng member mới nên lịch sử giữ đủ cặp JOINED/LEFT.
    * → POST /api/v1/work-orders/{id}/members
    * @param {number} id - ID phiếu công tác
    * @param {number} employeeId - ID nhân viên cần thêm
+   * @param {string} [joinedAt] - Giờ vào nhập tay (ISO), null = now
    */
-  addMember: (id, employeeId) => apiClient.post(`${BASE}/${id}/members`, { employeeId }),
+  addMember: (id, employeeId, joinedAt) =>
+    apiClient.post(`${BASE}/${id}/members`, { employeeId, joinedAt }),
 
   /**
-   * Đánh dấu thành viên rời khu vực làm việc (set leftAt = now, idempotent).
-   * → PATCH /api/v1/work-orders/{id}/members/{memberId}/leave
+   * Đánh dấu thành viên rời khu vực làm việc (leftAt nhập tay, null = now,
+   * idempotent).
+   * → PATCH /api/v1/work-orders/{id}/members/{memberId}/leave?leftAt=...
    * @param {number} id - ID phiếu công tác
    * @param {number} memberId - ID dòng member (KHÔNG phải employeeId)
+   * @param {string} [leftAt] - Giờ rời nhập tay (ISO), null = now
    */
-  leaveMember: (id, memberId) => apiClient.patch(`${BASE}/${id}/members/${memberId}/leave`),
+  leaveMember: (id, memberId, leftAt) =>
+    apiClient.patch(`${BASE}/${id}/members/${memberId}/leave`, null, { params: { leftAt } }),
 
   /**
    * Id nhân viên ĐANG BẬN ở một phiếu công tác sống bất kỳ (giữ vai trò phụ
