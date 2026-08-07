@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Tabs, Tab } from 'react-bootstrap';
 import {
   BsXCircle, BsCpu, BsPeopleFill, BsClockHistory,
   BsBoxArrowInRight, BsBoxArrowLeft, BsPersonBadge,
-  BsCircleFill, BsPersonPlus, BsSearch,
+  BsCircleFill, BsPersonPlus,
   BsCalendarWeek, BsPrinter,
 } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import StatusBadge from '../common/StatusBadge';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmModal from '../common/ConfirmModal';
+import SearchSelectField from '../common/SearchSelectField';
 import { workOrderService } from '../../services/workOrderService';
 import { employeeService } from '../../services/hr/employeeService';
 import { authService } from '../../services/authService';
@@ -33,6 +34,24 @@ const STATUS_MAP = {
 const MANAGE_MEMBER_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 
 const EQUIPMENT_STATUS_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
+
+/* ============================================================
+   Helpers search nhân viên server-side (chung cho SearchSelectField).
+   ============================================================ */
+const EMP_KEY = (e) => e.id;
+const EMP_RENDER = (e) => (
+  <>
+    <strong>{e.fullName || e.name || 'Unknown'}</strong>
+    <span className="ssf-item-sub">
+      {[e.employeeCode, e.position?.name || e.positionName, e.department?.name].filter(Boolean).join(' · ')}
+    </span>
+  </>
+);
+const searchEmployees = (p) => employeeService.search({
+  keyword: p.query || undefined,
+  page: p.page,
+  size: p.size,
+});
 
 const EQUIPMENT_STATUS_MAP = {
   IN_PROGRESS: { status: 'warning', label: 'Đang thực hiện' },
@@ -78,9 +97,6 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const [memberTab, setMemberTab] = useState('members');
   const [leaveTarget, setLeaveTarget] = useState(null);
   const [leaveLoading, setLeaveLoading] = useState(false);
-  const [employees, setEmployees] = useState(null); // null = chưa tải
-  const [employeesLoading, setEmployeesLoading] = useState(false);
-  const [empSearch, setEmpSearch] = useState('');
   const [addingEmployeeId, setAddingEmployeeId] = useState(null);
   // Id nhân viên đang bận ở phiếu công tác sống KHÁC (vai trò phụ trách hoặc
   // thành viên chưa rời) — ẩn khỏi gợi ý thêm. null = chưa tải.
@@ -123,30 +139,10 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   useEffect(() => {
     if (!show || !workOrderId) return;
     setMemberTab('members');
-    setEmpSearch('');
     setJoinTime(toLocalInput(new Date().toISOString()));
     setBusyIds(null); // tải lại mỗi lần mở — trạng thái bận đổi liên tục
     loadDetail();
   }, [show, workOrderId, loadDetail]);
-
-  // Tải danh sách nhân viên khi mở tab "Thêm thành viên" lần đầu
-  // (backend không có endpoint search — tải hết rồi lọc phía client).
-  useEffect(() => {
-    if (!show || memberTab !== 'add' || employees !== null || employeesLoading) return;
-    (async () => {
-      setEmployeesLoading(true);
-      try {
-        const res = await employeeService.getAll();
-        const arr = res.data?.data || res.data || [];
-        setEmployees(Array.isArray(arr) ? arr : []);
-      } catch (err) {
-        toast.error(`Không thể tải danh sách nhân viên: ${extractErrorMessage(err)}`);
-        setEmployees([]);
-      } finally {
-        setEmployeesLoading(false);
-      }
-    })();
-  }, [show, memberTab, employees, employeesLoading]);
 
   // Tải danh sách nhân viên ĐANG BẬN ở phiếu sống KHÁC khi mở tab thêm (mỗi
   // lần mở modal tải lại — busyIds reset về null lúc mở). Lỗi thì coi như
@@ -163,11 +159,11 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
     })();
   }, [show, memberTab, busyIds, workOrderId]);
 
-  // Nhân viên hiển thị trong tab thêm: loại người ĐANG trong khu vực làm việc
-  // (người đã rời vẫn hiện — backend cho phép vào lại), 3 vai trò phụ trách của
-  // CHÍNH phiếu này và người ĐANG BẬN ở phiếu công tác sống khác.
-  const filteredEmployees = useMemo(() => {
-    if (!employees) return [];
+  // Bộ lọc gợi ý thêm thành viên (chạy LÚC RENDER trên từng trang kết quả
+  // search): loại người ĐANG trong khu vực làm việc (người đã rời vẫn hiện —
+  // backend cho phép vào lại), 3 vai trò phụ trách của CHÍNH phiếu này và
+  // người ĐANG BẬN ở phiếu công tác sống khác.
+  const addFilter = useCallback((list) => {
     const activeIds = new Set(
       (detail?.currentMembers || []).filter((m) => !m.leftAt).map((m) => m.employeeId)
     );
@@ -175,20 +171,10 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
       [detail?.leaderId, detail?.directSupervisorId, detail?.safetySupervisorId].filter(Boolean)
     );
     const busy = new Set(busyIds || []);
-    const q = empSearch.trim().toLowerCase();
-    return employees
-      .filter((e) => e.isActive !== false && !activeIds.has(e.id) && !roleIds.has(e.id) && !busy.has(e.id))
-      .filter((e) => {
-        if (!q) return true;
-        return (
-          (e.fullName || '').toLowerCase().includes(q) ||
-          (e.employeeCode || '').toLowerCase().includes(q) ||
-          (e.department?.name || '').toLowerCase().includes(q) ||
-          (e.position?.name || '').toLowerCase().includes(q)
-        );
-      })
-      .slice(0, 30);
-  }, [employees, detail, empSearch, busyIds]);
+    return list.filter(
+      (e) => !activeIds.has(e.id) && !roleIds.has(e.id) && !busy.has(e.id)
+    );
+  }, [detail, busyIds]);
 
   const confirmLeave = async () => {
     if (!leaveTarget) return;
@@ -465,51 +451,16 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                         <div className="form-text mb-2" style={{ fontSize: 'var(--text-xs)' }}>
                           Giờ vào nhập tay (mặc định = hiện tại) — không lấy realtime.
                         </div>
-                        <div className="input-group input-group-sm mb-2">
-                          <span className="input-group-text"><BsSearch /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Tìm theo tên, mã NV, phòng ban, chức vụ..."
-                            value={empSearch}
-                            onChange={(e) => setEmpSearch(e.target.value)}
-                          />
-                        </div>
-                        {employeesLoading || employees === null ? (
-                          <LoadingSpinner />
-                        ) : filteredEmployees.length === 0 ? (
-                          <div className="text-muted text-center py-3">
-                            Không tìm thấy nhân viên phù hợp
-                          </div>
-                        ) : (
-                          <div className="list-group" style={{ maxHeight: 320, overflowY: 'auto' }}>
-                            {filteredEmployees.map((e) => (
-                              <div
-                                key={e.id}
-                                className="list-group-item d-flex justify-content-between align-items-center py-2"
-                              >
-                                <div>
-                                  <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)' }}>
-                                    {e.fullName}
-                                    <span className="font-mono text-muted ms-2 small">{e.employeeCode}</span>
-                                  </div>
-                                  <div className="text-muted small">
-                                    {[e.position?.name, e.department?.name].filter(Boolean).join(' · ') || '—'}
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  disabled={addingEmployeeId === e.id}
-                                  onClick={() => handleAddMember(e)}
-                                >
-                                  <BsPersonPlus className="me-1" />
-                                  {addingEmployeeId === e.id ? 'Đang thêm...' : 'Thêm'}
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <SearchSelectField
+                          mode="add"
+                          searchFn={searchEmployees}
+                          getKey={EMP_KEY}
+                          renderItem={EMP_RENDER}
+                          placeholder="Tìm theo tên, mã NV, phòng ban, chức vụ..."
+                          onAdd={handleAddMember}
+                          filterClient={addFilter}
+                          pendingKey={addingEmployeeId}
+                        />
                       </Tab>
                     )}
                   </Tabs>
