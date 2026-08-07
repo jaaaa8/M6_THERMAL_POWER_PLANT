@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button, Spinner, Table, Modal } from 'react-bootstrap';
 import {
   BsPlusLg,
-  BsArrowLeft,
   BsTrash,
   BsPencil
 } from "react-icons/bs";
@@ -16,7 +14,6 @@ import * as Yup from "yup";
 
 
 export default function ManageUnits() {
-  const navigate = useNavigate();
   const [unitsList, setUnitsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);

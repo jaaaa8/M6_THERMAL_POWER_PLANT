@@ -40,7 +40,7 @@
 
     const [systemId, setSystemId] = useState("");
 
-    const [status, setStatus] = useState("");
+    const [status] = useState("");
 
     const [page, setPage] = useState(0);
 
@@ -48,7 +48,7 @@
 
     const [totalPages, setTotalPages] = useState(0);
 
-    const [totalElements, setTotalElements] = useState(0);
+    const [, setTotalElements] = useState(0);
 
     const loadSystems = async () => {
       try {
@@ -64,7 +64,7 @@
             res.data.content || []
         );
 
-      } catch (e) {
+      } catch {
 
         toast.error("Không tải được hệ thống");
 

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { Row, Col, Form, Button, Modal, Table, Spinner, Badge } from 'react-bootstrap';
+import { Row, Col, Form, Button, Table, Spinner } from 'react-bootstrap';
 import {
-  BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX,
-  BsGearWideConnected, BsFileEarmarkPdf, BsTag, BsPlus
+  BsSearch, BsPlusLg, BsEye, BsPencil, BsTrash, BsX
 } from 'react-icons/bs';
 import * as equipmentService from "../../services/equipment/equipmentService";
 import PageHeader from '../common/PageHeader';
@@ -131,13 +130,6 @@ export default function ListEquipment() {
     setTimeout(() => {
       fetchEquipments(0);
     }, 50);
-  };
-
-  // Handle pagination size change
-  const handleSizeChange = (e) => {
-    const newSize = Number(e.target.value);
-    setSize(newSize);
-    fetchEquipments(0, newSize);
   };
 
   // Delete handler

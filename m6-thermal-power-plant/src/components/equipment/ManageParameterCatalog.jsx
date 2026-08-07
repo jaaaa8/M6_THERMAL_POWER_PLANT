@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button, Spinner, Table, Modal } from 'react-bootstrap';
 import {
     BsPlusLg,
-    BsArrowLeft,
     BsTrash,
     BsPencil
 } from "react-icons/bs";
@@ -18,7 +16,6 @@ import * as Yup from "yup";
 
 
 export default function ManageUnits() {
-    const navigate = useNavigate();
     const [catalogList, setCatalogList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -60,7 +57,7 @@ export default function ManageUnits() {
         try {
             const res = await unitService.getAll(0, 1000);
             setUnitsList(res.data.content);
-        } catch (e) {
+        } catch {
             toast.error("Không thể tải danh sách đơn vị");
         }
     };
@@ -74,7 +71,7 @@ export default function ManageUnits() {
             setTotalPages(res.data.totalPages);
             setTotalElements(res.data.totalElements);
 
-        } catch (e) {
+        } catch {
             toast.error("Không thể tải danh mục thông số");
         } finally {
             setLoading(false);

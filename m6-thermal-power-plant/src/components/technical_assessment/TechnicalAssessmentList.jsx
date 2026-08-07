@@ -36,7 +36,7 @@ import "./TechnicalAssessmentList.css"
 
 export default function TechnicalAssessmentList() {
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [systems,setSystems] = useState([]);
     const [equipments,setEquipments] = useState([]);
     const [showModal,setShowModal] = useState(false);
@@ -140,7 +140,7 @@ export default function TechnicalAssessmentList() {
                 res.data.content || res.data
             );
 
-        }catch(error){
+        }catch{
 
             toast.error(
                 "Không tải được danh sách hệ thống"

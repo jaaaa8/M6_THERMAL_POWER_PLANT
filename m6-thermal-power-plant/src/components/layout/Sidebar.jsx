@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   BsGrid1X2, BsPeople, BsBuilding, BsPersonBadge,
-  BsGearWideConnected, BsListUl, BsCpu,
+  BsGearWideConnected, BsListUl,
   BsWrenchAdjustable, BsExclamationTriangle, BsFileEarmarkText, BsClipboard2Check,
   BsBoxSeam, BsTags, BsArrowLeftRight,
   BsTools, BsJournalBookmark,
   BsDropletHalf, BsCalendar3,
-  BsChevronRight, BsShieldLock, BsCheck, BsLightningChargeFill,
-  BsClipboardCheck
+  BsChevronRight, BsShieldLock, BsCheck, BsLightningChargeFill
 } from 'react-icons/bs';
 import { authService } from '../../services/authService';
 import { hasAnyRole, SYSTEM_ROLES } from '../../services/roleService';

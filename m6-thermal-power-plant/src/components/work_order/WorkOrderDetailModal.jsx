@@ -656,32 +656,6 @@ function InfoItemWithStatus({ label, value, isOnline }) {
   );
 }
 
-function MemberCard({ member, isOnline }) {
-  return (
-    <div className={`wo-detail-member-card ${isOnline ? 'online' : 'offline'}`}>
-      <div className="wo-detail-member-avatar">
-        {member.fullName?.charAt(0) || '?'}
-        <span className={`wo-detail-member-status ${isOnline ? 'online' : 'offline'}`}>
-          <BsCircleFill />
-        </span>
-      </div>
-      <div className="wo-detail-member-info">
-        <div className="wo-detail-member-name">{member.fullName || 'N/A'}</div>
-        <div className="wo-detail-member-role">{member.roleInTask || '—'}</div>
-        <div className="wo-detail-member-time">
-          <span>Vào: {formatTime(member.joinedAt)}</span>
-          {member.leftAt && (
-            <>
-              <span className="mx-1">•</span>
-              <span>Rời: {formatTime(member.leftAt)}</span>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function MemberCardCompact({ member, isOnline, onLeave }) {
   return (
     <div className={`wo-detail-member-compact ${isOnline ? 'online' : 'offline'}`}>
@@ -758,11 +732,4 @@ function formatDateTime(iso) {
 function toLocalInput(iso) {
   if (!iso) return '';
   return iso.slice(0, 16);
-}
-
-function formatTime(iso) {
-  if (!iso) return '—';  return new Date(iso).toLocaleString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }

@@ -27,7 +27,6 @@ export default function StorekeeperConsumableIssueList() {
     const [loading, setLoading] = useState(true);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedIssue, setSelectedIssue] = useState(null);
-    const [workOrderMap, setWorkOrderMap] = useState({});
     const [rowPdfIssueId, setRowPdfIssueId] = useState(null);
     const [filters, setFilters] = useState({
         keyword: "",
@@ -83,7 +82,6 @@ export default function StorekeeperConsumableIssueList() {
                     item.orderCode ||
                     `WO-${item.id}`;
             });
-            setWorkOrderMap(woMap);
 
             const tableData = issues.map((item) => ({
                 id: item.id,
@@ -558,16 +556,19 @@ export default function StorekeeperConsumableIssueList() {
                 </Modal.Footer>
             </Modal>
 
-            {/* Modal Nhập kho từ chi tiết yêu cầu */}
-            <ConsumableImportModal
-                show={showImportModal}
-                onHide={() => {
-                    setShowImportModal(false);
-                    setSelectedConsumableForImport(null);
-                }}
-                consumableItem={selectedConsumableForImport}
-                onSubmit={handleImportSubmit}
-            />
+            {/* Modal Nhập kho từ chi tiết yêu cầu — chỉ mount khi mở, để giờ
+                mặc định là giờ bấm mở chứ không phải giờ load trang. */}
+            {showImportModal && (
+                <ConsumableImportModal
+                    show={showImportModal}
+                    onHide={() => {
+                        setShowImportModal(false);
+                        setSelectedConsumableForImport(null);
+                    }}
+                    consumableItem={selectedConsumableForImport}
+                    onSubmit={handleImportSubmit}
+                />
+            )}
         </div>
     );
 }

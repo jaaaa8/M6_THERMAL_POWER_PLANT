@@ -1,6 +1,6 @@
 import {useState, useEffect, useMemo} from "react";
 import { Modal, Button, Row, Col, Badge } from 'react-bootstrap';
-import { BsEye, BsInfoCircle, BsImage } from 'react-icons/bs';
+import { BsEye, BsImage } from 'react-icons/bs';
 
 export default function MaterialDetailModal({ show, onHide, item, type }) {
     const [activeImageIndex, setActiveImageIndex] = useState(0);

@@ -7,7 +7,6 @@ import {
     BsTags, 
     BsBuilding, 
     BsCheckCircle, 
-    BsXCircle,
     BsPlusLg 
 } from 'react-icons/bs';
 

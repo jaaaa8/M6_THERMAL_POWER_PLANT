@@ -27,8 +27,6 @@ export default function StorekeeperSparePartsIssueList() {
     const [loading, setLoading] = useState(true);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedIssue, setSelectedIssue] = useState(null);
-    const [workOrderMap, setWorkOrderMap] = useState({});
-    const [workOrdersList, setWorkOrdersList] = useState([]);
     const [rowPdfIssueId, setRowPdfIssueId] = useState(null);
     const [filters, setFilters] = useState({
         keyword: "",
@@ -76,7 +74,6 @@ export default function StorekeeperSparePartsIssueList() {
                 : Array.isArray(workOrderData?.content)
                     ? workOrderData.content
                     : [];
-            setWorkOrdersList(workOrders);
 
             const woMap = {};
             workOrders.forEach(item => {
@@ -85,7 +82,6 @@ export default function StorekeeperSparePartsIssueList() {
                     item.orderCode ||
                     `WO-${item.id}`;
             });
-            setWorkOrderMap(woMap);
 
             const tableData = issues.map((item) => ({
                 id: item.id,
@@ -558,16 +554,19 @@ export default function StorekeeperSparePartsIssueList() {
                 </Modal.Footer>
             </Modal>
 
-            {/* Modal Nhập kho từ chi tiết yêu cầu */}
-            <SparePartImportModal
-                show={showImportModal}
-                onHide={() => {
-                    setShowImportModal(false);
-                    setSelectedSparePartForImport(null);
-                }}
-                sparePartItem={selectedSparePartForImport}
-                onSubmit={handleImportSubmit}
-            />
+            {/* Modal Nhập kho từ chi tiết yêu cầu — chỉ mount khi mở, để giờ
+                mặc định là giờ bấm mở chứ không phải giờ load trang. */}
+            {showImportModal && (
+                <SparePartImportModal
+                    show={showImportModal}
+                    onHide={() => {
+                        setShowImportModal(false);
+                        setSelectedSparePartForImport(null);
+                    }}
+                    sparePartItem={selectedSparePartForImport}
+                    onSubmit={handleImportSubmit}
+                />
+            )}
         </div>
     );
 }

@@ -207,7 +207,7 @@ export default function TechnicalAssessmentForm() {
                 `Đã tải lên ${files.length} ảnh`
             );
 
-        } catch (error) {
+        } catch {
 
             toast.error(
                 "Không thể tải ảnh lên"

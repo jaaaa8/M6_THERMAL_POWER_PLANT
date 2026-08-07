@@ -2,7 +2,7 @@ import { Modal, Button, Row, Col } from 'react-bootstrap';
 import { useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { BsBoxSeam, BsInfoCircle } from 'react-icons/bs';
+import { BsBoxSeam } from 'react-icons/bs';
 
 const validationSchema = Yup.object().shape({
     receiptCode: Yup.string().nullable(),
@@ -20,8 +20,8 @@ const validationSchema = Yup.object().shape({
 export default function ConsumableImportModal({ show, onHide, consumableItem, onSubmit }) {
     // Tính 1 lần lúc mount (không phụ thuộc render) để tránh lệch giờ giữa
     // các lần render trong StrictMode (react-hooks/purity).
-    // ponytail: giá trị đóng băng lúc mount — nếu muốn làm mới mỗi lần mở,
-    // thêm key={item.id} ở chỗ render modal này.
+    // Giá trị đóng băng lúc mount — modal chỉ được mount khi mở (chỗ gọi bọc
+    // {showImportModal && ...}) nên đây luôn là giờ bấm mở.
     const [defaultReceivedAt] = useState(() =>
         new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().substring(0, 16)
     );

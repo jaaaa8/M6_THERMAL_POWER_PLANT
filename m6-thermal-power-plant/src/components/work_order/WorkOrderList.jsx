@@ -96,7 +96,7 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
       setWorkOrders(content);
       setTotalPages(paged.page?.totalPages ?? 1);
       setTotalElements(paged.page?.totalElements ?? content.length);
-    } catch (err) {
+    } catch {
       toast.error('Không thể tải danh sách phiếu công tác');
       setWorkOrders([]);
     } finally {
@@ -253,9 +253,9 @@ export default function WorkOrderList({ title = "Phiếu Công tác" }) {
           <Button
             variant="outline-secondary"
             size="sm"
-            title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Mở phiếu cấp vật tư thay thế, WO code được chọn sẵn'}
+            title={finished ? 'PCT đã kết thúc — không thể cấp vật tư' : 'Mở phiếu cấp vật tư thay thế, PCT được chọn sẵn'}
             disabled={finished}
-            onClick={() => navigate(`/repair/spare-parts-issue/add?workOrderCode=${encodeURIComponent(row.orderCode)}`)}
+            onClick={() => navigate(`/repair/spare-parts-issue/add?workOrderId=${row.id}`)}
           >
             <BsBoxSeam className="me-1" /> Cấp VT Thay thế
           </Button>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Button, Row, Col, Table } from 'react-bootstrap';
+import { Modal, Button, Row, Col, Table, Pagination } from 'react-bootstrap';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
@@ -15,6 +15,9 @@ import './CreateManualWorkOrderModal.css';
 
 /** Mã role (roles.name trong DB) được phép làm Người giám sát an toàn. */
 const SAFETY_SUPERVISOR_ROLE = 'SAFETY_SUPERVISOR';
+
+/** Số thiết bị mỗi trang trong picker. */
+const EQ_PAGE_SIZE = 10;
 
 /* ============================================================
    VALIDATION — khớp CreateWorkOrderRequest backend (@NotNull:
@@ -74,6 +77,8 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
   const isLubrication = Array.isArray(lubricationPlans) && lubricationPlans.length > 0;
   const [equipmentList, setEquipmentList] = useState(null); // null = đang tải
   const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [eqPage, setEqPage] = useState(0);
+  const [eqTotalPages, setEqTotalPages] = useState(1);
   const [accountEmployees, setAccountEmployees] = useState(null);
   const [busyIds, setBusyIds] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
@@ -83,38 +88,51 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
     let cancelled = false;
     (async () => {
       try {
-        const [eqRes, empRes, busyRes] = await Promise.all([
-          getAllEquipment({ page: 0, size: 1000 }),
+        const [empRes, busyRes] = await Promise.all([
           employeeService.getAllWithAccounts(),
           workOrderService.getBusyEmployees(undefined),
         ]);
         if (cancelled) return;
-        const eqArr = eqRes.data?.content || eqRes.data || [];
-        setEquipmentList(Array.isArray(eqArr) ? eqArr : []);
         const empArr = empRes.data?.data || empRes.data || [];
         setAccountEmployees(Array.isArray(empArr) ? empArr : []);
         setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
       } catch (err) {
         if (!cancelled) {
-          toast.error(`Không thể tải danh sách thiết bị/nhân viên: ${extractErrorMessage(err)}`);
+          toast.error(`Không thể tải danh sách nhân viên: ${extractErrorMessage(err)}`);
         }
       }
     })();
     return () => { cancelled = true; };
   }, [show]);
 
+  // Tải 1 trang thiết bị theo mã KKS (server-side). Debounce 300ms để gõ tìm
+  // kiếm không bắn request mỗi phím; cleanup huỷ cả timer lẫn response cũ nên
+  // không có race giữa các lần gõ. KHÔNG set setEquipmentList(null) khi tải
+  // lại: null là cờ "chưa tải lần đầu", nhánh LoadingSpinner sẽ unmount ô
+  // search và cướp focus giữa lúc đang gõ.
+  useEffect(() => {
+    if (!show) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await getAllEquipment({
+          page: eqPage,
+          size: EQ_PAGE_SIZE,
+          kks: equipmentSearch.trim() || undefined,
+        });
+        if (cancelled) return;
+        const arr = res.data?.content || [];
+        setEquipmentList(Array.isArray(arr) ? arr : []);
+        setEqTotalPages(res.data?.totalPages || 1);
+      } catch (err) {
+        if (!cancelled) toast.error(`Không thể tải danh sách thiết bị: ${extractErrorMessage(err)}`);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [show, eqPage, equipmentSearch]);
+
   // Đã có dữ liệu role chưa? (fallback prop không có role → không lọc GSAT được)
   const roleInfoLoaded = accountEmployees !== null;
-
-  // Bộ lọc thiết bị phía client: từ khoá khớp kksCode/name/equipmentType.
-  const filteredEquipment = useMemo(() => {
-    if (!equipmentList) return [];
-    const q = equipmentSearch.trim().toLowerCase();
-    return equipmentList.filter((e) => !q
-      || (e.kksCode || '').toLowerCase().includes(q)
-      || (e.name || '').toLowerCase().includes(q)
-      || (e.equipmentType || '').toLowerCase().includes(q));
-  }, [equipmentList, equipmentSearch]);
 
   const employeeList = useMemo(() => {
     const source = accountEmployees ?? [];
@@ -298,9 +316,9 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Tìm theo mã KKS, tên thiết bị, loại..."
+                        placeholder="Tìm theo mã KKS..."
                         value={equipmentSearch}
-                        onChange={(e) => setEquipmentSearch(e.target.value)}
+                        onChange={(e) => { setEquipmentSearch(e.target.value); setEqPage(0); }}
                       />
                     </div>
 
@@ -315,13 +333,13 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredEquipment.length === 0 ? (
+                          {equipmentList.length === 0 ? (
                             <tr>
                               <td colSpan={4} className="text-center text-muted py-3">
                                 Không tìm thấy thiết bị
                               </td>
                             </tr>
-                          ) : filteredEquipment.map((e) => (
+                          ) : equipmentList.map((e) => (
                             <tr
                               key={e.id}
                               onClick={() => toggleEquipment(e.id)}
@@ -345,6 +363,13 @@ export default function CreateManualWorkOrderModal({ show, onClose, onCreated, l
                           ))}
                         </tbody>
                       </Table>
+                    </div>
+                    <div className="d-flex justify-content-center mt-2">
+                      <Pagination size="sm" className="mb-0">
+                        <Pagination.Prev disabled={eqPage === 0} onClick={() => setEqPage(eqPage - 1)} />
+                        <Pagination.Item active>{eqPage + 1} / {eqTotalPages}</Pagination.Item>
+                        <Pagination.Next disabled={eqPage >= eqTotalPages - 1} onClick={() => setEqPage(eqPage + 1)} />
+                      </Pagination>
                     </div>
                     <div className="form-text">
                       Đã chọn: <strong>{values.equipmentIds.length}</strong> thiết bị
