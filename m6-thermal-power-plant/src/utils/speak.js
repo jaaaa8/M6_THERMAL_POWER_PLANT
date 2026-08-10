@@ -12,27 +12,21 @@ const ROLE_LABELS = {
   SAFETY_SUPERVISOR: 'Giám sát an toàn',
 };
 
-let currentAudio = null;
+let speechGeneration = 0;
 let interactionHandler = null;
 
 export function stopSpeaking() {
-  try {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      currentAudio = null;
-    }
-  } catch { /* ignore */ }
+  speechGeneration += 1;
   try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
   removeInteractionStop();
 }
 
-function armInteractionStop() {
+function armInteractionStop(generation) {
   removeInteractionStop();
   interactionHandler = () => stopSpeaking();
 
   setTimeout(() => {
-    if (!interactionHandler) return;
+    if (generation !== speechGeneration || !interactionHandler) return;
     document.addEventListener('click', interactionHandler, { once: true, capture: true });
     document.addEventListener('keydown', interactionHandler, { once: true, capture: true });
     window.addEventListener('scroll', interactionHandler, { once: true, capture: true });
@@ -50,40 +44,30 @@ function removeInteractionStop() {
 
 export function speak(text) {
   if (!text) return;
-  stopSpeaking(); // dừng câu cũ nếu đang phát
-  try {
-    const audio = new Audio(`/api/v1/tts?text=${encodeURIComponent(text)}`);
-    currentAudio = audio;
-    audio.onended = () => { currentAudio = null; removeInteractionStop(); };
-    audio.onerror = () => speakWithSynth(text);
-    const p = audio.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(() => speakWithSynth(text));
-    }
-    armInteractionStop();
-  } catch {
-    speakWithSynth(text);
-  }
-}
+  stopSpeaking();
+  const generation = speechGeneration;
 
-function speakWithSynth(text) {
   try {
     const synth = window.speechSynthesis;
     if (!synth) return;
 
     const utter = () => {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'vi-VN';
-      u.rate = 1;
-      const viVoice = synth.getVoices().find((v) => (v.lang || '').toLowerCase().startsWith('vi'));
-      if (viVoice) u.voice = viVoice;
+      if (generation !== speechGeneration) return;
+
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.lang = 'vi-VN';
+      speech.rate = 1;
+      const viVoice = synth.getVoices()
+        .find((voice) => (voice.lang || '').toLowerCase().startsWith('vi'));
+      if (viVoice) speech.voice = viVoice;
+
       synth.cancel();
-      synth.speak(u);
+      synth.speak(speech);
     };
 
     if (synth.getVoices().length) utter();
     else synth.addEventListener('voiceschanged', utter, { once: true });
-    armInteractionStop();
+    armInteractionStop(generation);
   } catch {
     /* im lặng — loa chỉ là tính năng phụ */
   }

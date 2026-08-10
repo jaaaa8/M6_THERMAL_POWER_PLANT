@@ -5,7 +5,7 @@ import * as Yup from 'yup';
 import { BsEye, BsEyeSlash } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { authService } from '../services/authService';
-import { speak, getWelcomeText } from '../utils/speak';
+import { getWelcomeText } from '../utils/speak';
 import './LoginPage.css';
 
 /**
@@ -36,6 +36,8 @@ const ROLE_REDIRECT = {
   SAFETY_SUPERVISOR: '/repair/phieu-cong-tac',
 };
 
+const REPAIR_LOGIN_ANNOUNCE_KEY = 'scms_announce_repair_after_login';
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -45,9 +47,14 @@ export default function LoginPage() {
       const res = await authService.login(values.username, values.password);
       const user = res.data;
 
+      // Toast hiển thị ngay; NotificationBell chọn lời chào hoặc RepairRequest để đọc.
       const welcome = getWelcomeText(user);
+      try {
+        sessionStorage.setItem(REPAIR_LOGIN_ANNOUNCE_KEY, welcome);
+      } catch {
+        // Voice notification là tính năng phụ; login vẫn phải tiếp tục.
+      }
       toast.success(welcome, { autoClose: 6000 });
-      speak(welcome);
 
       const primaryRole = user.roles?.[0];
       const redirectPath = ROLE_REDIRECT[primaryRole] || '/';

@@ -3,7 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { BsBell, BsBellFill, BsCheckAll } from 'react-icons/bs';
 import { notificationService } from '../../services/notificationService';
 import { useWebSocket } from '../../hooks/useWebSocket';
+import { speak } from '../../utils/speak';
 import './NotificationBell.css';
+
+const REPAIR_LOGIN_ANNOUNCE_KEY = 'scms_announce_repair_after_login';
+
+function isUnreadRepairRequestNotification(notif) {
+    return notif?.isRead === false
+        && notif.title === 'Yêu cầu sửa chữa mới'
+        && notif.link === '/repair/yeu-cau';
+}
+
+function announceRepairRequest(notif, lastSpokenIdRef) {
+    if (!isUnreadRepairRequestNotification(notif)) return;
+    if (lastSpokenIdRef.current === notif.id) return;
+
+    lastSpokenIdRef.current = notif.id;
+    speak(notif.message);
+}
 
 function timeAgo(createdAt) {
     const diff = (Date.now() - new Date(createdAt).getTime()) / 1000;
@@ -18,21 +35,51 @@ export default function NotificationBell({ accountId }) {
     const [notifications, setNotifications] = useState([]);
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
+    const lastSpokenIdRef = useRef(null);
 
     const unread = notifications.filter((n) => !n.isRead).length;
 
-    const load = async () => {
-        try {
-            const res = await notificationService.getByAccount(accountId);
-            setNotifications(res.data?.data ?? []);
-        } catch { /* ignore */ }
-    };
+    useEffect(() => {
+        if (!accountId) return;
 
-    useEffect(() => { if (accountId) load(); }, [accountId]);
+        let welcomeAfterLogin = null;
+        try {
+            welcomeAfterLogin = sessionStorage.getItem(REPAIR_LOGIN_ANNOUNCE_KEY);
+            if (welcomeAfterLogin !== null) {
+                sessionStorage.removeItem(REPAIR_LOGIN_ANNOUNCE_KEY);
+            }
+        } catch {
+            // Không có sessionStorage thì chuông vẫn hoạt động bình thường.
+        }
+
+        const load = async () => {
+            try {
+                const res = await notificationService.getByAccount(accountId);
+                const loaded = res.data?.data ?? [];
+                setNotifications(loaded);
+
+                if (welcomeAfterLogin !== null && lastSpokenIdRef.current === null) {
+                    const repairNotification = loaded.find(isUnreadRepairRequestNotification);
+                    if (repairNotification) {
+                        announceRepairRequest(repairNotification, lastSpokenIdRef);
+                    } else {
+                        speak(welcomeAfterLogin);
+                    }
+                }
+            } catch {
+                if (welcomeAfterLogin !== null && lastSpokenIdRef.current === null) {
+                    speak(welcomeAfterLogin);
+                }
+            }
+        };
+
+        load();
+    }, [accountId]);
 
     // Nhận thông báo real-time
     useWebSocket(accountId, (notif) => {
         setNotifications((prev) => [notif, ...prev]);
+        announceRepairRequest(notif, lastSpokenIdRef);
     });
 
     // Đóng dropdown khi click ngoài

@@ -93,8 +93,12 @@ function App() {
               <Route path="/equipment/equipments/:systemId/add" element={<AddEquipment />} />
               <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
               <Route path="/equipment/equipments/system/:systemId" element={<ListEquipment />} />
-              <Route path="/equipment/equipments/:id" element={<DetailEquipment />} />
               <Route path="/equipment/parameter" element={<ManageMaster />} />
+            </Route>
+
+            {/* Chi tiết thiết bị: bộ phận sửa chữa cần xem để cập nhật kết quả sửa chữa. */}
+            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN', 'TEAM_LEADER', 'MAINTENANCE_FOREMAN']}><Outlet /></ProtectedRoute>}>
+              <Route path="/equipment/equipments/:id" element={<DetailEquipment />} />
             </Route>
 
             {/* --- Sửa chữa: Yêu cầu Sửa chữa (cả 4 role sửa chữa) --- */}
