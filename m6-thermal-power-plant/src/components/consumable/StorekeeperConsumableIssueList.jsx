@@ -139,6 +139,24 @@ export default function StorekeeperConsumableIssueList() {
 
     const handleCompleteIssue = async () => {
         if (!selectedIssue) return;
+
+        // Validation số lượng thực tế cấp
+        if (selectedIssue.details && selectedIssue.details.length > 0) {
+            for (let i = 0; i < selectedIssue.details.length; i++) {
+                const d = selectedIssue.details[i];
+                const actQty = parseFloat(d.actualQuantity);
+                if (isNaN(actQty) || actQty < 0) {
+                    toast.error(`Số lượng thực tế cấp của vật tư "${d.consumableName}" không hợp lệ (phải >= 0).`);
+                    return;
+                }
+                const stock = d.currentStock || 0;
+                if (actQty > stock) {
+                    toast.error(`Số lượng thực tế cấp của vật tư "${d.consumableName}" (${actQty}) vượt quá tồn kho khả dụng (${stock})!`);
+                    return;
+                }
+            }
+        }
+
         try {
             const updatePayload = {
                 id: selectedIssue.id,
@@ -148,7 +166,8 @@ export default function StorekeeperConsumableIssueList() {
                 status: "COMPLETED",
                 details: selectedIssue.details ? selectedIssue.details.map(d => ({
                     consumableId: d.consumableId,
-                    quantity: d.quantity
+                    quantity: d.quantity,
+                    actualQuantity: d.actualQuantity !== "" && d.actualQuantity !== null ? parseFloat(d.actualQuantity) : 0
                 })) : []
             };
             const response = await consumableIssueService.update(updatePayload);
@@ -201,9 +220,32 @@ export default function StorekeeperConsumableIssueList() {
         }
     };
 
+    const handleDetailActualQtyChange = (index, value) => {
+        if (!selectedIssue || !selectedIssue.details) return;
+        const newDetails = [...selectedIssue.details];
+        newDetails[index] = {
+            ...newDetails[index],
+            actualQuantity: value
+        };
+        setSelectedIssue({
+            ...selectedIssue,
+            details: newDetails
+        });
+    };
+
     const handleView = async (row) => {
         try {
             const detail = await consumableIssueService.getDetail(row.id);
+            if (detail && detail.details) {
+                detail.details = detail.details.map(d => ({
+                    ...d,
+                    actualQuantity: d.actualQuantity != null
+                        ? d.actualQuantity
+                        : (detail.status === "COMPLETED"
+                            ? d.quantity
+                            : Math.min(d.quantity || 0, d.currentStock || 0))
+                }));
+            }
             setSelectedIssue(detail);
             setShowDetailModal(true);
         } catch (error) {
@@ -468,7 +510,23 @@ export default function StorekeeperConsumableIssueList() {
                                                             <Badge bg="secondary">{detail.unitName}</Badge>
                                                         </td>
                                                         <td className="text-end fw-bold text-dark">{detail.quantity}</td>
-                                                        <td className="text-end fw-bold text-success">{displayActualQty}</td>
+                                                        <td className="text-end fw-bold text-success" style={{ width: "120px" }}>
+                                                            {selectedIssue.status === "PENDING" && isStorekeeper ? (
+                                                                <Form.Control
+                                                                    type="number"
+                                                                    size="sm"
+                                                                    min="0"
+                                                                    max={detail.currentStock != null ? detail.currentStock : undefined}
+                                                                    step="any"
+                                                                    value={detail.actualQuantity !== undefined && detail.actualQuantity !== null ? detail.actualQuantity : ""}
+                                                                    onChange={(e) => handleDetailActualQtyChange(idx, e.target.value)}
+                                                                    className="text-end fw-bold text-success"
+                                                                    style={{ maxWidth: "100px", margin: "0 auto" }}
+                                                                />
+                                                            ) : (
+                                                                <span className="fw-bold text-success">{detail.actualQuantity ?? detail.quantity}</span>
+                                                            )}
+                                                        </td>
                                                         <td className="text-end fw-bold text-info">
                                                             {detail.currentStock != null ? detail.currentStock.toLocaleString("vi-VN") : 0}
                                                         </td>
