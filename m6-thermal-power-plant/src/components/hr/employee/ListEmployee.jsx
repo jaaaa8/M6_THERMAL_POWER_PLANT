@@ -25,13 +25,13 @@ export default function ListEmployee() {
   const [searchPhone, setSearchPhone] = useState('');
   const [searchGmail, setSearchGmail] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
-  const [filterIsActive, setFilterIsActive] = useState('');
+  const [filterIsActive, setFilterIsActive] = useState('ACTIVE');
   const [appliedFilters, setAppliedFilters] = useState({
     name: '',
     phone: '',
     gmail: '',
     department: '',
-    isActive: ''
+    isActive: 'ACTIVE'
   });
 
   // Modals
@@ -55,13 +55,13 @@ export default function ListEmployee() {
     setSearchPhone('');
     setSearchGmail('');
     setFilterDepartment('');
-    setFilterIsActive('');
+    setFilterIsActive('ACTIVE');
     setAppliedFilters({
       name: '',
       phone: '',
       gmail: '',
       department: '',
-      isActive: ''
+      isActive: 'ACTIVE'
     });
   };
 

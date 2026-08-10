@@ -21,13 +21,13 @@ export default function ListAccount() {
   const [searchEmail, setSearchEmail] = useState('');
   const [searchEmployeeName, setSearchEmployeeName] = useState('');
   const [filterRole, setFilterRole] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ACTIVE');
   const [appliedFilters, setAppliedFilters] = useState({
     username: '',
     email: '',
     employeeName: '',
     role: '',
-    status: ''
+    status: 'ACTIVE'
   });
 
   // Modals
@@ -49,13 +49,13 @@ export default function ListAccount() {
     setSearchEmail('');
     setSearchEmployeeName('');
     setFilterRole('');
-    setFilterStatus('');
+    setFilterStatus('ACTIVE');
     setAppliedFilters({
       username: '',
       email: '',
       employeeName: '',
       role: '',
-      status: ''
+      status: 'ACTIVE'
     });
   };
 

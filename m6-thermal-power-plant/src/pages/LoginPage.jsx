@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Button } from 'react-bootstrap';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { BsBoxArrowInRight, BsEye, BsEyeSlash, BsShieldLock } from 'react-icons/bs';
+import { BsEye, BsEyeSlash } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { authService } from '../services/authService';
 import { getWelcomeText } from '../utils/speak';
+import './LoginPage.css';
 
 /**
  * Schema validation cho form đăng nhập
@@ -22,7 +22,6 @@ const loginSchema = Yup.object({
 
 /**
  * Chuyển hướng dựa theo Role backend — màn hình chủ của từng vai trò.
- * Áp dụng cho role đầu tiên trong mảng `roles[]` trả về từ BE.
  */
 const ROLE_REDIRECT = {
   ADMIN: '/',
@@ -57,7 +56,6 @@ export default function LoginPage() {
       }
       toast.success(welcome, { autoClose: 6000 });
 
-      // Chuyển hướng theo role backend (lấy role đầu tiên).
       const primaryRole = user.roles?.[0];
       const redirectPath = ROLE_REDIRECT[primaryRole] || '/';
       navigate(redirectPath, { replace: true });
@@ -71,89 +69,95 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <h2>
-        <BsShieldLock className="me-2" style={{ fontSize: '1.2em', opacity: 0.7 }} />
-        Đăng nhập
-      </h2>
-
+    <div className="login-card-container">
+      <div className="heading">Sign In</div>
       <Formik
         initialValues={{ username: '', password: '' }}
         validationSchema={loginSchema}
         onSubmit={handleLogin}
       >
         {({ values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting }) => (
-          <Form onSubmit={handleSubmit} noValidate>
-            <Form.Group className="mb-3">
-              <Form.Label>Tên đăng nhập</Form.Label>
-              <Form.Control
+          <form onSubmit={handleSubmit} noValidate className="form">
+            <div className="input-wrapper">
+              <input
+                required
+                className={`input ${touched.username && errors.username ? 'is-invalid' : ''}`}
                 type="text"
                 name="username"
-                placeholder="Nhập tên đăng nhập"
+                id="username"
+                placeholder="Tên đăng nhập"
                 value={values.username}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                isInvalid={touched.username && !!errors.username}
                 autoFocus
                 autoComplete="username"
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.username}
-              </Form.Control.Feedback>
-            </Form.Group>
-
-            <Form.Group className="mb-4">
-              <Form.Label>Mật khẩu</Form.Label>
-              <div style={{ position: 'relative' }}>
-                <Form.Control
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  placeholder="Nhập mật khẩu"
-                  value={values.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  isInvalid={touched.password && !!errors.password}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: 'rgba(255,255,255,0.4)',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    zIndex: 2,
-                  }}
-                  aria-label="Toggle password"
-                >
-                  {showPassword ? <BsEyeSlash /> : <BsEye />}
-                </button>
-                <Form.Control.Feedback type="invalid">
-                  {errors.password}
-                </Form.Control.Feedback>
-              </div>
-            </Form.Group>
-
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
-              {isSubmitting ? (
-                'Đang đăng nhập...'
-              ) : (
-                <>
-                  <BsBoxArrowInRight className="me-2" />
-                  Đăng nhập
-                </>
+              {touched.username && errors.username && (
+                <div className="error-message">{errors.username}</div>
               )}
-            </Button>
-          </Form>
+            </div>
+
+            <div className="input-wrapper">
+              <input
+                required
+                className={`input ${touched.password && errors.password ? 'is-invalid' : ''}`}
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                id="password"
+                placeholder="Mật khẩu"
+                value={values.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label="Toggle password"
+              >
+                {showPassword ? <BsEyeSlash size={18} /> : <BsEye size={18} />}
+              </button>
+              {touched.password && errors.password && (
+                <div className="error-message">{errors.password}</div>
+              )}
+            </div>
+
+
+
+            <input
+              className="login-button"
+              type="submit"
+              value={isSubmitting ? 'Đang đăng nhập...' : 'Sign In'}
+              disabled={isSubmitting}
+            />
+          </form>
         )}
       </Formik>
-    </>
+
+      <div className="social-account-container">
+        <span className="title">Or Sign in with</span>
+        <div className="social-accounts">
+          <button type="button" className="social-button google" title="Google">
+            <svg className="svg" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 488 512">
+              <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" />
+            </svg>
+          </button>
+          <button type="button" className="social-button apple" title="Apple">
+            <svg className="svg" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+              <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+            </svg>
+          </button>
+          <button type="button" className="social-button twitter" title="Twitter / X">
+            <svg className="svg" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+              <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <span className="agreement">
+        <a href="#">Learn user licence agreement</a>
+      </span>
+    </div>
   );
 }

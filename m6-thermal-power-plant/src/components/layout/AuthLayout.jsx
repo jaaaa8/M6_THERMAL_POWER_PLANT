@@ -57,11 +57,6 @@ export default function AuthLayout() {
             </p>
           </div>
 
-          <div className="auth-form-header">
-            <h2 className="text-headline-lg" style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}>Đăng nhập vào hệ thống</h2>
-            <p className="text-body-md" style={{ color: 'var(--color-text-secondary)' }}>Vui lòng nhập thông tin xác thực để tiếp tục.</p>
-          </div>
-
           {/* Auth form card - renders LoginPage via Outlet */}
           <div className="auth-card">
             <Outlet />
