@@ -18,3 +18,6 @@ export const getRepairHistoryById = async (id) => {
 };
 export const getByEquipment = (equipmentId) =>
     apiClient.get(`${API_URL}/equipment/${equipmentId}`);
+
+export const updateResult = (id, data) =>
+    apiClient.put(`${API_URL}/${id}`, data);

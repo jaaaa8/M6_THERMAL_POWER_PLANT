@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getAllRepairHistories, getByEquipment } from "../../services/repairHistoryService";
+import { toast } from "react-toastify";
+import { getAllRepairHistories, getByEquipment, updateResult } from "../../services/repairHistoryService";
+import { authService } from "../../services/authService";
+import { hasAnyRole } from "../../services/roleService";
 import {
     Table,
     Button,
@@ -9,6 +12,7 @@ import {
     Badge,
     Collapse,
     Card,
+    Form,
 } from "react-bootstrap";
 import { BsEyeFill, BsClockHistory } from "react-icons/bs";
 import PageHeader from "../common/PageHeader";
@@ -285,6 +289,13 @@ export function RepairHistoryTab({ equipmentId }) {
 
     const [repairHistories, setRepairHistories] = useState([]);
     const [openId, setOpenId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editText, setEditText] = useState("");
+    const [saving, setSaving] = useState(false);
+    const canEditResult = hasAnyRole(
+        authService.getCurrentUser(),
+        ["TEAM_LEADER", "MAINTENANCE_FOREMAN"]
+    );
 
     const loadRepairHistory = async () => {
         try {
@@ -298,6 +309,35 @@ export function RepairHistoryTab({ equipmentId }) {
     useEffect(() => {
         loadRepairHistory();
     }, [equipmentId]);
+
+    const startEdit = (item) => {
+        setEditingId(item.id);
+        setEditText(item.repairResult || "");
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditText("");
+    };
+
+    const saveEdit = async (item) => {
+        const repairResult = editText.trim();
+        if (!repairResult || saving) return;
+
+        setSaving(true);
+        try {
+            await updateResult(item.id, { repairResult });
+            await loadRepairHistory();
+            cancelEdit();
+            toast.success("Cập nhật kết quả sửa chữa thành công");
+        } catch (error) {
+            const data = error.response?.data;
+            const message = typeof data === "string" ? data : data?.message;
+            toast.error(message || "Cập nhật kết quả sửa chữa thất bại");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     return (
         <>
@@ -342,9 +382,49 @@ export function RepairHistoryTab({ equipmentId }) {
                                     <td>{item.repairDate}</td>
 
                                     <td>
-                                        <Badge bg="success">
-                                            {item.repairResult}
-                                        </Badge>
+                                        {editingId === item.id ? (
+                                            <>
+                                                <Form.Control
+                                                    as="textarea"
+                                                    rows={2}
+                                                    value={editText}
+                                                    onChange={(event) => setEditText(event.target.value)}
+                                                />
+                                                <div className="d-flex gap-1 mt-1">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="success"
+                                                        disabled={saving || !editText.trim()}
+                                                        onClick={() => saveEdit(item)}
+                                                    >
+                                                        {saving ? "Đang lưu..." : "Lưu"}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline-secondary"
+                                                        disabled={saving}
+                                                        onClick={cancelEdit}
+                                                    >
+                                                        Huỷ
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="d-flex align-items-center gap-2">
+                                                <Badge bg="success">
+                                                    {item.repairResult || "—"}
+                                                </Badge>
+                                                {canEditResult && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline-primary"
+                                                        onClick={() => startEdit(item)}
+                                                    >
+                                                        Sửa
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
 
                                     <td>
