@@ -19,7 +19,7 @@ function announceRepairRequest(notif, lastSpokenIdRef) {
     if (lastSpokenIdRef.current === notif.id) return;
 
     lastSpokenIdRef.current = notif.id;
-    speak(notif.message);
+    speak('Có thông báo sửa chữa mới');
 }
 
 function timeAgo(createdAt) {
