@@ -24,6 +24,13 @@ export default defineConfig(({ mode }) => {
           // phép 2 origin này. Set cứng 8080 trước đây làm login qua proxy luôn
           // bị 403 (CORS) vì 8080 không nằm trong allowlist.
         },
+        // WebSocket (STOMP) — useWebSocket.js giờ dùng path tương đối '/ws',
+        // cần proxy riêng ở dev vì Vite không tự forward theo '/api'.
+        '/ws': {
+          target: env.VITE_API_BASE_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          ws: true,
+        },
       },
     },
   }
