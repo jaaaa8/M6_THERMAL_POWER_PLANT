@@ -1,8 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { API_BASE_URL } from '../services/apiClient';
 
-const WS_URL = 'http://localhost:8080/ws';
+// Path tương đối, đồng bộ với apiClient.js — để Nginx (prod) / Vite proxy (dev)
+// forward sang backend cùng origin, tránh hardcode domain (vỡ trên server thật).
+const WS_URL = `${API_BASE_URL}/ws`;
 
 export function useWebSocket(accountId, onMessage) {
     const clientRef = useRef(null);
