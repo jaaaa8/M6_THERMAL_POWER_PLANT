@@ -37,6 +37,8 @@ const ROLE_REDIRECT = {
   SAFETY_SUPERVISOR: '/repair/phieu-cong-tac',
 };
 
+const REPAIR_LOGIN_ANNOUNCE_KEY = 'scms_announce_repair_after_login';
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +50,11 @@ export default function LoginPage() {
 
       // Thông báo trên màn hình + loa phát dùng chung 1 câu chào theo vai trò
       const welcome = getWelcomeText(user);
+      try {
+        sessionStorage.setItem(REPAIR_LOGIN_ANNOUNCE_KEY, '1');
+      } catch {
+        // Voice notification là tính năng phụ; login vẫn phải tiếp tục.
+      }
       toast.success(welcome, { autoClose: 6000 });
       speak(welcome);
 
