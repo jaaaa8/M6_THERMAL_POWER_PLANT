@@ -42,10 +42,10 @@ export default function NotificationBell({ accountId }) {
     useEffect(() => {
         if (!accountId) return;
 
-        let announceAfterLogin = false;
+        let welcomeAfterLogin = null;
         try {
-            announceAfterLogin = sessionStorage.getItem(REPAIR_LOGIN_ANNOUNCE_KEY) === '1';
-            if (announceAfterLogin) {
+            welcomeAfterLogin = sessionStorage.getItem(REPAIR_LOGIN_ANNOUNCE_KEY);
+            if (welcomeAfterLogin !== null) {
                 sessionStorage.removeItem(REPAIR_LOGIN_ANNOUNCE_KEY);
             }
         } catch {
@@ -58,13 +58,19 @@ export default function NotificationBell({ accountId }) {
                 const loaded = res.data?.data ?? [];
                 setNotifications(loaded);
 
-                if (announceAfterLogin) {
-                    announceRepairRequest(
-                        loaded.find(isUnreadRepairRequestNotification),
-                        lastSpokenIdRef,
-                    );
+                if (welcomeAfterLogin !== null && lastSpokenIdRef.current === null) {
+                    const repairNotification = loaded.find(isUnreadRepairRequestNotification);
+                    if (repairNotification) {
+                        announceRepairRequest(repairNotification, lastSpokenIdRef);
+                    } else {
+                        speak(welcomeAfterLogin);
+                    }
                 }
-            } catch { /* ignore */ }
+            } catch {
+                if (welcomeAfterLogin !== null && lastSpokenIdRef.current === null) {
+                    speak(welcomeAfterLogin);
+                }
+            }
         };
 
         load();

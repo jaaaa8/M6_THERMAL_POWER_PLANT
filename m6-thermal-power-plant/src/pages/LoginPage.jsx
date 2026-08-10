@@ -6,7 +6,7 @@ import * as Yup from 'yup';
 import { BsBoxArrowInRight, BsEye, BsEyeSlash, BsShieldLock } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { authService } from '../services/authService';
-import { speak, getWelcomeText } from '../utils/speak';
+import { getWelcomeText } from '../utils/speak';
 
 /**
  * Schema validation cho form đăng nhập
@@ -48,15 +48,14 @@ export default function LoginPage() {
       const res = await authService.login(values.username, values.password);
       const user = res.data;
 
-      // Thông báo trên màn hình + loa phát dùng chung 1 câu chào theo vai trò
+      // Toast hiển thị ngay; NotificationBell chọn lời chào hoặc RepairRequest để đọc.
       const welcome = getWelcomeText(user);
       try {
-        sessionStorage.setItem(REPAIR_LOGIN_ANNOUNCE_KEY, '1');
+        sessionStorage.setItem(REPAIR_LOGIN_ANNOUNCE_KEY, welcome);
       } catch {
         // Voice notification là tính năng phụ; login vẫn phải tiếp tục.
       }
       toast.success(welcome, { autoClose: 6000 });
-      speak(welcome);
 
       // Chuyển hướng theo role backend (lấy role đầu tiên).
       const primaryRole = user.roles?.[0];

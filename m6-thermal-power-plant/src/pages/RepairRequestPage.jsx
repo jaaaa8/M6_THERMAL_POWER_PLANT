@@ -98,13 +98,13 @@ export default function RepairRequestPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Vai trò: SL/CL/TL tạo mới / xoá yêu cầu sửa chữa. MF/ADMIN chỉ xem danh sách + tạo PCT từ request pending.
+  // SL/CL/TL/ADMIN được tạo mới hoặc xoá yêu cầu sửa chữa.
   const userRoles = authService.getCurrentUser()?.roles || [];
   const canManageRequest = userRoles.some((r) =>
     ['SHIFT_LEADER', 'CREW_LEADER', 'TEAM_LEADER', 'ADMIN'].includes(r)
   );
 
-  // Vai trò: chỉ MF/ADMIN mới tạo Phiếu công tác từ yêu cầu (khớp BE POST /api/v1/work-orders).
+  // Chỉ MF/ADMIN được tạo Phiếu công tác từ yêu cầu (khớp BE POST /api/v1/work-orders).
   const canOperatePCT = userRoles.some((r) =>
     ['MAINTENANCE_FOREMAN', 'ADMIN'].includes(r)
   );
