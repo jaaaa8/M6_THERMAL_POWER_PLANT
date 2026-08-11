@@ -92,6 +92,7 @@ database.mwb
 *.pdf
 *.xlsx
 PROJECT_CONTEXT.md
+PROJECT_SUMMARY.md
 
 ### Temp / Scratch Files ###
 temp_*
