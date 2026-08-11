@@ -10,11 +10,17 @@ import './style/ListSystem.css';
 import ConfirmModal from '../common/ConfirmModal';
 import { toast } from 'react-toastify';
 import PaginationPanel from "./PaginationPanel";
+import { authService } from '../../services/authService';
+import { hasAnyRole } from '../../services/roleService';
+
+const WRITE_ROLES = ['WORKSHOP_FOREMAN'];
 
 export default function ListSystem() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const canWrite = hasAnyRole(authService.getCurrentUser(), WRITE_ROLES);
 
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(5);
@@ -206,6 +212,7 @@ export default function ListSystem() {
         title="Danh sách Hệ thống"
         subtitle="Quản lý thông tin hệ thống kỹ thuật của nhà máy điện"
         actions={
+          canWrite && (
           <Button
             variant="primary"
             onClick={() => navigate('/equipment/system/add')}
@@ -214,6 +221,7 @@ export default function ListSystem() {
             <BsPlusLg />
             Thêm hệ thống
           </Button>
+          )
         }
       />
 
@@ -281,6 +289,8 @@ export default function ListSystem() {
             >
               <BsEye size={16} />
             </button>
+            {canWrite && (
+            <>
             <button
               className="system-action-btn edit-btn"
               title="Chỉnh sửa"
@@ -300,6 +310,8 @@ export default function ListSystem() {
             >
               <BsTrash size={14} />
             </button>
+            </>
+            )}
           </div>
         )}
       />

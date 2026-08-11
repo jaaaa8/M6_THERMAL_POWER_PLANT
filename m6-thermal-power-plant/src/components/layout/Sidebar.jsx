@@ -42,10 +42,10 @@ const menuSections = [
     heading: 'Thiết bị',
     items: [
       {
-        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['WORKSHOP_FOREMAN'],
+        icon: <BsGearWideConnected />, label: 'Hệ thống & Thiết bị', roles: ['WORKSHOP_FOREMAN', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'SHIFT_LEADER'],
         children: [
           { path: '/equipment/system', icon: <BsListUl />, label: 'Hệ thống' },
-          { path: '/equipment/parameter', icon: <BsClipboard2Check />, label: 'Thông số' },
+          { path: '/equipment/parameter', icon: <BsClipboard2Check />, label: 'Thông số', roles: ['WORKSHOP_FOREMAN'] },
         ],
       },
     ],

@@ -11,6 +11,10 @@ import ConfirmModal from '../common/ConfirmModal';
 import { toast } from 'react-toastify';
 import './style/ListEquipment.css';
 import PaginationPanel from "./PaginationPanel";
+import { authService } from '../../services/authService';
+import { hasAnyRole } from '../../services/roleService';
+
+const WRITE_ROLES = ['WORKSHOP_FOREMAN'];
 
 export default function ListEquipment() {
   const navigate = useNavigate();
@@ -19,6 +23,8 @@ export default function ListEquipment() {
   const { systemId } = useParams();
   const isFilterBySystem = !!systemId;
   const isSystemView = !!systemId;
+
+  const canWrite = hasAnyRole(authService.getCurrentUser(), WRITE_ROLES);
 
   // system
   const location = useLocation();
@@ -203,7 +209,7 @@ export default function ListEquipment() {
         actions={
           <div className="d-flex gap-2">
 
-            {isSystemView && (
+            {isSystemView && canWrite && (
               <Button
                 variant="primary"
                 onClick={() =>
@@ -373,20 +379,24 @@ export default function ListEquipment() {
                           >
                             <BsEye size={16} />
                           </button>
-                          <button
-                            className="equipment-action-btn edit-btn"
-                            title="Chỉnh sửa"
-                            onClick={() => navigate(`/equipment/equipments/edit/${row.id}`)}
-                          >
-                            <BsPencil size={14} />
-                          </button>
-                          <button
-                            className="equipment-action-btn delete-btn"
-                            title="Xóa"
-                            onClick={() => setDeleteModal({ show: true, data: row })}
-                          >
-                            <BsTrash size={14} />
-                          </button>
+                          {canWrite && (
+                            <>
+                            <button
+                              className="equipment-action-btn edit-btn"
+                              title="Chỉnh sửa"
+                              onClick={() => navigate(`/equipment/equipments/edit/${row.id}`)}
+                            >
+                              <BsPencil size={14} />
+                            </button>
+                            <button
+                              className="equipment-action-btn delete-btn"
+                              title="Xóa"
+                              onClick={() => setDeleteModal({ show: true, data: row })}
+                            >
+                              <BsTrash size={14} />
+                            </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
