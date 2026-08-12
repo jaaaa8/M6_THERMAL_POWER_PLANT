@@ -1,5 +1,37 @@
 # M6 Thermal Power Plant — Frontend
 
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5-purple)
+
+Giao diện web cho hệ thống quản lý bảo trì – vận hành nhà máy nhiệt điện (SCMS):
+phiếu công tác, sửa chữa thiết bị, quản lý vật tư/công cụ, nhân sự, phân quyền
+theo vai trò, thông báo real-time.
+
+Backend tương ứng: [`M6_THERMAL_POWER_PLANT_API`](https://github.com/jaaaa8/M6_THERMAL_POWER_PLANT_API).
+
+## Tech stack
+
+- **React 19** + **Vite**
+- **React Router**, **Bootstrap 5 / react-bootstrap**
+- **Formik + Yup** cho form & validate
+- **Axios** cho gọi API, **STOMP/SockJS** cho realtime (thông báo, cập nhật trạng thái)
+- **jsPDF / @react-pdf/renderer** để xuất phiếu công tác PDF
+- **Recharts** cho dashboard biểu đồ
+
+## Cấu trúc thư mục
+
+```
+src/
+├── pages/        # màn hình theo route
+├── components/   # component theo domain (work_order, repair, equipment, hr, ...)
+├── layouts/       # layout khung trang
+├── services/      # gọi API theo domain
+├── hooks/         # custom hook
+├── pdf/           # sinh phiếu công tác PDF
+└── utils/
+```
+
 ## Chạy lần đầu
 
 1. `cp .env.example .env`
@@ -19,24 +51,17 @@ giá trị thật. Tên biến frontend **bắt buộc** có tiền tố `VITE_`
 bỏ qua và code đọc ra `undefined` mà không báo lỗi.
 
 Quy ước đặt tên đầy đủ, cách khai báo biến mới, xử lý sự cố: xem
-`BIEN_MOI_TRUONG.md` ở gốc repo **backend** (`M6_THERMAL_POWER_PLANT_API`) —
-tài liệu đó dùng chung cho cả 2 repo.
+[`docs/BIEN_MOI_TRUONG.md`](https://github.com/jaaaa8/M6_THERMAL_POWER_PLANT_API/blob/main/docs/BIEN_MOI_TRUONG.md)
+ở repo backend — tài liệu đó dùng chung cho cả 2 repo.
 
----
+## Build & lint
 
-# React + Vite
+```
+npm run build     # build production
+npm run preview   # xem thử bản build
+npm run lint      # eslint
+```
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Tài liệu
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- [`docs/CHANGELOG.md`](../docs/CHANGELOG.md) — lịch sử thay đổi
