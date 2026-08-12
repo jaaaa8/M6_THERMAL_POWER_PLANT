@@ -11,6 +11,7 @@ import { workOrderService } from '../../services/workOrderService';
 import { employeeService } from '../../services/hr/employeeService';
 import StatusBadge from '../common/StatusBadge';
 import SearchSelectField from '../common/SearchSelectField';
+import { searchWorkOrderRoles } from '../common/workOrderRoleSearch';
 import './CreateWorkOrderModal.css';
 
 /** Mã role (roles.name trong DB) được phép làm Người giám sát an toàn. */
@@ -103,8 +104,8 @@ export default function ModalCreateWorkOrder({
   request,
   onCreated,
 }) {
-  // Danh sách id đang BẬN ở mọi phiếu sống (STOPPED/IN_PROGRESS) — 3 vai trò
-  // phụ trách chỉ hiện người THỰC SỰ RẢNH.
+  // Ba vai trò PCT tìm local trên snapshot đầy đủ; chỉ tải lại khi mở modal.
+  const [roleEmployees, setRoleEmployees] = useState([]);
   const [busyIds, setBusyIds] = useState([]);
 
   useEffect(() => {
@@ -112,10 +113,20 @@ export default function ModalCreateWorkOrder({
     let cancelled = false;
     (async () => {
       try {
-        const busyRes = await workOrderService.getBusyEmployees(undefined);
-        if (!cancelled) setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
-      } catch {
-        if (!cancelled) setBusyIds([]);
+        const [employeeRes, busyRes] = await Promise.all([
+          employeeService.getAllWithAccounts(),
+          workOrderService.getBusyEmployees(undefined),
+        ]);
+        if (cancelled) return;
+        const employees = employeeRes.data?.data || employeeRes.data || [];
+        setRoleEmployees(Array.isArray(employees) ? employees : []);
+        setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
+      } catch (err) {
+        if (!cancelled) {
+          setRoleEmployees([]);
+          setBusyIds([]);
+          toast.error(`Không thể tải danh sách nhân viên khả dụng: ${extractErrorMessage(err)}`);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -212,13 +223,15 @@ export default function ModalCreateWorkOrder({
             if (busy.has(e.id)) return false;
             if (field === 'safetySupervisorId') {
               if (roleFieldIds.leaderId === e.id || roleFieldIds.directSupervisorId === e.id) return false;
-              const roles = (e.account?.roles || []).map((r) => r?.name || r);
+              const roles = (e.roles || []).map((r) => r?.name || r);
               if (!roles.includes(SAFETY_SUPERVISOR_ROLE)) return false;
             } else if (roleFieldIds.safetySupervisorId === e.id) {
               return false;
             }
             return true;
           });
+          const roleSearch = (field) => (params) =>
+            searchWorkOrderRoles(roleEmployees, params, roleFilter(field));
 
           return (
             <Form noValidate>
@@ -325,7 +338,7 @@ export default function ModalCreateWorkOrder({
                       label="Người lãnh đạo công việc"
                       required
                       mode="single"
-                      searchFn={searchEmployees}
+                      searchFn={roleSearch('leaderId')}
                       getKey={EMP_KEY}
                       renderItem={EMP_RENDER}
                       placeholder="Tìm theo tên, mã NV, phòng ban..."
@@ -345,7 +358,7 @@ export default function ModalCreateWorkOrder({
                       label="Chỉ huy trực tiếp"
                       required
                       mode="single"
-                      searchFn={searchEmployees}
+                      searchFn={roleSearch('directSupervisorId')}
                       getKey={EMP_KEY}
                       renderItem={EMP_RENDER}
                       placeholder="Tìm theo tên, mã NV, phòng ban..."
@@ -365,7 +378,7 @@ export default function ModalCreateWorkOrder({
                       label="Người giám sát an toàn"
                       required
                       mode="single"
-                      searchFn={searchEmployees}
+                      searchFn={roleSearch('safetySupervisorId')}
                       getKey={EMP_KEY}
                       renderItem={EMP_RENDER}
                       placeholder="Tìm theo tên, mã NV, phòng ban..."
