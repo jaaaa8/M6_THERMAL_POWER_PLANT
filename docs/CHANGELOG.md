@@ -1,5 +1,34 @@
 # CHANGELOG — Dự án SCMS
 
+## [2026-08-12] — Tách quyền xem/ghi module Thiết bị
+
+Module Thiết bị trước đây chỉ `WORKSHOP_FOREMAN` (WF) dùng được. Tách thành: **4 role xem**
+(WF, `MAINTENANCE_FOREMAN`, `TEAM_LEADER`, `SHIFT_LEADER`), **chỉ WF ghi** (thêm/sửa/xóa
+hệ thống & thiết bị, quản lý Thông số). Backend đã khoá bằng `@PreAuthorize` ở Task 1 — đây là
+lớp UX cho khớp.
+
+### Frontend (`m6-thermal-power-plant`)
+- **`src/App.jsx`**: tách block route Thiết bị thành 2 nhóm — view
+  (`/equipment/system`, `/equipment/equipments`, `/equipment/equipments/system/:systemId`) cho 4
+  role; write (`/equipment/system/add`, `/edit/:id`, `/equipment/equipments/:systemId/add`,
+  `/edit/:id`, `/equipment/parameter`) giữ `WORKSHOP_FOREMAN`. Chi tiết thiết bị
+  `/equipment/equipments/:id` mở thêm `SHIFT_LEADER`.
+- **`src/components/layout/Sidebar.jsx`**: menu "Hệ thống & Thiết bị" hiện cho 4 role; child
+  "Thông số" giữ `roles: ['WORKSHOP_FOREMAN']` (lọc child theo role đã có sẵn).
+- **`src/components/equipment/ListSystem.jsx`**: ẩn nút "Thêm hệ thống", "Chỉnh sửa", "Xóa" nếu
+  user không thuộc `WORKSHOP_FOREMAN` (dùng `hasAnyRole` + `authService.getCurrentUser`).
+- **`src/components/equipment/ListEquipment.jsx`**: ẩn "Thêm thiết bị", "Chỉnh sửa", "Xóa" cùng
+  điều kiện.
+- **`src/components/equipment/TechnicalParameterTab.jsx`**: ẩn nút "Thêm thông số" và nút sửa
+  từng dòng khi không phải `WORKSHOP_FOREMAN` → tab Thông số kỹ thuật read-only cho 3 role xem
+  còn lại.
+
+### Test (verify e2e qua browser)
+- `mforeman_1` (MF): sidebar chỉ "Hệ thống", không "Thông số"; ListSystem/ListEquipment chỉ
+  "Xem chi tiết"; tab Thông số kỹ thuật không nút thêm/sửa.
+- `wforeman_1` (WF): đầy đủ nút ghi + menu "Thông số".
+
+
 ## [2026-08-07] — Xác nhận OTP qua email khi đổi mật khẩu
 
 Đổi mật khẩu vốn **đã chạy hoàn chỉnh** (modal FE + `POST /auth/change-password`). Thay đổi này

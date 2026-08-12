@@ -11,11 +11,18 @@ import { toast } from "react-toastify";
 
 import * as parameterService from "../../services/equipment/parameterService";
 import * as catalogService from "../../services/equipment/catalogService";
+import { authService } from "../../services/authService";
+import { hasAnyRole } from "../../services/roleService";
+
+const WRITE_ROLES = ['WORKSHOP_FOREMAN'];
+
 export default function TechnicalParameterTab({
     equipmentId,
     technicalParameters,
     onReload
 }) {
+
+    const canWrite = hasAnyRole(authService.getCurrentUser(), WRITE_ROLES);
 
     const [mode, setMode] = useState("create");
     const [editing, setEditing] = useState(false);
@@ -231,7 +238,7 @@ export default function TechnicalParameterTab({
                 <h5 className="fw-bold">
                     Thông số kỹ thuật
                 </h5>
-                <Button onClick={openCreate}>
+                <Button onClick={openCreate} hidden={!canWrite}>
 
                     <BsPlusLg />
 
@@ -276,6 +283,7 @@ export default function TechnicalParameterTab({
                                 <td>
                                     <Button
                                         variant="link"
+                                        hidden={!canWrite}
                                         onClick={() => openEditor(p)}
                                     >
                                         <BsPencil />

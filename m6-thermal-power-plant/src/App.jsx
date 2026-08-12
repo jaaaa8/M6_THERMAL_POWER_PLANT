@@ -84,20 +84,24 @@ function App() {
               <Route path="/hr/employees/detail/:id" element={<PlaceholderPage title="Chi tiết Nhân sự" />} />
             </Route>
 
-            {/* --- Thiết bị (WORKSHOP_FOREMAN) --- */}
-            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN']}><Outlet /></ProtectedRoute>}>
+            {/* --- Thiết bị: xem (4 role) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'SHIFT_LEADER']}><Outlet /></ProtectedRoute>}>
               <Route path="/equipment/system" element={<ListSystem />} />
+              <Route path="/equipment/equipments" element={<ListEquipment />} />
+              <Route path="/equipment/equipments/system/:systemId" element={<ListEquipment />} />
+            </Route>
+
+            {/* --- Thiết bị: ghi (chỉ WORKSHOP_FOREMAN) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN']}><Outlet /></ProtectedRoute>}>
               <Route path="/equipment/system/add" element={<AddSystem />} />
               <Route path="/equipment/system/edit/:id" element={<EditSystem />} />
-              <Route path="/equipment/equipments" element={<ListEquipment />} />
               <Route path="/equipment/equipments/:systemId/add" element={<AddEquipment />} />
               <Route path="/equipment/equipments/edit/:id" element={<UpdateEquipment />} />
-              <Route path="/equipment/equipments/system/:systemId" element={<ListEquipment />} />
               <Route path="/equipment/parameter" element={<ManageMaster />} />
             </Route>
 
-            {/* Chi tiết thiết bị: bộ phận sửa chữa cần xem để cập nhật kết quả sửa chữa. */}
-            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN', 'TEAM_LEADER', 'MAINTENANCE_FOREMAN']}><Outlet /></ProtectedRoute>}>
+            {/* Chi tiết thiết bị: 4 role xem; cập nhật kết quả sửa chữa vẫn là quyền sửa chữa. */}
+            <Route element={<ProtectedRoute allowedRoles={['WORKSHOP_FOREMAN', 'MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'SHIFT_LEADER']}><Outlet /></ProtectedRoute>}>
               <Route path="/equipment/equipments/:id" element={<DetailEquipment />} />
             </Route>
 
