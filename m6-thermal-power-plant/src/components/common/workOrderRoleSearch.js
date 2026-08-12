@@ -26,3 +26,12 @@ export const searchWorkOrderRoles = async (
     },
   };
 };
+
+export const searchWorkOrderMembers = (employees, params, excludedIds) => {
+  const excluded = new Set([...excludedIds].map(String));
+  return searchWorkOrderRoles(
+    employees,
+    params,
+    (matches) => matches.filter((employee) => !excluded.has(String(employee.id))),
+  );
+};

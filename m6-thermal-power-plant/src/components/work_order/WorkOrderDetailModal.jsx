@@ -11,6 +11,7 @@ import StatusBadge from '../common/StatusBadge';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmModal from '../common/ConfirmModal';
 import SearchSelectField from '../common/SearchSelectField';
+import { searchWorkOrderMembers } from '../common/workOrderRoleSearch';
 import { workOrderService } from '../../services/workOrderService';
 import { employeeService } from '../../services/hr/employeeService';
 import { authService } from '../../services/authService';
@@ -35,9 +36,6 @@ const MANAGE_MEMBER_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 
 const EQUIPMENT_STATUS_ROLES = ['MAINTENANCE_FOREMAN', 'TEAM_LEADER', 'ADMIN'];
 
-/* ============================================================
-   Helpers search nhân viên server-side (chung cho SearchSelectField).
-   ============================================================ */
 const EMP_KEY = (e) => e.id;
 const EMP_RENDER = (e) => (
   <>
@@ -47,12 +45,6 @@ const EMP_RENDER = (e) => (
     </span>
   </>
 );
-const searchEmployees = (p) => employeeService.search({
-  keyword: p.query || undefined,
-  page: p.page,
-  size: p.size,
-});
-
 const EQUIPMENT_STATUS_MAP = {
   IN_PROGRESS: { status: 'warning', label: 'Đang thực hiện' },
   COMPLETED: { status: 'normal', label: 'Đã xong' },
@@ -98,6 +90,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const [leaveTarget, setLeaveTarget] = useState(null);
   const [leaveLoading, setLeaveLoading] = useState(false);
   const [addingEmployeeId, setAddingEmployeeId] = useState(null);
+  const [memberEmployees, setMemberEmployees] = useState(null);
   // Id nhân viên đang bận ở phiếu công tác sống KHÁC (vai trò phụ trách hoặc
   // thành viên chưa rời) — ẩn khỏi gợi ý thêm. null = chưa tải.
   const [busyIds, setBusyIds] = useState(null);
@@ -138,43 +131,35 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
 
   useEffect(() => {
     if (!show || !workOrderId) return;
-    setMemberTab('members');
-    setJoinTime(toLocalInput(new Date().toISOString()));
-    setBusyIds(null); // tải lại mỗi lần mở — trạng thái bận đổi liên tục
+    // Effect này đồng bộ modal với dữ liệu backend; loadDetail tự quản lý loading/error.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDetail();
   }, [show, workOrderId, loadDetail]);
 
-  // Tải danh sách nhân viên ĐANG BẬN ở phiếu sống KHÁC khi mở tab thêm (mỗi
-  // lần mở modal tải lại — busyIds reset về null lúc mở). Lỗi thì coi như
-  // không ai bận (bộ lọc gợi ý thôi, backend không chặn).
+  // Tải snapshot nhân viên + người bận đúng một lần khi mở tab thêm. Search
+  // sau đó chạy local để lọc eligibility trước khi phân trang.
   useEffect(() => {
-    if (!show || memberTab !== 'add' || busyIds !== null || !workOrderId) return;
+    if (!show || memberTab !== 'add' || !workOrderId
+      || (memberEmployees !== null && busyIds !== null)) return undefined;
+    let cancelled = false;
     (async () => {
       try {
-        const res = await workOrderService.getBusyEmployees(workOrderId);
-        setBusyIds(Array.isArray(res.data) ? res.data : []);
-      } catch {
+        const [employeeRes, busyRes] = await Promise.all([
+          employeeService.getAllWithAccounts(),
+          workOrderService.getBusyEmployees(workOrderId).catch(() => ({ data: [] })),
+        ]);
+        if (cancelled) return;
+        setMemberEmployees(Array.isArray(employeeRes.data) ? employeeRes.data : []);
+        setBusyIds(Array.isArray(busyRes.data) ? busyRes.data : []);
+      } catch (err) {
+        if (cancelled) return;
+        setMemberEmployees([]);
         setBusyIds([]);
+        toast.error(`Không thể tải danh sách nhân viên: ${extractErrorMessage(err)}`);
       }
     })();
-  }, [show, memberTab, busyIds, workOrderId]);
-
-  // Bộ lọc gợi ý thêm thành viên (chạy LÚC RENDER trên từng trang kết quả
-  // search): loại người ĐANG trong khu vực làm việc (người đã rời vẫn hiện —
-  // backend cho phép vào lại), 3 vai trò phụ trách của CHÍNH phiếu này và
-  // người ĐANG BẬN ở phiếu công tác sống khác.
-  const addFilter = useCallback((list) => {
-    const activeIds = new Set(
-      (detail?.currentMembers || []).filter((m) => !m.leftAt).map((m) => m.employeeId)
-    );
-    const roleIds = new Set(
-      [detail?.leaderId, detail?.directSupervisorId, detail?.safetySupervisorId].filter(Boolean)
-    );
-    const busy = new Set(busyIds || []);
-    return list.filter(
-      (e) => !activeIds.has(e.id) && !roleIds.has(e.id) && !busy.has(e.id)
-    );
-  }, [detail, busyIds]);
+    return () => { cancelled = true; };
+  }, [show, memberTab, memberEmployees, busyIds, workOrderId]);
 
   const confirmLeave = async () => {
     if (!leaveTarget) return;
@@ -257,10 +242,33 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
   const canManageMembers = userRoles.some((r) => MANAGE_MEMBER_ROLES.includes(r));
   const canUpdateEquipmentStatus = userRoles.some((r) => EQUIPMENT_STATUS_ROLES.includes(r));
 
+  const handleClose = () => {
+    setMemberTab('members');
+    setMemberEmployees(null);
+    setBusyIds(null);
+    onClose();
+  };
+
+  const handleMemberTabSelect = (key) => {
+    setMemberTab(key);
+    if (key === 'add') {
+      setJoinTime(toLocalInput(new Date().toISOString()));
+      setMemberEmployees(null);
+      setBusyIds(null);
+    }
+  };
+
   const statusInfo = detail?.status ? STATUS_MAP[detail.status] || { label: detail.status, status: 'info' } : null;
 
   // Workers only (not including leaders/supervisors)
   const workers = detail?.currentMembers || [];
+  const unavailableMemberIds = [
+    ...workers.filter((member) => !member.leftAt).map((member) => member.employeeId),
+    detail?.leaderId,
+    detail?.directSupervisorId,
+    detail?.safetySupervisorId,
+    ...(busyIds || []),
+  ].filter(Boolean);
   
   // Sort workers: online first, then offline
   const sortedWorkers = [...workers].sort((a, b) => {
@@ -279,7 +287,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
 
   return (
     <>
-    <Modal show={show} onHide={onClose} centered size="xl" scrollable dialogClassName="wo-detail-modal">
+    <Modal show={show} onHide={handleClose} centered size="xl" scrollable dialogClassName="wo-detail-modal">
       <Modal.Header closeButton>
         <Modal.Title className="wo-detail-modal-title">
           <BsCpu className="me-2" style={{ color: 'var(--color-primary)' }} />
@@ -411,7 +419,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                     <BsPeopleFill />
                     Thành viên tham gia ({sortedWorkers.length})
                   </div>
-                  <Tabs activeKey={memberTab} onSelect={(k) => setMemberTab(k)} className="mb-2">
+                  <Tabs activeKey={memberTab} onSelect={handleMemberTabSelect} className="mb-2">
                     <Tab eventKey="members" title="Thành viên">
                       {sortedWorkers.length === 0 ? (
                         <div className="text-muted text-center py-3">Không có nhân viên nào</div>
@@ -451,16 +459,24 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
                         <div className="form-text mb-2" style={{ fontSize: 'var(--text-xs)' }}>
                           Giờ vào nhập tay (mặc định = hiện tại) — không lấy realtime.
                         </div>
-                        <SearchSelectField
-                          mode="add"
-                          searchFn={searchEmployees}
-                          getKey={EMP_KEY}
-                          renderItem={EMP_RENDER}
-                          placeholder="Tìm theo tên, mã NV, phòng ban, chức vụ..."
-                          onAdd={handleAddMember}
-                          filterClient={addFilter}
-                          pendingKey={addingEmployeeId}
-                        />
+                        {memberEmployees === null || busyIds === null ? (
+                          <LoadingSpinner />
+                        ) : (
+                          <SearchSelectField
+                            mode="add"
+                            searchFn={(params) => searchWorkOrderMembers(
+                              memberEmployees,
+                              params,
+                              unavailableMemberIds,
+                            )}
+                            getKey={EMP_KEY}
+                            renderItem={EMP_RENDER}
+                            placeholder="Tìm theo tên, mã NV, phòng ban, chức vụ..."
+                            onAdd={handleAddMember}
+                            excludedIds={unavailableMemberIds}
+                            pendingKey={addingEmployeeId}
+                          />
+                        )}
                       </Tab>
                     )}
                   </Tabs>
@@ -544,7 +560,7 @@ export default function WorkOrderDetailModal({ show, onClose, workOrderId, onCha
         )}
         {/* Mọi bước chuyển trạng thái (mở / khoá phiếu ngày, khoá hoàn thành,
             huỷ) nằm ở modal "Cập nhật trạng thái" ngoài danh sách PCT. */}
-        <Button variant="outline-secondary" size="sm" onClick={onClose}>
+        <Button variant="outline-secondary" size="sm" onClick={handleClose}>
           <BsXCircle className="me-1" /> Đóng
         </Button>
       </Modal.Footer>
